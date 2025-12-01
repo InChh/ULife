@@ -1,5 +1,5 @@
 //
-//  ViewController.swift
+//  CalendarViewController.swift
 //  ULife
 //
 //  Created by 刘宏伟 on 2025/12/1.
@@ -7,13 +7,11 @@
 
 import UIKit
 
-class ViewController: UIViewController {
+class CalendarViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view.
+        view.backgroundColor = .systemPink
     }
-
-
+    
 }
-
