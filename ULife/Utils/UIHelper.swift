@@ -11,6 +11,7 @@ enum UIHelper {
     static func createTabViewController() -> UITabBarController {
         let tabBarController = UITabBarController()
         tabBarController.viewControllers = [createCalendarNavigationController(),
+                                            createActivityNavigationController(),
                                             createForumNavigationController(),
                                             createProfileNavigationController()]
                                 
@@ -21,6 +22,13 @@ enum UIHelper {
         let calendarViewController = CalendarViewController()
         let navigationController = UINavigationController(rootViewController: calendarViewController)
         navigationController.tabBarItem = UITabBarItem(title: NSLocalizedString("Calendar", comment: ""), image: UIImage(systemName: "calendar"), selectedImage: UIImage(systemName: "calendar.fill"))
+        return navigationController
+    }
+
+    static func createActivityNavigationController() -> UINavigationController {
+        let activityViewController = ActivityViewController()
+        let navigationController = UINavigationController(rootViewController: activityViewController)
+        navigationController.tabBarItem = UITabBarItem(title: NSLocalizedString("Activity", comment: ""), image: UIImage(systemName: "flame"), selectedImage: UIImage(systemName: "flame.fill"))
         return navigationController
     }
     
