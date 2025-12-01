@@ -16,6 +16,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).
         guard let windowScene = (scene as? UIWindowScene) else { return }
         window = UIWindow(windowScene: windowScene)
+        // 打开app后，若检测到未登录，则进入登录页面，登录后跳转到主页面
+        //        window?.rootViewController = LoginViewController()
+        // 主页面四个Tab
         window?.rootViewController = UIHelper.createTabViewController()
         window?.makeKeyAndVisible()
     }
