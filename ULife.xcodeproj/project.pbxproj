@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		DC8DA6142EDDA50A00A245AC /* Ulifelib in Frameworks */ = {isa = PBXBuildFile; productRef = DC8DA6132EDDA50A00A245AC /* Ulifelib */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		DC5647252EDD20A700B23650 /* ULife.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ULife.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -36,6 +40,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DC8DA6142EDDA50A00A245AC /* Ulifelib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +83,7 @@
 			);
 			name = ULife;
 			packageProductDependencies = (
+				DC8DA6132EDDA50A00A245AC /* Ulifelib */,
 			);
 			productName = ULife;
 			productReference = DC5647252EDD20A700B23650 /* ULife.app */;
@@ -108,6 +114,9 @@
 			);
 			mainGroup = DC56471C2EDD20A700B23650;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				DC8DA6122EDDA50A00A245AC /* XCLocalSwiftPackageReference "ULifeLib/Ulifelib" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = DC5647262EDD20A700B23650 /* Products */;
 			projectDirPath = "";
@@ -350,6 +359,20 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		DC8DA6122EDDA50A00A245AC /* XCLocalSwiftPackageReference "ULifeLib/Ulifelib" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ULifeLib/Ulifelib;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		DC8DA6132EDDA50A00A245AC /* Ulifelib */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Ulifelib;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = DC56471D2EDD20A700B23650 /* Project object */;
 }
