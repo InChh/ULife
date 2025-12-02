@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		CD64AE392EDEDA09000D9154 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = CD64AE382EDEDA09000D9154 /* Alamofire */; };
 		DC8DA6142EDDA50A00A245AC /* Ulifelib in Frameworks */ = {isa = PBXBuildFile; productRef = DC8DA6132EDDA50A00A245AC /* Ulifelib */; };
 /* End PBXBuildFile section */
 
@@ -19,6 +20,18 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
+				Managers/Activity/.gitkeep,
+				Managers/Calendar/.gitkeep,
+				Managers/Forum/.gitkeep,
+				Managers/Profile/.gitkeep,
+				Models/Activity/.gitkeep,
+				Models/Calendar/.gitkeep,
+				Models/Forum/.gitkeep,
+				Models/Profile/.gitkeep,
+				Views/Activity/.gitkeep,
+				Views/Calendaar/.gitkeep,
+				Views/Forum/.gitkeep,
+				Views/Profile/.gitkeep,
 			);
 			target = DC5647242EDD20A700B23650 /* ULife */;
 		};
@@ -41,6 +54,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				DC8DA6142EDDA50A00A245AC /* Ulifelib in Frameworks */,
+				CD64AE392EDEDA09000D9154 /* Alamofire in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -84,6 +98,7 @@
 			name = ULife;
 			packageProductDependencies = (
 				DC8DA6132EDDA50A00A245AC /* Ulifelib */,
+				CD64AE382EDEDA09000D9154 /* Alamofire */,
 			);
 			productName = ULife;
 			productReference = DC5647252EDD20A700B23650 /* ULife.app */;
@@ -116,6 +131,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				DC8DA6122EDDA50A00A245AC /* XCLocalSwiftPackageReference "ULifeLib/Ulifelib" */,
+				CD64AE372EDEDA09000D9154 /* XCRemoteSwiftPackageReference "Alamofire" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = DC5647262EDD20A700B23650 /* Products */;
@@ -367,7 +383,23 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		CD64AE372EDEDA09000D9154 /* XCRemoteSwiftPackageReference "Alamofire" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Alamofire/Alamofire.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.9.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
+		CD64AE382EDEDA09000D9154 /* Alamofire */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CD64AE372EDEDA09000D9154 /* XCRemoteSwiftPackageReference "Alamofire" */;
+			productName = Alamofire;
+		};
 		DC8DA6132EDDA50A00A245AC /* Ulifelib */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Ulifelib;
