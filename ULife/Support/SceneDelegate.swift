@@ -10,18 +10,25 @@ import UIKit
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
 
-    func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
-        // Use this method to optionally configure and attach the UIWindow `window` to the provided UIWindowScene `scene`.
-        // If using a storyboard, the `window` property will automatically be initialized and attached to the scene.
-        // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).
-        guard let windowScene = (scene as? UIWindowScene) else { return }
-        window = UIWindow(windowScene: windowScene)
-        // 打开app后，若检测到未登录，则进入登录页面，登录后跳转到主页面
-        //        window?.rootViewController = LoginViewController()
-        // 主页面四个Tab
-        window?.rootViewController = UIHelper.createTabViewController()
-        window?.makeKeyAndVisible()
-    }
+        func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
+            guard let windowScene = (scene as? UIWindowScene) else { return }
+            window = UIWindow(windowScene: windowScene)
+            
+            // 检查登录状态
+            let isLoggedIn = UserDefaults.standard.bool(forKey: "isLoggedIn")
+            
+            if isLoggedIn {
+                // 已登录，进入主页面
+                window?.rootViewController = UIHelper.createTabViewController()
+            } else {
+                // 未登录，进入登录页面
+                let loginVC = LoginViewController()
+                let navController = UINavigationController(rootViewController: loginVC)
+                window?.rootViewController = navController
+            }
+            
+            window?.makeKeyAndVisible()
+        }
 
     func sceneDidDisconnect(_ scene: UIScene) {
         // Called as the scene is being released by the system.
