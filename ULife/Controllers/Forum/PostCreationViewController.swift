@@ -1,123 +1,186 @@
+//
+//  PostCreationViewController.swift
+//  ULife
+//
+//  Created by 骑鱼的猫 on 2025/12/5.
+//
+
 import UIKit
 
 class PostCreationViewController: UIViewController {
 
-    // 状态和数据
-    private var postModel = PostModel()
-    
-    // View 引用
-    private var postCreationView: PostCreationView {
-        return view as! PostCreationView
-    }
-    
+    private let postCreationView = PostCreationView()
     // 发布按钮
     private var publishButton: UIBarButtonItem?
 
-    // MARK: - 生命周期
+    var createPostRequest = CreatePostRequest()
     
-    override func loadView() {
-        // 将自定义的 View 赋值给 self.view
-        view = PostCreationView()
-    }
+    // 标签数据源
+    private let tags = ["社团活动", "学习交流", "二手市场", "求助", "校内通知"]
     
+    private var selectedTagIndex:[Int] = []
+
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+
+        setupViews()
+        setupLayout()
+        
         setupNavigationBar()
+    }
+    
+    
+    private func setupViews() {
         // 将 Controller 自身设置为 View 元素的代理
         postCreationView.titleTextField.delegate = self
         postCreationView.contentTextView.delegate = self
+        
+        // 设置 CollectionView 代理
+        postCreationView.tagsCollectionView.delegate = self
+        postCreationView.tagsCollectionView.dataSource = self
+        
+        view.addSubview(postCreationView)
     }
     
-    // MARK: - 导航栏设置
+    //设置布局
+    private func setupLayout() {
+        postCreationView.translatesAutoresizingMaskIntoConstraints = false
+
+        NSLayoutConstraint.activate([
+            postCreationView.topAnchor.constraint(equalTo: view.topAnchor),
+            postCreationView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            postCreationView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            postCreationView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+        ])
+    }
     
+    
+
     private func setupNavigationBar() {
-        navigationItem.title = "发帖" 
-        
-        // 左上角取消按钮
-        navigationItem.leftBarButtonItem = UIBarButtonItem(title: "取消", style: .plain, target: self, action: #selector(handleCancel))
-        
+        navigationItem.title = "发帖"
+
         // 右上角发布按钮
-        let publish = UIBarButtonItem(title: "发布", style: .done, target: self, action: #selector(handlePublish))
+        let publish = UIBarButtonItem(
+            title: "发布",
+            style: .done,
+            target: self,
+            action: #selector(handlePublish)
+        )
         navigationItem.rightBarButtonItem = publish
         self.publishButton = publish
-        
+
         // 初始状态检查
         updatePublishButtonState()
     }
-    
-    // MARK: - 动作处理
-    
-    @objc private func handleCancel() {
-        // 如果内容不为空，弹出确认框
-        if postModel.isValid {
-            let alert = UIAlertController(title: "放弃发帖？", message: "您确定要放弃本次编辑吗？", preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "继续编辑", style: .cancel))
-            alert.addAction(UIAlertAction(title: "放弃", style: .destructive, handler: { _ in
-                self.dismiss(animated: true)
-            }))
-            present(alert, animated: true)
-        } else {
-            // 内容为空则直接关闭
-            dismiss(animated: true)
-        }
-    }
-    
+
     @objc private func handlePublish() {
-        // 确保 Model 数据是最新的
-        updateModelFromView()
-        
-        guard postModel.isValid else {
+        if !createPostRequest.isValid {
             Toast.show("标题和内容不能为空", style: .error)
             return
         }
-        
+
         // 禁用按钮防止重复提交
         publishButton?.isEnabled = false
-        Toast.show("发布中...", style: .normal, duration: 1.0)
         
-        // 调用 Model 层的提交逻辑
-        postModel.submit { [weak self] result in
-            DispatchQueue.main.async {
-                self?.publishButton?.isEnabled = true // 重新启用按钮
-                switch result {
-                case .success(let message):
-                    Toast.show(message, style: .success)
-                    // 延迟关闭，让用户看到成功的提示
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        self?.dismiss(animated: true)
-                    }
-                case .failure(let error):
-                    Toast.show("发布失败: \(error.localizedDescription)", style: .error)
-                }
-            }
+        createPostRequest.tags = selectedTagIndex.compactMap { index in
+            tags.indices.contains(index) ? tags[index] : nil
         }
+        
+        navigationController?.popViewController(animated: true)
+        Toast.show("发布成功", style: .normal, duration: 1.0)
+        
+        print(createPostRequest)
     }
-    
-    // MARK: - 状态更新
-    
-    /// 将 View 中的数据同步到 Model 中
-    private func updateModelFromView() {
-        postModel.title = postCreationView.titleTextField.text ?? ""
-        postModel.content = postCreationView.contentTextView.text ?? ""
-        // 标签选择逻辑在此处更新 postModel.selectedTags
-    }
-    
-    /// 根据 Model 的状态更新发布按钮的可用性
+
+    // 根据 Model 的状态更新发布按钮的可用性
     private func updatePublishButtonState() {
-        updateModelFromView() // 确保 Model 数据最新
-        publishButton?.isEnabled = postModel.isValid
+        createPostRequest.title = postCreationView.titleTextField.text ?? ""
+        createPostRequest.content = postCreationView.contentTextView.text ?? ""
+        
+        publishButton?.isEnabled = createPostRequest.isValid
     }
 }
 
 // MARK: - UITextFieldDelegate, UITextViewDelegate
 
 extension PostCreationViewController: UITextFieldDelegate, UITextViewDelegate {
-    
+
     func textFieldDidChangeSelection(_ textField: UITextField) {
         updatePublishButtonState()
     }
-    
+
     func textViewDidChange(_ textView: UITextView) {
         updatePublishButtonState()
+    }
+}
+
+
+
+// 扩展实现 CollectionView 代理和数据源
+extension PostCreationViewController: UICollectionViewDelegate,
+    UICollectionViewDataSource, UICollectionViewDelegateFlowLayout
+{
+    // 每个分区有多少项目
+    func collectionView(
+        _ collectionView: UICollectionView,
+        numberOfItemsInSection section: Int
+    ) -> Int {
+        return tags.count
+    }
+    
+    func collectionView(
+        _ collectionView: UICollectionView,
+        cellForItemAt indexPath: IndexPath
+    ) -> UICollectionViewCell {
+        guard
+            let cell = collectionView.dequeueReusableCell(
+                withReuseIdentifier: TagCell.identifier,
+                for: indexPath
+            ) as? TagCell
+        else {
+            return UICollectionViewCell()
+        }
+
+        let isSelected = (selectedTagIndex.contains(indexPath.row))  //是否选中
+        cell.configure(with: tags[indexPath.row], isSelected: isSelected)
+        return cell
+    }
+
+    // 点击调用
+    func collectionView(
+        _ collectionView: UICollectionView,
+        didSelectItemAt indexPath: IndexPath
+    ) {
+        
+        if selectedTagIndex.contains(indexPath.row){
+            let existingIndex = selectedTagIndex.firstIndex(of: indexPath.row)
+            selectedTagIndex.remove(at: existingIndex!)
+        }else{
+            selectedTagIndex.append(indexPath.row)
+        }
+
+        collectionView.reloadData()  // 刷新 CollectionView 来更新选中状态
+
+        let selectedTag = tags[indexPath.row]
+    }
+
+    // 根据每一个标签内容的长度设置每一个 cell 的宽度和高度
+    func collectionView(
+        _ collectionView: UICollectionView,
+        layout collectionViewLayout: UICollectionViewLayout,
+        sizeForItemAt indexPath: IndexPath
+    ) -> CGSize {
+        // 创建一个临时的 Label，计算文本实际需要的宽度
+        let tempLabel = UILabel()
+        tempLabel.font = .systemFont(ofSize: 14, weight: .medium)
+        tempLabel.text = tags[indexPath.row]
+        tempLabel.sizeToFit()
+
+        // 宽度 = 文本宽度 + 左右各 16pt 的边距 (总共 32pt 额外填充)
+        let width = tempLabel.frame.width + 32
+
+        
+        return CGSize(width: width, height: 36)
     }
 }

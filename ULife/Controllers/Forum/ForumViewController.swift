@@ -8,23 +8,22 @@
 import UIKit
 
 class ForumViewController: UIViewController {
-
     private let mainView = ForumMainView()
 
     // 模拟数据源
     private var posts: [ForumPost] = []
-    
+
     // 标签数据源
     private let tags = ["全部", "社团活动", "学习交流", "二手市场", "求助", "校内通知"]
-    
-    private var selectedTagIndex: Int = 0 // 默认选中"全部"
+
+    private var selectedTagIndex: Int = 0  // 默认选中"全部"
 
     override func viewDidLoad() {
         super.viewDidLoad()
         setupViews()
         setupLayout()
         setupBindings()
-        
+
         loadMockData()
     }
 
@@ -34,15 +33,13 @@ class ForumViewController: UIViewController {
         // 设置 tableView 代理
         mainView.tableView.delegate = self
         mainView.tableView.dataSource = self
-        
+
         // 设置 CollectionView 代理
         mainView.tagsCollectionView.delegate = self
         mainView.tagsCollectionView.dataSource = self
         view.addSubview(mainView)
     }
 
-    
-    
     //设置布局
     private func setupLayout() {
         mainView.translatesAutoresizingMaskIntoConstraints = false
@@ -59,16 +56,24 @@ class ForumViewController: UIViewController {
     private func setupBindings() {
         mainView.createPostButton.addAction(
             UIAction(handler: { _ in
-                print("点击了发帖按钮")
+                self.ComeTocreatePost()
             }),
             for: .touchUpInside
         )
     }
     
-    
+    private func ComeTocreatePost() {
+        let postCreationViewController = PostCreationViewController()
+        // 导航到详情页
+        navigationController?.pushViewController(
+            postCreationViewController,
+            animated: true
+        )
+    }
+
     // 假数据
     private func loadMockData() {
-        
+
         posts = [
             ForumPost(
                 id: UUID().uuidString,
@@ -181,8 +186,7 @@ extension ForumViewController: UITableViewDelegate, UITableViewDataSource {
         else {
             return UITableViewCell()
         }
-        
-        
+
         cell.configure(with: posts[indexPath.row])
         return cell
     }
@@ -191,54 +195,83 @@ extension ForumViewController: UITableViewDelegate, UITableViewDataSource {
         _ tableView: UITableView,
         didSelectRowAt indexPath: IndexPath
     ) {
-        print("点击了第 \(indexPath.row) 个帖子")
+        let forumDetailController = ForumDetailViewController(
+            post: posts[indexPath.row]
+        )
+
+        // 导航到详情页
+        navigationController?.pushViewController(
+            forumDetailController,
+            animated: true
+        )
     }
 }
 
-
 // 扩展实现 CollectionView 代理和数据源
-extension ForumViewController: UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
-    
-    // MARK: DataSource
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+extension ForumViewController: UICollectionViewDelegate,
+    UICollectionViewDataSource, UICollectionViewDelegateFlowLayout
+{
+    // 每个分区有多少项目
+    func collectionView(
+        _ collectionView: UICollectionView,
+        numberOfItemsInSection section: Int
+    ) -> Int {
         return tags.count
     }
-    
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: TagCell.identifier, for: indexPath) as? TagCell else {
+    //从复用池取 cell
+    //    尝试转换为你自定义的 ForumPostCell
+    //    如果成功 → 得到强类型的 cell
+    //    如果失败 → 返回一个空的默认 cell（避免崩溃）
+    func collectionView(
+        _ collectionView: UICollectionView,
+        cellForItemAt indexPath: IndexPath
+    ) -> UICollectionViewCell {
+        guard
+            let cell = collectionView.dequeueReusableCell(
+                withReuseIdentifier: TagCell.identifier,
+                for: indexPath
+            ) as? TagCell
+        else {
             return UICollectionViewCell()
         }
-        
-        let isSelected = (indexPath.row == selectedTagIndex) //是否选中
+
+        let isSelected = (indexPath.row == selectedTagIndex)  //是否选中
         cell.configure(with: tags[indexPath.row], isSelected: isSelected)
         return cell
     }
-    
-    // MARK: Delegate
-    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+
+    // 点击调用
+    func collectionView(
+        _ collectionView: UICollectionView,
+        didSelectItemAt indexPath: IndexPath
+    ) {
         selectedTagIndex = indexPath.row
-        collectionView.reloadData() // 刷新 CollectionView 来更新选中状态
-        
+        collectionView.reloadData()  // 刷新 CollectionView 来更新选中状态
+
         let selectedTag = tags[indexPath.row]
         print("选中了标签: \(selectedTag)")
-        
+
         // todo筛选逻辑
 
     }
-    
-    // 返回 Cell 尺寸
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        
+
+    // 根据每一个标签内容的长度设置每一个 cell 的宽度和高度
+    func collectionView(
+        _ collectionView: UICollectionView,
+        layout collectionViewLayout: UICollectionViewLayout,
+        sizeForItemAt indexPath: IndexPath
+    ) -> CGSize {
         // 1. 创建一个临时的 Label，计算文本实际需要的宽度
         let tempLabel = UILabel()
         tempLabel.font = .systemFont(ofSize: 14, weight: .medium)
         tempLabel.text = tags[indexPath.row]
         tempLabel.sizeToFit()
-        
+
         // 2. 宽度 = 文本宽度 + 左右各 16pt 的边距 (总共 32pt 额外填充)
         let width = tempLabel.frame.width + 32
-        
+
         // 3. 高度固定为 CollectionView 的高度 (44pt)
         return CGSize(width: width, height: 44)
     }
+
 }
