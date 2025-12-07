@@ -7,20 +7,24 @@
 import Foundation
 
 struct Comment {
-    let id: String
-    let authorName: String
-    let authorAvatar: String
-    let content: String
-    let createTime: Date
-    let likeCount: Int
-    
-    let replies: [CommentReply]?
+    var id: String
+    var authorName: String
+    var authorAvatar: String
+    var content: String
+    var createTime: Date
+    /// 顶层评论点赞数
+    var likeCount: Int
+    /// 该评论下的回复列表
+    var replies: [CommentReply]?
 }
 
-struct CommentReply {
-    let id: String
-    let authorName: String
-    let repliedToUser: String?  // 回复给谁 (例如：回复 @张三)
-    let content: String
-    let createTime: Date
+struct CommentReply : Equatable{
+    var id: String
+    var authorName: String
+    /// 回复给谁 (例如：回复 @张三)
+    var repliedToUser: String?
+    var content: String
+    var createTime: Date
+    /// 回复点赞数
+    var likeCount: Int
 }

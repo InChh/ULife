@@ -14,6 +14,15 @@ class CommentCell: UITableViewCell {
     //评论的回复数组
     private var replies: [CommentReply] = []
 
+    // 对整条评论点击的回调
+    var onCommentTap: (() -> Void)?
+    // 点赞整条评论的回调
+    var onCommentLikeTap: (() -> Void)?
+    // 对某一条回复点击的回调
+    var onReplyTap: ((CommentReply) -> Void)?
+    // 点赞某一条回复的回调
+    var onReplyLikeTap: ((CommentReply) -> Void)?
+
     // MARK: - UI Components
 
     private lazy var avatarImageView: UIImageView = {
@@ -82,8 +91,6 @@ class CommentCell: UITableViewCell {
 
         selectionStyle = .none
 
-        
-
         [
             avatarImageView, authorLabel, timeLabel, contentLabel, likeButton, repliesStackView
 
@@ -97,6 +104,20 @@ class CommentCell: UITableViewCell {
         contentView.addSubview(contentLabel)
         contentView.addSubview(likeButton)
         contentView.addSubview(repliesStackView)
+
+        // 给整个 cell 添加点击事件（用于“回复这条评论”）
+        let tap = UITapGestureRecognizer(
+            target: self,
+            action: #selector(handleCommentTap)
+        )
+        contentView.addGestureRecognizer(tap)
+
+        // 点赞按钮点击事件
+        likeButton.addTarget(
+            self,
+            action: #selector(handleLikeButtonTap),
+            for: .touchUpInside
+        )
 
         NSLayoutConstraint.activate([
             // 头像
@@ -169,21 +190,40 @@ class CommentCell: UITableViewCell {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func configure(with comment: Comment) {
+    func configure(
+        with comment: Comment,
+        isLiked: Bool,
+        likedReplyIDs: Set<String>
+    ) {
         authorLabel.text = comment.authorName
         timeLabel.text = comment.createTime.timeAgoString()
         contentLabel.text = comment.content
-        likeButton.setTitle("\(comment.likeCount)", for: .normal)
-        // 假设头像已加载
+
+        // 顶层评论点赞显示：基础数量 + 是否点赞
+        let baseCount = comment.likeCount
+        let displayCount = baseCount + (isLiked ? 1 : 0)
+        
+        // 重要：无论是否为 0，都要重置标题，避免 cell 复用时显示旧的数字
+        let title = displayCount == 0 ? "" : "\(displayCount)"
+        likeButton.setTitle(title, for: .normal)
+        
+        let color: UIColor = isLiked ? .systemRed : .secondaryLabel
+        let imageName = isLiked ? "heart.fill" : "heart"
+        likeButton.setImage(UIImage(systemName: imageName), for: .normal)
+        likeButton.tintColor = color
+        likeButton.setTitleColor(color, for: .normal)
 
         // 更新回复列表
         let newReplies = comment.replies ?? []
         self.replies = newReplies
-        updateRepliesStackView(with: newReplies)
+        updateRepliesStackView(with: newReplies, likedReplyIDs: likedReplyIDs)
     }
     
     // 更新回复 StackView
-    private func updateRepliesStackView(with replies: [CommentReply]) {
+    private func updateRepliesStackView(
+        with replies: [CommentReply],
+        likedReplyIDs: Set<String>
+    ) {
         // 清除所有现有的回复视图
         repliesStackView.arrangedSubviews.forEach { view in
             repliesStackView.removeArrangedSubview(view)
@@ -202,12 +242,31 @@ class CommentCell: UITableViewCell {
         // 为每个回复创建 ReplyView 并添加到 StackView
         for reply in replies {
             let replyView = ReplyView()
-            replyView.configure(with: reply)
+            let isLiked = likedReplyIDs.contains(reply.id)
+            replyView.configure(with: reply, isLiked: isLiked)
+            
+            // 点击整条回复：用于“回复这条回复”
+            replyView.onTap = { [weak self] in
+                self?.onReplyTap?(reply)
+            }
+            // 点赞某条回复
+            replyView.onLikeTap = { [weak self] in
+                self?.onReplyLikeTap?(reply)
+            }
+
             repliesStackView.addArrangedSubview(replyView)
         }
         
         // 强制更新布局（确保 StackView 正确计算高度）
         repliesStackView.setNeedsLayout()
         repliesStackView.layoutIfNeeded()
+    }
+
+    @objc private func handleCommentTap() {
+        onCommentTap?()
+    }
+
+    @objc private func handleLikeButtonTap() {
+        onCommentLikeTap?()
     }
 }

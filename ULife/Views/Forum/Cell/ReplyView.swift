@@ -3,11 +3,16 @@
 //  ULife
 //
 //  Created by 骑鱼的猫 on 2025/12/5.
-//  回复视图（用于 UIStackView）
+//  回复视图(每一条评论的回复就是一个ReplyView)
 
 import UIKit
 
 class ReplyView: UIView {
+    
+    /// 外部设置的点击回调，用于“回复这条回复”
+    var onTap: (() -> Void)?
+    /// 点赞按钮点击回调
+    var onLikeTap: (() -> Void)?
     
     private lazy var avatarImageView: UIImageView = {
         let iv = UIImageView()
@@ -51,9 +56,10 @@ class ReplyView: UIView {
             ),
             for: .normal
         )
-        btn.setTitle("0", for: .normal)
         btn.semanticContentAttribute = .forceRightToLeft
         btn.titleLabel?.font = .systemFont(ofSize: 12)
+        btn.tintColor = .secondaryLabel
+        btn.setTitleColor(.secondaryLabel, for: .normal)
         return btn
     }()
 
@@ -77,6 +83,22 @@ class ReplyView: UIView {
                 $0.translatesAutoresizingMaskIntoConstraints = false
             }
 
+        // 给 ReplyView 添加点击事件（用于“回复这条回复”）
+        let tap = UITapGestureRecognizer(
+            target: self,
+            action: #selector(handleTap)
+        )
+        addGestureRecognizer(tap)
+
+        // 点赞按钮点击事件
+        likeButton.addTarget(
+            self,
+            action: #selector(handleLikeButtonTap),
+            for: .touchUpInside
+        )
+
+        
+        
         NSLayoutConstraint.activate([
             // 头像
             avatarImageView.topAnchor.constraint(
@@ -133,7 +155,7 @@ class ReplyView: UIView {
         ])
     }
 
-    func configure(with reply: CommentReply) {
+    func configure(with reply: CommentReply, isLiked: Bool) {
         nameLabel.text = reply.authorName
 
         if let to = reply.repliedToUser {
@@ -143,6 +165,27 @@ class ReplyView: UIView {
         }
 
         contentLabel.text = reply.content
+
+        // 根据点赞状态更新 UI
+        let baseCount = reply.likeCount
+        let displayCount = baseCount + (isLiked ? 1 : 0)
+        // 点赞数为 0 时不显示数字，否则显示具体数量
+        let title = displayCount == 0 ? "" : "\(displayCount)"
+        likeButton.setTitle(title, for: .normal)
+
+        let color: UIColor = isLiked ? .systemRed : .secondaryLabel
+        let imageName = isLiked ? "heart.fill" : "heart"
+        likeButton.setImage(UIImage(systemName: imageName), for: .normal)
+        likeButton.tintColor = color
+        likeButton.setTitleColor(color, for: .normal)
+    }
+
+    @objc private func handleTap() {
+        onTap?()
+    }
+
+    @objc private func handleLikeButtonTap() {
+        onLikeTap?()
     }
 }
 

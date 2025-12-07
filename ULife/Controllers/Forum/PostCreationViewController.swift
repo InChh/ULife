@@ -15,30 +15,45 @@ class PostCreationViewController: UIViewController {
 
     var createPostRequest = CreatePostRequest()
     
-    // 标签数据源
-    private let tags = ["社团活动", "学习交流", "二手市场", "求助", "校内通知"]
+    private var selectedCategoryIndex: Int = 0
     
-    private var selectedTagIndex:[Int] = []
+    private var customTags: [String] = []
 
     override func viewDidLoad() {
         super.viewDidLoad()
         
-
         setupViews()
         setupLayout()
-        
-        setupNavigationBar()
     }
-    
-    
+
     private func setupViews() {
         // 将 Controller 自身设置为 View 元素的代理
         postCreationView.titleTextField.delegate = self
         postCreationView.contentTextView.delegate = self
         
         // 设置 CollectionView 代理
-        postCreationView.tagsCollectionView.delegate = self
-        postCreationView.tagsCollectionView.dataSource = self
+        postCreationView.CategoryCollectionView.delegate = self
+        postCreationView.CategoryCollectionView.dataSource = self
+
+        // 标签输入框回车/按钮事件
+        postCreationView.tagInputTextField.delegate = self
+        postCreationView.tagAddButton.addTarget(
+            self,
+            action: #selector(handleAddTag),
+            for: .touchUpInside
+        )
+        
+        let publish = UIBarButtonItem(
+            title: "发布",
+            style: .done,
+            target: self,
+            action: #selector(handlePublish)
+        )
+        self.publishButton = publish
+        self.navigationItem.rightBarButtonItem = publish
+        navigationItem.title = "发帖"
+        // 初始状态检查
+        updatePublishButtonState()
         
         view.addSubview(postCreationView)
     }
@@ -55,24 +70,7 @@ class PostCreationViewController: UIViewController {
         ])
     }
     
-    
 
-    private func setupNavigationBar() {
-        navigationItem.title = "发帖"
-
-        // 右上角发布按钮
-        let publish = UIBarButtonItem(
-            title: "发布",
-            style: .done,
-            target: self,
-            action: #selector(handlePublish)
-        )
-        navigationItem.rightBarButtonItem = publish
-        self.publishButton = publish
-
-        // 初始状态检查
-        updatePublishButtonState()
-    }
 
     @objc private func handlePublish() {
         if !createPostRequest.isValid {
@@ -83,9 +81,8 @@ class PostCreationViewController: UIViewController {
         // 禁用按钮防止重复提交
         publishButton?.isEnabled = false
         
-        createPostRequest.tags = selectedTagIndex.compactMap { index in
-            tags.indices.contains(index) ? tags[index] : nil
-        }
+        createPostRequest.category = CreateCategorys[selectedCategoryIndex]
+        createPostRequest.tags = customTags
         
         navigationController?.popViewController(animated: true)
         Toast.show("发布成功", style: .normal, duration: 1.0)
@@ -100,6 +97,39 @@ class PostCreationViewController: UIViewController {
         
         publishButton?.isEnabled = createPostRequest.isValid
     }
+
+    // 添加自定义标签
+    @objc private func handleAddTag() {
+        guard
+            let rawText = postCreationView.tagInputTextField.text?
+                .trimmingCharacters(in: .whitespacesAndNewlines),
+            !rawText.isEmpty
+        else { return }
+
+        // 统一加上 # 前缀
+        let tag = rawText.hasPrefix("#") ? rawText : "#\(rawText)"
+
+        // 去重：避免重复标签
+        if !customTags.contains(tag) {
+            customTags.append(tag)
+        }
+
+        // 清空输入框
+        postCreationView.tagInputTextField.text = ""
+
+        // 更新标签展示
+        updateTagListLabel()
+    }
+
+    // 根据 current customTags 更新底部“已添加标签”展示
+    private func updateTagListLabel() {
+        if customTags.isEmpty {
+            postCreationView.tagListLabel.text = nil
+            return
+        }
+        let joined = customTags.joined(separator: "  ")
+        postCreationView.tagListLabel.text = "已添加标签：\(joined)"
+    }
 }
 
 // MARK: - UITextFieldDelegate, UITextViewDelegate
@@ -107,11 +137,22 @@ class PostCreationViewController: UIViewController {
 extension PostCreationViewController: UITextFieldDelegate, UITextViewDelegate {
 
     func textFieldDidChangeSelection(_ textField: UITextField) {
-        updatePublishButtonState()
+        if textField == postCreationView.titleTextField {
+            updatePublishButtonState()
+        }
     }
 
     func textViewDidChange(_ textView: UITextView) {
         updatePublishButtonState()
+    }
+
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        if textField == postCreationView.tagInputTextField {
+            handleAddTag()
+            textField.resignFirstResponder()
+            return false
+        }
+        return true
     }
 }
 
@@ -126,7 +167,7 @@ extension PostCreationViewController: UICollectionViewDelegate,
         _ collectionView: UICollectionView,
         numberOfItemsInSection section: Int
     ) -> Int {
-        return tags.count
+        return CreateCategorys.count
     }
     
     func collectionView(
@@ -135,15 +176,16 @@ extension PostCreationViewController: UICollectionViewDelegate,
     ) -> UICollectionViewCell {
         guard
             let cell = collectionView.dequeueReusableCell(
-                withReuseIdentifier: TagCell.identifier,
+                withReuseIdentifier: CategoryCell.identifier,
                 for: indexPath
-            ) as? TagCell
+            ) as? CategoryCell
         else {
             return UICollectionViewCell()
         }
 
-        let isSelected = (selectedTagIndex.contains(indexPath.row))  //是否选中
-        cell.configure(with: tags[indexPath.row], isSelected: isSelected)
+        //let isSelected = (selectedCategoryIndex.contains(indexPath.row))  //是否选中
+        let isSelected = indexPath.row == selectedCategoryIndex
+        cell.configure(with: CreateCategorys[indexPath.row], isSelected: isSelected)
         return cell
     }
 
@@ -153,16 +195,16 @@ extension PostCreationViewController: UICollectionViewDelegate,
         didSelectItemAt indexPath: IndexPath
     ) {
         
-        if selectedTagIndex.contains(indexPath.row){
-            let existingIndex = selectedTagIndex.firstIndex(of: indexPath.row)
-            selectedTagIndex.remove(at: existingIndex!)
-        }else{
-            selectedTagIndex.append(indexPath.row)
-        }
-
+//        if selectedCategoryIndex.contains(indexPath.row){
+//            let existingIndex = selectedCategoryIndex.firstIndex(of: indexPath.row)
+//            selectedCategoryIndex.remove(at: existingIndex!)
+//        }else{
+//            selectedCategoryIndex.append(indexPath.row)
+//        }
+        selectedCategoryIndex = indexPath.row
         collectionView.reloadData()  // 刷新 CollectionView 来更新选中状态
 
-        let selectedTag = tags[indexPath.row]
+        let selectedTag = CreateCategorys[indexPath.row]
     }
 
     // 根据每一个标签内容的长度设置每一个 cell 的宽度和高度
@@ -174,11 +216,11 @@ extension PostCreationViewController: UICollectionViewDelegate,
         // 创建一个临时的 Label，计算文本实际需要的宽度
         let tempLabel = UILabel()
         tempLabel.font = .systemFont(ofSize: 14, weight: .medium)
-        tempLabel.text = tags[indexPath.row]
+        tempLabel.text = CreateCategorys[indexPath.row]
         tempLabel.sizeToFit()
 
-        // 宽度 = 文本宽度 + 左右各 16pt 的边距 (总共 32pt 额外填充)
-        let width = tempLabel.frame.width + 32
+        // 宽度 
+        let width = tempLabel.frame.width + 8
 
         
         return CGSize(width: width, height: 36)

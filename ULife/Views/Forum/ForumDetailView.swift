@@ -67,6 +67,16 @@ class ForumDetailView: UIView {
         return label
     }()
 
+    /// 帖子标签展示（位于正文下方）
+    lazy var tagsLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 13)
+        label.textColor = .secondaryLabel
+        label.numberOfLines = 0
+        label.text = nil
+        return label
+    }()
+
     lazy var line: UIView = {
         let line = UIView()
         line.backgroundColor = .systemGray5
@@ -112,12 +122,11 @@ class ForumDetailView: UIView {
         return view
     }()
 
-    // 左侧：点赞按钮 (修改后：垂直布局)
+    // 左侧：点赞按钮
     lazy var likeButton: UIButton = {
         // 使用 plain 样式配置
         var config = UIButton.Configuration.plain()
 
-        // 图片设置
         config.image = UIImage(systemName: "hand.thumbsup")
         // 关键设置：图片放置在顶部
         config.imagePlacement = .top
@@ -136,6 +145,27 @@ class ForumDetailView: UIView {
         // 创建按钮
         let btn = UIButton(configuration: config)
         btn.tintColor = .label  // 图标颜色
+        return btn
+    }()
+
+    // 收藏按钮：在点赞按钮右侧，垂直布局
+    lazy var CollectButton: UIButton = {
+        var config = UIButton.Configuration.plain()
+
+        
+        config.image = UIImage(systemName: "star")
+        config.imagePlacement = .top
+        config.imagePadding = 4
+
+        var titleContainer = AttributeContainer()
+        titleContainer.font = UIFont.systemFont(ofSize: 10, weight: .regular)
+        config.attributedTitle = AttributedString(
+            "收藏",
+            attributes: titleContainer
+        )
+
+        let btn = UIButton(configuration: config)
+        btn.tintColor = .label
         return btn
     }()
 
@@ -216,8 +246,8 @@ class ForumDetailView: UIView {
         authorInfoStack.addArrangedSubview(createTimeLabel)
 
         [
-            titleLabel, authorInfoStack, contentBodyLabel, commentHeaderLabel,
-            commentTableView, line
+            titleLabel, authorInfoStack, contentBodyLabel, tagsLabel,
+            commentHeaderLabel, commentTableView, line,
         ].forEach { item in
             contentViewContainer.addSubview(item)
             item.translatesAutoresizingMaskIntoConstraints = false
@@ -226,13 +256,14 @@ class ForumDetailView: UIView {
         // 3. 设置底部工具栏
         addSubview(bottomToolbar)
         bottomToolbar.addSubview(likeButton)
+        bottomToolbar.addSubview(CollectButton)
         bottomToolbar.addSubview(commentButton)
         bottomToolbar.addSubview(reportButton)
 
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         contentViewContainer.translatesAutoresizingMaskIntoConstraints = false
 
-        [bottomToolbar, likeButton, commentButton, reportButton].forEach {
+        [bottomToolbar, likeButton, CollectButton, commentButton, reportButton].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
         }
 
@@ -303,9 +334,16 @@ class ForumDetailView: UIView {
             contentBodyLabel.trailingAnchor.constraint(
                 equalTo: titleLabel.trailingAnchor
             ),
-            
-            
-            
+            // 标签
+            tagsLabel.topAnchor.constraint(
+                equalTo: contentBodyLabel.bottomAnchor,
+                constant: 12
+            ),
+            tagsLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
+            tagsLabel.trailingAnchor.constraint(
+                equalTo: titleLabel.trailingAnchor
+            ),
+
             line.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor),
             line.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor),
             line.heightAnchor.constraint(equalToConstant: 1),
@@ -313,8 +351,8 @@ class ForumDetailView: UIView {
 
             // 评论区标题
             commentHeaderLabel.topAnchor.constraint(
-                equalTo: contentBodyLabel.bottomAnchor,
-                constant: 30
+                equalTo: tagsLabel.bottomAnchor,
+                constant: 24
             ),
             commentHeaderLabel.leadingAnchor.constraint(
                 equalTo: titleLabel.leadingAnchor
@@ -361,6 +399,17 @@ class ForumDetailView: UIView {
             likeButton.widthAnchor.constraint(equalToConstant: 44),
             likeButton.heightAnchor.constraint(equalToConstant: 44),
 
+            // 1.5 点踩按钮，在点赞按钮右侧
+            CollectButton.leadingAnchor.constraint(
+                equalTo: likeButton.trailingAnchor,
+                constant: 8
+            ),
+            CollectButton.centerYAnchor.constraint(
+                equalTo: bottomToolbar.centerYAnchor
+            ),
+            CollectButton.widthAnchor.constraint(equalToConstant: 44),
+            CollectButton.heightAnchor.constraint(equalToConstant: 44),
+
             // 2. 右侧举报按钮
             reportButton.trailingAnchor.constraint(
                 equalTo: bottomToolbar.trailingAnchor,
@@ -374,7 +423,7 @@ class ForumDetailView: UIView {
 
             // 3. 中间评论按钮 (撑满中间空间)
             commentButton.leadingAnchor.constraint(
-                equalTo: likeButton.trailingAnchor,
+                equalTo: CollectButton.trailingAnchor,
                 constant: 8
             ),
             commentButton.trailingAnchor.constraint(

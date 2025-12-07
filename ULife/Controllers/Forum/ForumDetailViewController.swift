@@ -18,14 +18,18 @@ class ForumDetailViewController: UIViewController {
     // 接收从上一个 Controller 传入的帖子数据（必须初始化传入）
     private let post: ForumPost
 
-    // 评论数据源
-    private var comments: [Comment] = []
+    private var comments: [Comment] = []  // 评论数据源
+    // 已点赞的评论、回复 ID 集合（仅前端状态）
+    private var likedCommentIDs: Set<String> = []
+    private var likedReplyIDs: Set<String> = []
+    private var isPostLiked: Bool  //是否点赞
 
-    // 状态属性
-    private var isPostLiked: Bool = false  // 假设帖子初始状态未点赞
+    private var iscollected: Bool  //是否收藏
 
     init(post: ForumPost) {
         self.post = post
+        isPostLiked = post.isLiked
+        iscollected = post.isreplyed
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -53,6 +57,7 @@ class ForumDetailViewController: UIViewController {
 
         // 更新点赞按钮状态
         updateLikeButtonState()
+        updatecollectedButtonState()
     }
 
     private func setupViews() {
@@ -67,6 +72,11 @@ class ForumDetailViewController: UIViewController {
         detailView.likeButton.addTarget(
             self,
             action: #selector(handleLikeTap),
+            for: .touchUpInside
+        )
+        detailView.CollectButton.addTarget(
+            self,
+            action: #selector(handleDislikeTap),
             for: .touchUpInside
         )
         detailView.commentButton.addTarget(
@@ -89,12 +99,22 @@ class ForumDetailViewController: UIViewController {
         detailView.authorNameLabel.text = post.authorName
         detailView.contentBodyLabel.text = post.content
 
+        // 标签展示：将 tags 数组渲染为 #tag 样式
+        if post.tags.isEmpty {
+            detailView.tagsLabel.text = nil
+        } else {
+            let displayTags = post.tags.map { tag in
+                tag.hasPrefix("#") ? tag : "#\(tag)"
+            }.joined(separator: "  ")
+            detailView.tagsLabel.text = "\(displayTags)"
+        }
+
         // 格式化日期
         let formatter = DateFormatter()
         formatter.dateStyle = .short
         formatter.timeStyle = .short
         detailView.createTimeLabel.text = formatter.string(
-            from: post.createTime
+            from: post.publishTime
         )
 
         // 假设这里会使用你的图片加载库加载 post.authorAvatar
@@ -106,92 +126,9 @@ class ForumDetailViewController: UIViewController {
         // 实际开发中，这里应该调用你的 NetworkManager 来请求 API
         // 例如：NetworkManager.shared.fetchComments(for: post.id) { result in ... }
 
-        // --- 模拟回复数据 ---
-        let replies1: [CommentReply] = [
-            CommentReply(
-                id: "r1",
-                authorName: "小助手",
-                repliedToUser: nil,
-                content: "感谢你的肯定！我们致力于提供高质量内容。",
-                createTime: Date(timeIntervalSinceNow: -60 * 5)
-            ),
-            CommentReply(
-                id: "r2",
-                authorName: "热心网友C",
-                repliedToUser: "评论者A",
-                content: "确实，楼主的观点非常独到，受益匪浅。",
-                createTime: Date(timeIntervalSinceNow: -60 * 3)
-            ),
-            CommentReply(
-                id: "r3",
-                authorName: "潜水艇",
-                repliedToUser: nil,
-                content: "偷偷点个赞！",
-                createTime: Date(timeIntervalSinceNow: -60 * 2)
-            ),
-            CommentReply(
-                id: "r4",
-                authorName: "路人甲",
-                repliedToUser: nil,
-                content: "这条回复不会被默认显示，除非点击'查看更多'。",
-                createTime: Date(timeIntervalSinceNow: -60 * 1)
-            ),
-        ]
         // 假设成功获取评论数据
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            self.comments = [
-                Comment(
-                    id: "c1",
-                    authorName: "评论者A",
-                    authorAvatar: "",
-                    content: "楼主写得太好了，内容很有启发性！我已经在别处分享了你的帖子。",
-                    createTime: Date(timeIntervalSinceNow: -60 * 20),
-                    likeCount: 5,
-                    replies: replies1  // 包含 4 条回复
-                ),
-
-                // 2. 没有回复的评论
-                Comment(
-                    id: "c2",
-                    authorName: "评论者B",
-                    authorAvatar: "",
-                    content: "我也有同样的问题，希望能找到解决方案。不过帖子本身描述得很清晰。",
-                    createTime: Date(timeIntervalSinceNow: -60 * 15),
-                    likeCount: 2,
-                    replies: []  // 明确没有回复
-                ),
-
-                // 3. 只有一条回复的评论
-                Comment(
-                    id: "c3",
-                    authorName: "好奇宝宝",
-                    authorAvatar: "",
-                    content: "请问一下，帖子中提到的那个工具叫什么名字？",
-                    createTime: Date(timeIntervalSinceNow: -60 * 10),
-                    likeCount: 8,
-                    replies: [
-                        CommentReply(
-                            id: "r5",
-                            authorName: "楼主本人",
-                            repliedToUser: "好奇宝宝",
-                            content: "那个工具是 SwiftLint，非常好用。",
-                            createTime: Date(timeIntervalSinceNow: -60 * 6)
-                        )
-                    ]
-                ),
-
-                // 4. 较长的评论内容（测试高度自适应）
-                Comment(
-                    id: "c4",
-                    authorName: "资深用户",
-                    authorAvatar: "",
-                    content:
-                        "关于这个问题，我做了一些深入的研究，我认为除了楼主提到的几点之外，我们还需要考虑内存管理和线程安全的问题。特别是在高性能要求的场景下，细微的同步问题都可能导致程序崩溃，所以建议大家在实际应用中要非常小心谨慎。代码写得好只是第一步，稳定性和可维护性才是长久之计。",
-                    createTime: Date(timeIntervalSinceNow: -60 * 4),
-                    likeCount: 15,
-                    replies: nil  // nil 表示尚未加载回复或没有回复
-                ),
-            ]
+            self.comments = MockCommentData.comments
 
             // 更新评论区标题和 TableView
             self.detailView.commentHeaderLabel.text =
@@ -234,6 +171,17 @@ class ForumDetailViewController: UIViewController {
 
         // 仅在前端更新状态
         updateLikeButtonState()
+
+        // 成功调用 API 后，你应该更新 post.likeCount 并通知列表页刷新
+    }
+
+    //踩
+    @objc private func handleDislikeTap() {
+        // 切换点赞状态
+        iscollected.toggle()
+
+        // 仅在前端更新状态
+        updatecollectedButtonState()
 
         // 成功调用 API 后，你应该更新 post.likeCount 并通知列表页刷新
     }
@@ -312,13 +260,146 @@ class ForumDetailViewController: UIViewController {
 
     //评论
     @objc private func handleCommentTap() {
-        // 弹出评论输入框或跳转到全屏评论输入页面
-        print("弹出评论输入界面")
+        // 弹出评论输入框
+        let alert = UIAlertController(
+            title: "发表评论",
+            message: nil,
+            preferredStyle: .alert
+        )
+
+        alert.addTextField { textField in
+            textField.placeholder = "友善评论，传递温暖..."
+            textField.returnKeyType = .done  //将键盘右下角的“换行键”（Return Key）的样式和功能设置为 Done（完成）
+        }
+
+        let sendAction = UIAlertAction(
+            title: "发送",
+            style: .default,
+            handler: { [weak self] _ in
+                guard
+                    let self = self,
+                    let text = alert.textFields?.first?.text?
+                        .trimmingCharacters(in: .whitespacesAndNewlines),
+                    !text.isEmpty
+                else {
+                    Toast.show("评论内容不能为空", style: .error)
+                    return
+                }
+
+                // 创建本地评论对象（实际项目中应调用后端接口）
+                let newComment = Comment(
+                    id: UUID().uuidString,
+                    authorName: "我",
+                    authorAvatar: "",
+                    content: text,
+                    createTime: Date(),
+                    likeCount: 0,
+                    replies: nil
+                )
+
+                self.insertNewComment(newComment)
+            }
+        )
+
+        let cancelAction = UIAlertAction(title: "取消", style: .cancel)
+
+        alert.addAction(cancelAction)
+        alert.addAction(sendAction)
+
+        present(alert, animated: true)
+    }
+
+    /// 将一条新的一级评论插入到列表顶部，并刷新 UI 点击按钮评论后为帖子添加评论
+    private func insertNewComment(_ comment: Comment) {
+        comments.insert(comment, at: 0)
+        detailView.commentHeaderLabel.text = "评论 (\(comments.count))"
+        detailView.commentTableView.reloadData()
+        updateTableViewHeight()  //更新 tabelview 的高度
+    }
+
+    /// 统一弹出“回复评论/回复”的输入框
+    private func presentReplyAlert(
+        commentIndex: Int,
+        replyingToName: String?
+    ) {
+        let title: String = {
+            if let name = replyingToName {
+                return "回复 \(name)"
+            } else {
+                return "回复评论"
+            }
+        }()
+
+        let alert = UIAlertController(
+            title: title,
+            message: nil,
+            preferredStyle: .alert
+        )
+
+        alert.addTextField { textField in
+            textField.placeholder = "友善回复，传递温暖..."
+            textField.returnKeyType = .done
+        }
+
+        let sendAction = UIAlertAction(
+            title: "发送",
+            style: .default,
+            handler: { [weak self] _ in
+                //校验数据
+                guard
+                    let self = self,
+                    commentIndex < self.comments.count,
+                    let text = alert.textFields?.first?.text?
+                        .trimmingCharacters(in: .whitespacesAndNewlines),
+                    !text.isEmpty
+                else {
+                    Toast.show("回复内容不能为空", style: .error)
+                    return
+                }
+
+                //获取回复的评论和回复
+                var comment = self.comments[commentIndex]
+                var existingReplies = comment.replies ?? []
+
+                let reply = CommentReply(
+                    id: UUID().uuidString,
+                    authorName: "我",
+                    repliedToUser: replyingToName,
+                    content: text,
+                    createTime: Date(),
+                    likeCount: 0
+                )
+                existingReplies.append(reply)
+
+                // 生成带有新 replies 的 Comment（因为 Comment 各字段是 let）
+                let updated = Comment(
+                    id: comment.id,
+                    authorName: comment.authorName,
+                    authorAvatar: comment.authorAvatar,
+                    content: comment.content,
+                    createTime: comment.createTime,
+                    likeCount: comment.likeCount,
+                    replies: existingReplies
+                )
+
+                self.comments[commentIndex] = updated
+                self.detailView.commentTableView.reloadData()  //刷新数据
+                self.updateTableViewHeight()  //更新高度
+            }
+        )
+
+        let cancelAction = UIAlertAction(title: "取消", style: .cancel)
+
+        alert.addAction(cancelAction)
+        alert.addAction(sendAction)
+
+        present(alert, animated: true)
     }
 
     // 更新点赞按钮的 UI 样式
     private func updateLikeButtonState() {
         let systemName = isPostLiked ? "hand.thumbsup.fill" : "hand.thumbsup"
+
         let color: UIColor = isPostLiked ? .systemRed : .label
         let text = isPostLiked ? "\(post.likeCount + 1)" : "点赞"  // 或显示具体数字
 
@@ -338,6 +419,142 @@ class ForumDetailViewController: UIViewController {
         // 重新赋值回去
         detailView.likeButton.configuration = config
     }
+
+    private func updatecollectedButtonState() {
+        let systemName = iscollected ? "star.fill" : "star"
+
+        let color: UIColor = iscollected ? .systemRed : .label
+        let text = iscollected ? "\(post.replyCount + 1)" : "收藏"  // 或显示具体数字
+
+        // 获取当前的配置进行修改
+        var config = detailView.CollectButton.configuration
+        config?.image = UIImage(systemName: systemName)
+        config?.baseForegroundColor = color  // 控制图片和文字颜色
+
+        // 更新文字 (保留字体设置)
+        var titleContainer = AttributeContainer()
+        titleContainer.font = UIFont.systemFont(ofSize: 10, weight: .regular)
+        config?.attributedTitle = AttributedString(
+            text,
+            attributes: titleContainer
+        )
+
+        // 重新赋值回去
+        detailView.CollectButton.configuration = config
+    }
+
+    // MARK: - 评论 & 回复点赞逻辑
+
+    /// 切换某条评论的点赞状态
+    private func toggleCommentLike(at index: Int) {
+        guard comments.indices.contains(index) else { return }
+        let comment = comments[index]
+        if likedCommentIDs.contains(comment.id) {
+            likedCommentIDs.remove(comment.id)
+        } else {
+            likedCommentIDs.insert(comment.id)
+        }
+
+        let indexPath = IndexPath(row: index, section: 0)
+        detailView.commentTableView.reloadRows(at: [indexPath], with: .none)
+        updateTableViewHeight()
+    }
+
+    /// 切换某条回复的点赞状态
+    private func toggleReplyLike(_ reply: CommentReply, inCommentAt index: Int)
+    {
+        guard comments.indices.contains(index) else { return }
+
+        if likedReplyIDs.contains(reply.id) {
+            likedReplyIDs.remove(reply.id)
+        } else {
+            likedReplyIDs.insert(reply.id)
+        }
+
+        let indexPath = IndexPath(row: index, section: 0)
+        detailView.commentTableView.reloadRows(at: [indexPath], with: .none)
+        updateTableViewHeight()
+    }
+
+    private func CommentReplyOrDelete(_ commentIndex: Int) {
+        let alert = UIAlertController(
+            title: nil,
+            message: nil,
+            preferredStyle: .alert
+        )
+
+        alert.addAction(
+            UIAlertAction(
+                title: "回复",
+                style: .default,
+                handler: { _ in
+                    self.presentReplyAlert(
+                        commentIndex: commentIndex,
+                        replyingToName: nil
+                    )
+                }
+            )
+        )
+        alert.addAction(
+            UIAlertAction(
+                title: "删除",
+                style: .destructive,
+                handler: { _ in
+                    self.comments.remove(at: commentIndex)
+                    self.detailView.commentHeaderLabel.text =
+                        "评论 (\(self.comments.count))"
+                    self.detailView.commentTableView.reloadData()
+                    self.updateTableViewHeight()
+                    Toast.show("删除成功", style: .normal)
+                }
+            )
+        )
+
+        alert.addAction(UIAlertAction(title: "取消", style: .cancel))
+        present(alert, animated: true)
+    }
+
+    private func ReplyReplyOrDelete(_ commentIndex: Int, _ reply: CommentReply)
+    {
+        let alert = UIAlertController(
+            title: nil,
+            message: nil,
+            preferredStyle: .alert
+        )
+
+        alert.addAction(
+            UIAlertAction(title: "回复", style: .default) { [weak self] _ in
+                self?.presentReplyAlert(
+                    commentIndex: commentIndex,
+                    replyingToName: reply.authorName
+                )
+            }
+        )
+
+        alert.addAction(
+            UIAlertAction(title: "删除", style: .destructive) { [weak self] _ in
+                guard
+                    let self = self,
+                    self.comments.indices.contains(commentIndex),
+                    var replies = self.comments[commentIndex].replies,  // 取出原来的数组
+                    let idx = replies.firstIndex(of: reply)  // 找到要删的那条
+                else { return }
+
+                // 从本地数组删除
+                replies.remove(at: idx)
+                // 写回到数据源
+                self.comments[commentIndex].replies = replies
+
+                // 刷新列表和高度
+                self.detailView.commentTableView.reloadData()
+                self.updateTableViewHeight()
+                Toast.show("删除成功", style: .normal)
+            }
+        )
+
+        alert.addAction(UIAlertAction(title: "取消", style: .cancel))
+        present(alert, animated: true)
+    }
 }
 
 // MARK: - UITableViewDelegate, UITableViewDataSource (评论列表)
@@ -355,6 +572,7 @@ extension ForumDetailViewController: UITableViewDelegate, UITableViewDataSource
         return 0
     }
 
+    //初始化tabelview 中每个 cell 设置点击方法
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath)
         -> UITableViewCell
     {
@@ -367,7 +585,52 @@ extension ForumDetailViewController: UITableViewDelegate, UITableViewDataSource
             return UITableViewCell()
         }
 
-        cell.configure(with: comments[indexPath.row])
+        let comment = comments[indexPath.row]
+        let isLiked = likedCommentIDs.contains(comment.id)
+        cell.configure(
+            with: comment,
+            isLiked: isLiked,
+            likedReplyIDs: likedReplyIDs
+        )
+
+        //判断是否为自己的评论
+        if true {
+            cell.onCommentTap = { [weak self] in
+                self?.CommentReplyOrDelete(indexPath.row)
+            }
+        } else {
+            // 点击整条评论：回复该评论
+            cell.onCommentTap = { [weak self] in
+                self?.presentReplyAlert(
+                    commentIndex: indexPath.row,
+                    replyingToName: nil
+                )
+            }
+        }
+
+        // 点赞整条评论
+        cell.onCommentLikeTap = { [weak self] in
+            self?.toggleCommentLike(at: indexPath.row)
+        }
+
+        if true {
+            cell.onReplyTap = { [weak self] reply in
+                self?.ReplyReplyOrDelete(indexPath.row, reply)
+            }
+        } else {
+            // 点击某一条回复：回复这条回复的作者
+            cell.onReplyTap = { [weak self] reply in
+                self?.presentReplyAlert(
+                    commentIndex: indexPath.row,
+                    replyingToName: reply.authorName
+                )
+            }
+        }
+
+        // 点赞某一条回复
+        cell.onReplyLikeTap = { [weak self] reply in
+            self?.toggleReplyLike(reply, inCommentAt: indexPath.row)
+        }
         return cell
     }
 
@@ -384,6 +647,6 @@ extension ForumDetailViewController: UITableViewDelegate, UITableViewDataSource
         _ tableView: UITableView,
         estimatedHeightForRowAt indexPath: IndexPath
     ) -> CGFloat {
-        return 200 // 估算高度，帮助系统优化滚动
+        return 200  // 估算高度，帮助系统优化滚动
     }
 }
