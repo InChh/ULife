@@ -29,7 +29,6 @@
 				Models/Forum/.gitkeep,
 				Models/Profile/.gitkeep,
 				Views/Activity/.gitkeep,
-				Views/Calendaar/.gitkeep,
 				Views/Forum/.gitkeep,
 				Views/Profile/.gitkeep,
 			);
