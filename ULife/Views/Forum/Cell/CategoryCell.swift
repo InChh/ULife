@@ -7,7 +7,7 @@
 
 import UIKit
 
-class TagCell: UICollectionViewCell {
+class CategoryCell: UICollectionViewCell {
     
     //标识符
     static let identifier = "TagCell"
