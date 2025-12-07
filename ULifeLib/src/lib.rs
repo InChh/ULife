@@ -1,37 +1,105 @@
+#![allow(unused)]
+use once_cell::sync::OnceCell;
+use reqwest::RequestBuilder;
+use std::time::Duration;
+
+use crate::{
+    error::{Error, Result},
+    persistence::PersistenceManager,
+};
+
+pub mod activity;
+pub mod common;
+pub mod error;
+pub mod forum;
+pub mod hybrid_cache;
+pub mod pb;
+pub mod persistence;
+pub mod profile;
+pub mod schedule;
+pub mod util;
+pub use hybrid_cache::{CacheOptions, HybridCache, HybridCacheConfig};
+
 uniffi::setup_scaffolding!();
 
-
-// You can annotate items with uniffi macros to make them available in your swift package.
-// You can export functions...
-#[uniffi::export]
-pub fn add(a: u64, b: u64) -> u64 {
-    a + b
-}
-
-// ... data structs without methods ...
-#[derive(uniffi::Record)]
-pub struct Example {
-    pub items: Vec<String>,
-    pub value: Option<f64>,
-}
-
-// ... classes with methods ...
-#[derive(uniffi::Object)]
-pub struct Greeter {
-    name: String,
+#[derive(Debug, uniffi::Object)]
+pub struct ApiClient {
+    client: reqwest::Client,
+    base_url: String,
+    cache: HybridCache<String, Vec<u8>>,
 }
 
 #[uniffi::export]
-impl Greeter {
-    // Constructors need to be annotated as such
+impl ApiClient {
     #[uniffi::constructor]
-    pub fn new(name: String) -> Self {
-        Self { name }
-    }
-
-    pub fn greet(&self) -> String {
-        format!("Hello, {}!", self.name)
+    pub fn new(base_url: String, cache_folder: String, cache_size: u64) -> Result<Self> {
+        let client = reqwest::Client::builder()
+            .user_agent("ULife.ios/1.0")
+            .build()?;
+        let cache_dir = std::path::PathBuf::from(cache_folder).join("api_cache");
+        let cache = HybridCache::new(HybridCacheConfig {
+            disk_dir: cache_dir,
+            memory_capacity: cache_size,
+            default_ttl: Some(Duration::from_hours(24)),
+            memory_time_to_idle: Some(Duration::from_secs(60)),
+        })?;
+        Ok(ApiClient {
+            client,
+            base_url,
+            cache,
+        })
     }
 }
 
-// ... and much more! For more information about uniffi macros, read the UniFFI book: https://mozilla.github.io/uniffi-rs/proc_macro/index.html
+static PERSISTENCE_MANAGER: OnceCell<PersistenceManager> = OnceCell::new();
+
+impl ApiClient {
+    /// 构建请求
+    fn build_request(&self, method: reqwest::Method, path: &str) -> RequestBuilder {
+        let url = format!(
+            "{}/{}",
+            self.base_url.trim_end_matches('/'),
+            path.trim_start_matches('/')
+        );
+        self.client.request(method, url)
+    }
+
+    /// 构建需要认证的请求
+    fn build_auth_request(&self, method: reqwest::Method, path: &str) -> Result<RequestBuilder> {
+        let token = self.require_token()?;
+        Ok(self.build_request(method, path).bearer_auth(token))
+    }
+
+    /// 发送请求
+    async fn send(&self, builder: RequestBuilder) -> Result<reqwest::Response> {
+        let resp = builder.send().await?;
+        if !resp.status().is_success() {
+            return Err(Error::HttpError(resp.status()));
+        }
+        Ok(resp)
+    }
+
+    /// 发送请求并解析 Protobuf 响应
+    async fn send_proto<T>(&self, builder: RequestBuilder) -> Result<T>
+    where
+        T: prost::Message + Default,
+    {
+        let resp = self.send(builder).await?;
+        if !resp.status().is_success() {
+            return Err(Error::HttpError(resp.status()));
+        }
+        let bytes = resp.bytes().await?;
+        let message = T::decode(bytes)?;
+        Ok(message)
+    }
+
+    /// 获取当前用户的 Token
+    fn require_token(&self) -> Result<String> {
+        let token = PERSISTENCE_MANAGER
+            .get()
+            .ok_or(Error::Uninitialized)?
+            .get_current_user_token()?
+            .ok_or(Error::UnAuthorized)?;
+        Ok(token)
+    }
+}
