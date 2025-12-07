@@ -61,15 +61,34 @@ class ForumPostCell: UITableViewCell {
         return label
     }()
 
-    // 标签容器(存多个标签 label)
-    private lazy var tagsStackView: UIStackView = {
-        let stack = UIStackView()
-        stack.axis = .horizontal  // 水平排列
-        stack.spacing = 6  // 标签之间的间距
-        stack.alignment = .center  // 垂直居中
-        stack.distribution = .fillProportionally
-        return stack
+//    // 标签容器(存多个标签 label)
+//    private lazy var CategoryStackView: UIStackView = {
+//        let stack = UIStackView()
+//        stack.axis = .horizontal  // 水平排列
+//        stack.spacing = 6  // 标签之间的间距
+//        stack.alignment = .center  // 垂直居中
+//        stack.distribution = .fillProportionally
+//        return stack
+//    }()
+    
+    private lazy var CategoryLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 12, weight: .medium)
+        label.textColor = .white
+        label.backgroundColor = .systemPurple.withAlphaComponent(0.7)
+        label.layer.cornerRadius = 4
+        label.layer.masksToBounds = true
+        return label
     }()
+    
+    private lazy var ViewCountLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 12, weight: .regular)
+        label.textColor = .systemGray2
+        label.textAlignment = .right
+        return label
+    }()
+    
 
     // 时间
     private lazy var timeLabel: UILabel = {
@@ -101,7 +120,8 @@ class ForumPostCell: UITableViewCell {
         cardView.addSubview(avatarImageView)
         cardView.addSubview(authorLabel)
         cardView.addSubview(timeLabel)
-        cardView.addSubview(tagsStackView)
+        cardView.addSubview(CategoryLabel)
+        cardView.addSubview(ViewCountLabel)
 
         cardView.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -109,7 +129,8 @@ class ForumPostCell: UITableViewCell {
         avatarImageView.translatesAutoresizingMaskIntoConstraints = false
         authorLabel.translatesAutoresizingMaskIntoConstraints = false
         timeLabel.translatesAutoresizingMaskIntoConstraints = false
-        tagsStackView.translatesAutoresizingMaskIntoConstraints = false
+        CategoryLabel.translatesAutoresizingMaskIntoConstraints = false
+        ViewCountLabel.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
             // CardView 布局 (留出边距)
@@ -172,19 +193,6 @@ class ForumPostCell: UITableViewCell {
                 constant: -16
             ),
 
-            // 标签容器布局 (在作者名右边)
-            tagsStackView.centerYAnchor.constraint(
-                equalTo: authorLabel.centerYAnchor
-            ),
-            tagsStackView.leadingAnchor.constraint(
-                equalTo: authorLabel.trailingAnchor,
-                constant: 15
-            ),
-            // 标签右位置小于时间 label 的左位置
-            tagsStackView.trailingAnchor.constraint(
-                lessThanOrEqualTo: timeLabel.leadingAnchor,
-                constant: -8
-            ),
 
             // 作者名布局
             authorLabel.centerYAnchor.constraint(
@@ -203,6 +211,24 @@ class ForumPostCell: UITableViewCell {
                 equalTo: cardView.trailingAnchor,
                 constant: -16
             ),
+            
+            
+            CategoryLabel.centerYAnchor.constraint(
+                equalTo: avatarImageView.centerYAnchor
+            ),
+            CategoryLabel.trailingAnchor.constraint(
+                lessThanOrEqualTo: ViewCountLabel.leadingAnchor,
+                constant: -6
+            ),
+            
+            ViewCountLabel.centerYAnchor.constraint(
+                equalTo: avatarImageView.centerYAnchor
+            ),
+            ViewCountLabel.trailingAnchor.constraint(
+                lessThanOrEqualTo: timeLabel.leadingAnchor,
+                constant: -6
+            ),
+            
         ])
     }
 
@@ -211,33 +237,12 @@ class ForumPostCell: UITableViewCell {
         titleLabel.text = post.title
         contentLabel.text = post.content
         authorLabel.text = post.authorName
-        timeLabel.text = post.createTime.timeAgoString()
+        timeLabel.text = post.publishTime.timeAgoString()
         // todo 加载图片
         
         // 动态生成标签
-        setupTags(post.tags)
-    }
+        CategoryLabel.text = " \(post.category) "
+        ViewCountLabel.text = " \(post.viewCount)人围观 "
 
-    // 生成标签
-    private func setupTags(_ tags: [String]) {
-        // 清空之前的视图 (因为 Cell 是复用的，不清空会重叠)
-        tagsStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
-
-        //添加新标签
-        for tagText in tags {
-            let label = createTagLabel(text: tagText)
-            tagsStackView.addArrangedSubview(label)
-        }
-    }
-
-    // 创建统一风格的标签 Label
-    private func createTagLabel(text: String) -> UILabel {
-        let label = UILabel()
-        label.text = " \(text) "  // 前后加个空格，增加内边距的视觉效果
-        label.font = .systemFont(ofSize: 12, weight: .medium)
-        label.textColor = .systemBlue  // 文字蓝色
-        label.backgroundColor = .systemBlue.withAlphaComponent(0.1)  // 背景淡蓝
-        label.layer.cornerRadius = 4
-        return label
     }
 }

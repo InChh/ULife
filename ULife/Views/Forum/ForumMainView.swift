@@ -9,7 +9,7 @@ import UIKit
 
 class ForumMainView: UIView {
 
-    // 标签滚动栏
+    // 滚动栏
     lazy var tagsCollectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .horizontal  // 关键：设置水平滚动
@@ -25,10 +25,10 @@ class ForumMainView: UIView {
         cv.backgroundColor = .systemGray6 
         cv.showsHorizontalScrollIndicator = false //是否显示横向滚动条
 
-        // 注册标签删选栏的元素
+        // 注册删选栏的元素
         cv.register(
-            TagCell.self,
-            forCellWithReuseIdentifier: TagCell.identifier
+            CategoryCell.self,
+            forCellWithReuseIdentifier: CategoryCell.identifier
         )
         return cv
     }()

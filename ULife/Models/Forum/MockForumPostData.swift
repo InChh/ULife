@@ -1,0 +1,76 @@
+//
+//  MockForumPostData.swift
+//  ULife
+//
+//  Created by 骑鱼的猫 on 2025/12/6.
+//
+import Foundation
+
+struct MockForumPostData {
+    static var posts: [ForumPost] = [
+        ForumPost(
+            id: 1,
+            title: "校园音乐节即将开幕！",
+            content: "今年的校园音乐节将于本周六下午 6 点在操场举行，欢迎大家踊跃参加！",
+            category: "校园通知",
+            tags: ["#活动"],
+            imageUrls: [
+                "https://example.com/images/music_01.jpg",
+                "https://example.com/images/music_02.jpg",
+            ],
+            authorId: 1001,
+            authorName: "学生会小明",
+            authorAvatar: "https://example.com/avatar/ming.jpg",
+            authorRole: "学生会干部",
+            publishTime: Date(timeIntervalSinceNow: -60 * 20),
+            viewCount: 1453,
+            likeCount: 86,
+            replyCount: 12,
+            isLiked: false,
+            isreplyed: true,
+            isPinned: true
+        ),
+
+        ForumPost(
+            id: 2,
+            title: "期末复习资料分享（内含重点）",
+            content: "期末要到了，我整理了一份复习笔记，分享给大家，希望有所帮助。",
+            category: "学习交流",
+            tags: ["#学习资料期末"],
+            imageUrls: [],
+            authorId: 1002,
+            authorName: "图书馆小李",
+            authorAvatar: "https://example.com/avatar/li.jpg",
+            authorRole: "普通学生",
+            publishTime: Date(timeIntervalSinceNow: -60 * 20),
+            viewCount: 932,
+            likeCount: 54,
+            replyCount: 8,
+            isLiked: true,
+            isreplyed: true,
+            isPinned: false
+        ),
+
+        ForumPost(
+            id: 3,
+            title: "出一辆九成新山地车（便宜卖）",
+            content: "入手半年，保养很好，想升级公路车，所以出掉这辆。",
+            category: "二手市场",
+            tags: ["#二手自行车"],
+            imageUrls: [
+                "https://example.com/images/bike_01.jpg"
+            ],
+            authorId: 1003,
+            authorName: "骑鱼的猫",
+            authorAvatar: "https://example.com/avatar/cat.jpg",
+            authorRole: "普通学生",
+            publishTime: Date(timeIntervalSinceNow: -60 * 20),
+            viewCount: 618,
+            likeCount: 32,
+            replyCount: 4,
+            isLiked: false,
+            isreplyed: true,
+            isPinned: false
+        ),
+    ]
+}

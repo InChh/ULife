@@ -7,13 +7,13 @@
 
 import UIKit
 
-class TagCell: UICollectionViewCell {
+class CategoryCell: UICollectionViewCell {
     
     //标识符
     static let identifier = "TagCell"
     
     //标签 label
-    lazy var tagLabel: UILabel = {
+    lazy var CategoryLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 14, weight: .medium)
         label.textAlignment = .center
@@ -25,14 +25,14 @@ class TagCell: UICollectionViewCell {
     
     override init(frame: CGRect) {
         super.init(frame: frame)
-        contentView.addSubview(tagLabel)
-        tagLabel.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(CategoryLabel)
+        CategoryLabel.translatesAutoresizingMaskIntoConstraints = false
         
         NSLayoutConstraint.activate([
-            tagLabel.topAnchor.constraint(equalTo: contentView.topAnchor),
-            tagLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            tagLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            tagLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
+            CategoryLabel.topAnchor.constraint(equalTo: contentView.topAnchor),
+            CategoryLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            CategoryLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            CategoryLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
         ])
     }
     
@@ -42,23 +42,23 @@ class TagCell: UICollectionViewCell {
     
     // 选中/未选中状态
     func configure(with tag: String, isSelected: Bool) {
-        tagLabel.text = tag
+        CategoryLabel.text = tag
         if isSelected {
-            tagLabel.backgroundColor = .systemBlue
-            tagLabel.textColor = .white
+            //tagLabel.backgroundColor = .systemBlue
+            CategoryLabel.textColor = .systemBlue
         } else {
-            tagLabel.backgroundColor = .systemGray5
-            tagLabel.textColor = .label
+            //tagLabel.backgroundColor = .systemGray5
+            CategoryLabel.textColor = .label
         }
     }
     
     // 返回标签的合适尺寸，让 Cell 自适应文本宽度
     override func preferredLayoutAttributesFitting(_ layoutAttributes: UICollectionViewLayoutAttributes) -> UICollectionViewLayoutAttributes {
-        let targetSize = CGSize(width: layoutAttributes.frame.width, height: 44) // 44是 Tag Collection View 的高度
-        let size = tagLabel.sizeThatFits(CGSize(width: .greatestFiniteMagnitude, height: targetSize.height))
+        let targetSize = CGSize(width: layoutAttributes.frame.width, height: 32) // 44是 Tag Collection View 的高度
+        let size = CategoryLabel.sizeThatFits(CGSize(width: .greatestFiniteMagnitude, height: targetSize.height))
         
         // 文本宽度 + 左右各 16pt 填充
-        layoutAttributes.frame.size.width = size.width + 32
+        layoutAttributes.frame.size.width = size.width + 16
         return layoutAttributes
     }
 }
