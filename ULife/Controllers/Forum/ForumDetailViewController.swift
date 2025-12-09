@@ -325,7 +325,7 @@ class ForumDetailViewController: UIViewController {
         let isLiked = post.userInteraction.isLiked
         
         // 发送帖子点赞请求
-        var request = LikeOrDisListRequest(id: post.id, actions: isLiked ? Actions.like : Actions.unlike)
+        let request = LikeOrDisListRequest(id: post.id, actions: isLiked ? Actions.like : Actions.unlike)
         let response = ForumRequest().LikeOrDisList(Requst: request)
         
         let systemName = isLiked ? "hand.thumbsup.fill" : "hand.thumbsup"
@@ -352,7 +352,7 @@ class ForumDetailViewController: UIViewController {
     private func updatecollectedButtonState() {
         let isCollected = post.userInteraction.isCollected
         
-        var request = ColectOrDisColectRequest(id: post.id, action: isCollected ? Action.collect : Action.uncollect)
+        let request = ColectOrDisColectRequest(id: post.id, action: isCollected ? Action.collect : Action.uncollect)
         let response = ForumRequest().ColectOrDisColect(Requst: request)
         
         let systemName = isCollected ? "star.fill" : "star"
@@ -530,7 +530,7 @@ class ForumDetailViewController: UIViewController {
                 }
 
                 //获取回复的评论和回复
-                var comment = maincomments[commentIndex]
+                let comment = maincomments[commentIndex]
                 
                 let response = ForumRequest().CreateComment(id: comment.postid, content: text, replyToCommentid: comment.id)
                 comments.append(response.comment)

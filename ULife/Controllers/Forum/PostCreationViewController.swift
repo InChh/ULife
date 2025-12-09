@@ -82,7 +82,7 @@ class PostCreationViewController: UIViewController {
         let category = categorys[CreateselectedCategoryIndex]
         let tags = customTags
         
-        var createPostRequest = CreatePostRequest(boardid: "\(category.id ?? "")", content: content, media: nil, tags: tags, title: title)
+        let createPostRequest = CreatePostRequest(boardid: "\(category.id ?? "")", content: content, media: nil, tags: tags, title: title)
         
         let post = ForumRequest().CreatePost(request: createPostRequest)
         
