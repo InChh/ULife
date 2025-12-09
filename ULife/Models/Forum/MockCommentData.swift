@@ -7,8 +7,8 @@
 import Foundation
 
 struct MockCommentData{
-    static var comments: [Comment] = [
-        Comment(
+    static var comments: [Comment2] = [
+        Comment2(
             id: "c1",
             authorName: "评论者A",
             authorAvatar: "",
@@ -19,7 +19,7 @@ struct MockCommentData{
         ),
 
         // 2. 没有回复的评论
-        Comment(
+        Comment2(
             id: "c2",
             authorName: "评论者B",
             authorAvatar: "",
@@ -30,7 +30,7 @@ struct MockCommentData{
         ),
 
         // 3. 只有一条回复的评论
-        Comment(
+        Comment2(
             id: "c3",
             authorName: "好奇宝宝",
             authorAvatar: "",
@@ -50,7 +50,7 @@ struct MockCommentData{
         ),
 
         // 4. 较长的评论内容（测试高度自适应）
-        Comment(
+        Comment2(
             id: "c4",
             authorName: "资深用户",
             authorAvatar: "",
@@ -59,6 +59,42 @@ struct MockCommentData{
             createTime: Date(timeIntervalSinceNow: -60 * 4),
             likeCount: 15,
             replies: nil  // nil 表示尚未加载回复或没有回复
+        ),
+        Comment2(
+            id: "c1",
+            authorName: "评论者A",
+            authorAvatar: "",
+            content: "楼主写得太好了，内容很有启发性！我已经在别处分享了你的帖子。",
+            createTime: Date(timeIntervalSinceNow: -60 * 20),
+            likeCount: 5,
+            replies: replies1  // 包含 4 条回复
+        ),
+        Comment2(
+            id: "c1",
+            authorName: "评论者A",
+            authorAvatar: "",
+            content: "楼主写得太好了，内容很有启发性！我已经在别处分享了你的帖子。",
+            createTime: Date(timeIntervalSinceNow: -60 * 20),
+            likeCount: 5,
+            replies: replies1  // 包含 4 条回复
+        ),
+        Comment2(
+            id: "c1",
+            authorName: "评论者A",
+            authorAvatar: "",
+            content: "楼主写得太好了，内容很有启发性！我已经在别处分享了你的帖子。",
+            createTime: Date(timeIntervalSinceNow: -60 * 20),
+            likeCount: 5,
+            replies: replies1  // 包含 4 条回复
+        ),
+        Comment2(
+            id: "c1",
+            authorName: "评论者A",
+            authorAvatar: "",
+            content: "楼主写得太好了，内容很有启发性！我已经在别处分享了你的帖子。",
+            createTime: Date(timeIntervalSinceNow: -60 * 20),
+            likeCount: 5,
+            replies: replies1  // 包含 4 条回复
         ),
     ]
 }

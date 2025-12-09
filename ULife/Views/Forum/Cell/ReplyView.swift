@@ -56,48 +56,33 @@ class ReplyView: UIView {
             ),
             for: .normal
         )
-        btn.semanticContentAttribute = .forceRightToLeft
+        btn.semanticContentAttribute = .forceRightToLeft //靠右对齐,图片位于文本的右侧
         btn.titleLabel?.font = .systemFont(ofSize: 12)
         btn.tintColor = .secondaryLabel
         btn.setTitleColor(.secondaryLabel, for: .normal)
         return btn
     }()
 
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupUI()
+        setupBindings()
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+    
 
     private func setupUI() {
         backgroundColor = .systemBackground
-        layer.cornerRadius = 4
-        clipsToBounds = true
 
         [avatarImageView, nameLabel, replyToLabel, contentLabel, likeButton]
-            .forEach {
-                addSubview($0)
-                $0.translatesAutoresizingMaskIntoConstraints = false
+            .forEach { item in
+                addSubview(item)
+                item.translatesAutoresizingMaskIntoConstraints = false
             }
-
-        // 给 ReplyView 添加点击事件（用于“回复这条回复”）
-        let tap = UITapGestureRecognizer(
-            target: self,
-            action: #selector(handleTap)
-        )
-        addGestureRecognizer(tap)
-
-        // 点赞按钮点击事件
-        likeButton.addTarget(
-            self,
-            action: #selector(handleLikeButtonTap),
-            for: .touchUpInside
-        )
-
-        
         
         NSLayoutConstraint.activate([
             // 头像
@@ -154,38 +139,54 @@ class ReplyView: UIView {
             ),
         ])
     }
+    
 
-    func configure(with reply: CommentReply, isLiked: Bool) {
-        nameLabel.text = reply.authorName
+    /// 绑定事件
+    private func setupBindings() {
+        // 给 ReplyView 添加点击事件（用于“回复这条回复”）
+        let tap = UITapGestureRecognizer(
+            target: self,
+            action: #selector(handleTap)
+        )
+        addGestureRecognizer(tap)
 
-        if let to = reply.repliedToUser {
-            replyToLabel.text = "回复 \(to)"
-        } else {
-            replyToLabel.text = ""
-        }
-
-        contentLabel.text = reply.content
-
-        // 根据点赞状态更新 UI
-        let baseCount = reply.likeCount
-        let displayCount = baseCount + (isLiked ? 1 : 0)
-        // 点赞数为 0 时不显示数字，否则显示具体数量
-        let title = displayCount == 0 ? "" : "\(displayCount)"
-        likeButton.setTitle(title, for: .normal)
-
-        let color: UIColor = isLiked ? .systemRed : .secondaryLabel
-        let imageName = isLiked ? "heart.fill" : "heart"
-        likeButton.setImage(UIImage(systemName: imageName), for: .normal)
-        likeButton.tintColor = color
-        likeButton.setTitleColor(color, for: .normal)
+        // 点赞按钮点击事件
+        likeButton.addTarget(
+            self,
+            action: #selector(handleLikeButtonTap),
+            for: .touchUpInside
+        )
     }
-
+    
     @objc private func handleTap() {
         onTap?()
     }
 
     @objc private func handleLikeButtonTap() {
         onLikeTap?()
+    }
+
+    func configure(with reply: CommentReply, isLiked: Bool) {
+        nameLabel.text = reply.authorName
+        if let to = reply.repliedToUser {
+            replyToLabel.text = "回复 \(to)"
+        } else {
+            replyToLabel.text = ""
+        }
+        contentLabel.text = reply.content
+
+        
+        // 根据点赞状态更新 UI
+        let baseCount = reply.likeCount
+        let displayCount = baseCount + (isLiked ? 1 : 0)
+        // 点赞数为 0 时不显示数字，否则显示具体数量
+        let title = displayCount == 0 ? "" : "\(displayCount)"
+        likeButton.setTitle(title, for: .normal)
+        let color: UIColor = isLiked ? .systemRed : .secondaryLabel
+        let imageName = isLiked ? "heart.fill" : "heart"
+        likeButton.setImage(UIImage(systemName: imageName), for: .normal)
+        likeButton.tintColor = color
+        likeButton.setTitleColor(color, for: .normal)
     }
 }
 

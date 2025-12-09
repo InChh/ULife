@@ -1,7 +1,9 @@
-// This file was generated from JSON Schema using quicktype, do not modify it directly.
-// To parse the JSON, add this file to your project and do:
 //
-//   let post = try Post(json)
+//  Post.swift
+//  ULife
+//
+//  Created by 骑鱼的猫 on 2025/12/8.
+//
 
 import Foundation
 
@@ -13,6 +15,7 @@ public struct Post: Equatable {
     public var boardid: String
     /// 板块名称
     public var boardName: String
+    
     public var content: String
     /// 创建时间（iso08601)
     public var createdAt: String
@@ -44,6 +47,47 @@ public struct Post: Equatable {
         self.reportCount = reportCount
         self.stats = stats
         self.status = status
+        self.tags = tags
+        self.title = title
+        self.userInteraction = userInteraction
+    }
+}
+
+
+/// PostLite
+// MARK: - PostLite
+public struct PostLite: Equatable {
+    public var author: UserLite
+    /// 所属板块ID
+    public var boardid: String
+    /// 所属板块名称
+    public var boardName: String?
+    /// 第一张图片URL（如果存在），用于列表预览
+    public var coverImageurl: String?
+    /// 发布时间
+    public var createdAt: Date
+    /// 帖子唯一ID
+    public var id: String
+    /// 统计数据
+    public var stats: Stats
+    /// 内容摘要（content字段的前N个字符）
+    public var summary: String?
+    /// 标签列表
+    public var tags: [String]?
+    /// 帖子标题
+    public var title: String
+    /// 当前用户互动状态
+    public var userInteraction: UserInteraction
+
+    public init(author: UserLite, boardid: String, boardName: String?, coverImageurl: String?, createdAt: Date, id: String, stats: Stats, summary: String?, tags: [String]?, title: String, userInteraction: UserInteraction) {
+        self.author = author
+        self.boardid = boardid
+        self.boardName = boardName
+        self.coverImageurl = coverImageurl
+        self.createdAt = createdAt
+        self.id = id
+        self.stats = stats
+        self.summary = summary
         self.tags = tags
         self.title = title
         self.userInteraction = userInteraction

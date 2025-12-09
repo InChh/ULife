@@ -1,8 +1,9 @@
-// This file was generated from JSON Schema using quicktype, do not modify it directly.
-// To parse the JSON, add this file to your project and do:
 //
-//   let board = try Board(json)
-
+//  Board.swift
+//  ULife
+//
+//  Created by 骑鱼的猫 on 2025/12/8.
+//
 import Foundation
 
 /// Board，论坛板块的详细信息模型，通常通过 GET /boards/{id} 获取。

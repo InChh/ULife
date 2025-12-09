@@ -15,7 +15,7 @@ import Foundation
 
 /// Comment
 // MARK: - Comment
-public struct Comment2: Equatable {
+public struct Comment: Equatable {
     public var author: UserLite
     /// 评论内容
     public var content: String
@@ -30,9 +30,9 @@ public struct Comment2: Equatable {
     /// 所属帖子ID
     public var postid: String
     /// 被回复的评论的作者信息（UserLite），用于楼中楼展示，如果是回复帖子则为null。
-    public var replyTo: [UserLite]
+    public var replyTo: UserLite
 
-    public init(author: UserLite, content: String, createdAt: Date, id: String, isLiked: String, likeCount: String, parentid: String?, postid: String, replyTo: [UserLite]) {
+    public init(author: UserLite, content: String, createdAt: Date, id: String, isLiked: String, likeCount: String, parentid: String?, postid: String, replyTo: UserLite) {
         self.author = author
         self.content = content
         self.createdAt = createdAt

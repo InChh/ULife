@@ -3,8 +3,8 @@
 //  ULife
 //
 //  Created by 骑鱼的猫 on 2025/12/8.
-//
-
+//  ForumViewController扩展
+import UIKit
 
 // 扩展实现 TableView 代理
 extension ForumViewController: UITableViewDelegate, UITableViewDataSource {
@@ -13,7 +13,8 @@ extension ForumViewController: UITableViewDelegate, UITableViewDataSource {
     {
         return posts.count
     }
-
+    
+    // 配置每一个 cell
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath)
         -> UITableViewCell
     {
@@ -37,7 +38,6 @@ extension ForumViewController: UITableViewDelegate, UITableViewDataSource {
         let forumDetailController = ForumDetailViewController(
             post: posts[indexPath.row]
         )
-
         // 导航到详情页
         navigationController?.pushViewController(
             forumDetailController,
@@ -50,7 +50,6 @@ extension ForumViewController: UITableViewDelegate, UITableViewDataSource {
 extension ForumViewController: UICollectionViewDelegate,
     UICollectionViewDataSource, UICollectionViewDelegateFlowLayout
 {
-    // 每个分区有多少项目
     func collectionView(
         _ collectionView: UICollectionView,
         numberOfItemsInSection section: Int
@@ -71,7 +70,7 @@ extension ForumViewController: UICollectionViewDelegate,
             return UICollectionViewCell()
         }
 
-        let isSelected = (indexPath.row == selectedCategoryIndex)  //是否选中
+        let isSelected = (indexPath.row == MainselectedCategoryIndex)  //是否选中
         cell.configure(with: categorys[indexPath.row], isSelected: isSelected)
         return cell
     }
@@ -81,10 +80,10 @@ extension ForumViewController: UICollectionViewDelegate,
         _ collectionView: UICollectionView,
         didSelectItemAt indexPath: IndexPath
     ) {
-        selectedCategoryIndex = indexPath.row
+        MainselectedCategoryIndex = indexPath.row // 更新选中的标签
         collectionView.reloadData()  // 刷新 CollectionView 来更新选中状态
 
-        // 重新应用标签 + 排序 + 搜索逻辑
+        /// 重新应用标签 + 排序 + 搜索逻辑 进行搜索
         applyFilterAndSort()
     }
 
@@ -94,16 +93,14 @@ extension ForumViewController: UICollectionViewDelegate,
         layout collectionViewLayout: UICollectionViewLayout,
         sizeForItemAt indexPath: IndexPath
     ) -> CGSize {
-        // 1. 创建一个临时的 Label，计算文本实际需要的宽度
+        // 创建一个临时的 Label，计算文本实际需要的宽度
         let tempLabel = UILabel()
         tempLabel.font = .systemFont(ofSize: 14, weight: .medium)
         tempLabel.text = categorys[indexPath.row]
         tempLabel.sizeToFit()
 
-        // 2. 宽度 = 文本宽度 + 左右各 16pt 的边距 (总共 32pt 额外填充)
-        let width = tempLabel.frame.width + 8
-
-        return CGSize(width: width, height: 32)
+        return CGSize(width: tempLabel.frame.width + 8, height: 32)
     }
 
 }
+
