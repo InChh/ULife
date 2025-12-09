@@ -21,6 +21,7 @@ impl PersistenceManager {
         Ok(PersistenceManager { base_folder, key_to_file })
     }
 
+    /// 保存当前用户信息到本地存储
     pub async fn save_current_user(&self, current_user: CurrentUser) -> Result<()> {
         // encode and save the token to a file
         let file_path = PathBuf::from(&self.base_folder).join("current_user");
@@ -32,6 +33,17 @@ impl PersistenceManager {
         Ok(())
     }
 
+    /// 获取当前用户信息
+    pub async fn get_current_user(&self) -> Result<Option<CurrentUser>> {
+        if let Some(file_path) = self.key_to_file.get("current_user") {
+            let data = tokio::fs::read(&*file_path).await?;
+            let current_user = CurrentUser::decode(&*data)?;
+            return Ok(Some(current_user));
+        }
+        Ok(None)
+    }
+
+    /// 获取当前用户的 Token
     pub fn get_current_user_token(&self) -> Result<Option<String>> {
         if let Some(file_path) = self.key_to_file.get("current_user") {
             let data = std::fs::read(&*file_path)?;

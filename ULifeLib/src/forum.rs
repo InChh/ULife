@@ -41,6 +41,38 @@ pub struct ListPostsRequest {
     pub keyword: Option<Vec<String>>,
 }
 
+#[derive(uniffi::Object, serde::Serialize)]
+pub struct CreatePostRequest {
+    pub title: String,
+    pub content: String,
+    pub category: String,
+    pub tags: Vec<String>,
+}
+
+#[uniffi::export]
+impl CreatePostRequest {
+
+    #[uniffi::constructor]
+    pub fn new() -> Self {
+        CreatePostRequest {
+            title: String::new(),
+            content: String::new(),
+            category: String::new(),
+            tags: Vec::new(),
+        }
+    }
+
+    pub fn is_valid(&self) -> bool {
+        !self.title.trim().is_empty() && !self.content.trim().is_empty()
+    }
+}
+
+impl Default for CreatePostRequest {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[uniffi::export]
 impl ApiClient {
     /// 获取论坛版块列表

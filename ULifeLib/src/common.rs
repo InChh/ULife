@@ -25,4 +25,24 @@ impl ApiClient {
 
         Ok(data)
     }
+
+    pub async fn upload_file(&self, data: Vec<u8>, filename: String) -> Result<String> {
+        let filename_cloned = filename.clone();
+        let file_type = filename_cloned.rsplit('.').next().unwrap_or("unknown");
+        let req = self
+            .build_auth_request(reqwest::Method::POST, "storage/upload")?
+            .multipart(
+                reqwest::multipart::Form::new().part(
+                    "file",
+                    reqwest::multipart::Part::bytes(data).file_name(filename),
+                )
+                .part(
+                    "file_type",
+                    reqwest::multipart::Part::text(file_type.to_string()),
+                ),
+            );
+
+        let resp = self.send(req).await?;
+        todo!()
+    }
 }

@@ -1,19 +1,41 @@
 use crate::{ApiClient, CacheOptions, error::Result};
 
+#[derive(uniffi::Record, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ListCoursesRequest {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "semester_id")]
+    pub semester_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub teacher: Option<String>,
+    pub page: u64,
+    pub page_size: u64,
+}
+
 #[uniffi::export]
 impl ApiClient {
     /// 获取全校课程列表
-    pub async fn list_courses(&self) -> Result<()> {
+    pub async fn list_courses(&self, query_params: ListCoursesRequest) -> Result<()> {
         if let Some(_hit) = self.cache.get(&"courses".into()).await? {
             // return cached courses
             todo!()
         } else {
-            let method = reqwest::Method::GET;
-            let resp = self.send(self.build_request(method, "courses")).await?;
+            let req = self
+                .build_auth_request(reqwest::Method::GET, "courses")?
+                .query(&query_params);
+            let resp = self.send(req).await?;
 
-            self.cache.insert("courses".into(), resp.bytes().await?.to_vec(), CacheOptions {
-                ttl: Some(std::time::Duration::from_secs(120)),
-            }).await?;
+            self.cache
+                .insert(
+                    "courses".into(),
+                    resp.bytes().await?.to_vec(),
+                    CacheOptions {
+                        ttl: Some(std::time::Duration::from_secs(120)),
+                    },
+                )
+                .await?;
 
             todo!()
         }
@@ -62,8 +84,8 @@ impl ApiClient {
 
     /// 获取学期列表
     pub async fn list_semesters(&self) -> Result<()> {
-        let method = reqwest::Method::GET;
-        let resp = self.send(self.build_request(method, "semesters")).await?;
+        let req = self.build_auth_request(reqwest::Method::GET, "semesters")?;
+        let resp = self.send(req).await?;
         todo!()
     }
 }

@@ -66,6 +66,7 @@ impl ApiClient {
         todo!()
     }
 
+    /// 取消收藏活动
     pub async fn unfavorite_activity(&self, activity_id: u64) -> Result<()> {
         let req = self.build_auth_request(
             reqwest::Method::DELETE,
@@ -75,6 +76,7 @@ impl ApiClient {
         todo!()
     }
 
+    /// 获取我的活动列表
     pub async fn list_my_activities(&self) -> Result<()> {
         let req = self.build_auth_request(reqwest::Method::GET, "/my/activities")?;
         let resp = self.send(req).await?;

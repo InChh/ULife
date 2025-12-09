@@ -18,6 +18,7 @@ pub mod persistence;
 pub mod profile;
 pub mod schedule;
 pub mod util;
+pub mod model;
 pub use hybrid_cache::{CacheOptions, HybridCache, HybridCacheConfig};
 
 uniffi::setup_scaffolding!();
