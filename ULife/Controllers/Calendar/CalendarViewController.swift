@@ -95,57 +95,11 @@ final class CalendarViewController: UIViewController, UITableViewDataSource, UIT
         regroupWeekly()
         tableView.reloadData()
     }
-
-    /*
-    /// 使用 PublicCourse 模拟数据并映射到 UI Course
-    private func loadMockData() {
-        let apiCourses: [PublicCourse] = [
-            PublicCourse(courseId: 1, 
-                         courseName: "高等数学（上）",
-                         teacherName: "王教授",
-                         teacherId: 1001,
-                         location: "教二-201",
-                         dayOfWeek: 1,
-                         startSection: 1,
-                         endSection: 2,
-                         weeksRange: [1,2,3,4,5,6],
-                         type: .compulsory,
-                         credits: 4,
-                         description: "高等数学（上）描述"),
-            PublicCourse(courseId: 2,
-                         courseName: "大学英语 II",
-                         teacherName: "李老师",
-                         teacherId: 1002,
-                         location: "外语楼-105",
-                         dayOfWeek: 1,
-                         startSection: 3,
-                         endSection: 4,
-                         weeksRange: [1,2,3,4,5,6],
-                         type: .compulsory,
-                         credits: 3,
-                         description: "大学英语 II描述"),
-            PublicCourse(courseId: 3,
-                         courseName: "计算机网络",
-                         teacherName: "赵老师",
-                         teacherId: 1003,
-                         location: "综教-302",
-                         dayOfWeek: 1,
-                         startSection: 5,
-                         endSection: 6,
-                         weeksRange: [1,2,3,4,5,6],
-                         type: .elective,
-                         credits: 3,
-                         description: "计算机网络描述")
-        ]
-
-        courses = apiCourses.map { $0.toUICourse(sectionSlots: sectionSlots, color: .white) }
-        tableView.reloadData()
-    }
-     */
     
     private func loadData(){
-        let apiCourses = CalendarDataManager.shared.fetchPublicCoursesMock()
-        courses = apiCourses.map { $0.toUICourse(sectionSlots: sectionSlots, color: .white)}
+        //let apiCourses = CalendarDataManager.shared.fetchPublicCoursesMock()
+        let apiCourses = CalendarDataManager.shared.fetchScheduleMock()
+        courses = apiCourses.map { $0.toUICourse(sectionSlots: sectionSlots)}
         regroupWeekly()
         tableView.reloadData()
     }
@@ -349,9 +303,8 @@ final class CourseDetailViewController: UIViewController {
         stack.spacing = 12
         stack.alignment = .leading
 
-
         let card = UIView()
-        card.backgroundColor = .white
+        card.backgroundColor = course.color.withAlphaComponent(0.15)
         card.layer.cornerRadius = 12
         card.layer.masksToBounds = true
 
