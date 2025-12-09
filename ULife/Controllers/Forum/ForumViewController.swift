@@ -8,41 +8,145 @@
 import UIKit
 
 class ForumViewController: UIViewController {
-
     private let mainView = ForumMainView()
 
-    // 模拟数据源
-    private var posts: [ForumPost] = []
+    private var selectedCategoryIndex: Int = 0  // 默认选中"全部"
+
+    // 原始帖子列表数据
+    private var allPosts: [ForumPost] = []
     
-    // 标签数据源
-    private let tags = ["全部", "社团活动", "学习交流", "二手市场", "求助", "校内通知"]
-    
-    private var selectedTagIndex: Int = 0 // 默认选中"全部"
+    // 当前展示的帖子列表（排序 / 筛选 / 搜索之后）
+    private var posts: [ForumPost] = []  //帖子列表数据
+
+    // 导航栏中的排序按钮 + 搜索框 + 搜索按钮
+    private lazy var sortButton: UIButton = {
+        let btn = UIButton(type: .system)
+        btn.setTitle("最新", for: .normal)
+        btn.titleLabel?.font = .systemFont(ofSize: 14, weight: .medium)
+        btn.setImage(UIImage(systemName: "arrow.up.arrow.down"), for: .normal)
+        btn.tintColor = .label
+        btn.backgroundColor = .clear
+        btn.contentEdgeInsets = UIEdgeInsets(
+            top: 4,
+            left: 8,
+            bottom: 4,
+            right: 8
+        )
+        btn.semanticContentAttribute = .forceLeftToRight
+        return btn
+    }()
+
+    private lazy var searchTextField: UITextField = {
+        let tf = UITextField()
+        tf.placeholder = "搜索帖子"
+        // 稍微小一点的字号，整体更精致
+        tf.font = .systemFont(ofSize: 15)
+        // 使用自定义圆角和浅色背景
+        tf.borderStyle = .none
+        tf.backgroundColor = .systemGray5
+        tf.layer.cornerRadius = 20
+        tf.clipsToBounds = true
+        tf.clearButtonMode = .whileEditing
+        tf.returnKeyType = .search
+        // 左侧留一点内边距
+        let paddingView = UIView(frame: CGRect(x: 0, y: 0, width: 10, height: 0))
+        tf.leftView = paddingView
+        tf.leftViewMode = .always
+        return tf
+    }()
+
+    // 搜索按钮：放在搜索框内部右侧
+    private lazy var searchButton: UIButton = {
+        let btn = UIButton(type: .system)
+        btn.setTitle("| 搜索", for: .normal)
+        // 字号略小一点，避免太挤
+        btn.titleLabel?.font = .systemFont(ofSize: 15)
+        // 和排序按钮使用同一套主题色
+        btn.tintColor = .systemBlue
+        btn.backgroundColor = .systemGray5
+        btn.layer.cornerRadius = 14
+        // 内边距：左一点空隙，右边稍微大一点，点击面积也更舒适
+        btn.contentEdgeInsets = UIEdgeInsets(top: 0, left: 6, bottom: 0, right: 10)
+        return btn
+    }()
+
+    private enum SortMode {
+        case latest  // 最新
+        case hot  // 热度
+    }
+
+    private var sortMode: SortMode = .latest
 
     override func viewDidLoad() {
         super.viewDidLoad()
         setupViews()
         setupLayout()
         setupBindings()
-        
+        setupNavigationBar()
+
         loadMockData()
     }
 
     private func setupViews() {
-        title = "校园论坛"
 
         // 设置 tableView 代理
         mainView.tableView.delegate = self
         mainView.tableView.dataSource = self
-        
+
         // 设置 CollectionView 代理
         mainView.tagsCollectionView.delegate = self
         mainView.tagsCollectionView.dataSource = self
         view.addSubview(mainView)
     }
 
-    
-    
+    // 设置导航栏上的排序 + 搜索 UI
+    private func setupNavigationBar() {
+        // 左上角：排序按钮
+        let sortItem = UIBarButtonItem(customView: sortButton)
+        navigationItem.leftBarButtonItem = sortItem
+        
+
+        // 中间：搜索框，占据剩余空间
+        let container = UIView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+        searchTextField.translatesAutoresizingMaskIntoConstraints = false
+        
+        container.addSubview(searchTextField)
+        
+        // 搜索按钮放在搜索框内部右侧
+        searchTextField.rightView = searchButton
+        searchTextField.rightViewMode = .always
+
+
+        NSLayoutConstraint.activate([
+            searchTextField.topAnchor.constraint(equalTo: container.topAnchor),
+            searchTextField.bottomAnchor.constraint(
+                equalTo: container.bottomAnchor
+            ),
+            searchTextField.leadingAnchor.constraint(
+                equalTo: container.leadingAnchor
+            ),
+            searchTextField.trailingAnchor.constraint(
+                equalTo: container.trailingAnchor
+            ),
+            searchTextField.heightAnchor.constraint(equalToConstant: 40),
+            container.heightAnchor.constraint(equalToConstant: 40)
+        ])
+
+        // 动态宽度
+        let screenWidth = UIScreen.main.bounds.width
+        let horizontalMargin: CGFloat = 16 //空隙
+        let approximateSortButtonWidth: CGFloat = 60 //估算的排序按钮
+        let maxWidth = max(
+            0,
+            screenWidth - approximateSortButtonWidth - horizontalMargin * 2
+        )
+        container.widthAnchor.constraint(equalToConstant: maxWidth).isActive = true
+
+        // 设置为导航栏的 titleView
+        navigationItem.titleView = container
+    }
+
     //设置布局
     private func setupLayout() {
         mainView.translatesAutoresizingMaskIntoConstraints = false
@@ -59,106 +163,133 @@ class ForumViewController: UIViewController {
     private func setupBindings() {
         mainView.createPostButton.addAction(
             UIAction(handler: { _ in
-                print("点击了发帖按钮")
+                self.ComeTocreatePost()
             }),
             for: .touchUpInside
         )
+
+        // 排序按钮
+        sortButton.addTarget(
+            self,
+            action: #selector(handleSortButtonTap),
+            for: .touchUpInside
+        )
+
+        // 搜索按钮
+        searchButton.addTarget(
+            self,
+            action: #selector(handleSearchButtonTap),
+            for: .touchUpInside
+        )
+
+        // 键盘回车也触发搜索
+        searchTextField.addTarget(
+            self,
+            action: #selector(handleSearchReturn),
+            for: .editingDidEndOnExit
+        )
     }
-    
-    
+
+    private func ComeTocreatePost() {
+        let postCreationViewController = PostCreationViewController()
+        // 导航到详情页
+        navigationController?.pushViewController(
+            postCreationViewController,
+            animated: true
+        )
+    }
+
     // 假数据
     private func loadMockData() {
-        
-        posts = [
-            ForumPost(
-                id: UUID().uuidString,
-                title: "关于校园音乐节的报名通知",
-                authorName: "张三",
-                authorAvatar: "",
-                content: "今年的校园音乐节将在下个月举办，欢迎大家踊跃报名参与，详情请查看教务处通知。",
-                tags: ["#社团", "#社团活动"],
-                commentCount: 12,
-                likeCount: 76,
-                createTime: Date(timeIntervalSinceNow: -3600 * 5),  // 5 小时前
-                updateTime: Date(timeIntervalSinceNow: -3600 * 3)
-            ),
 
-            ForumPost(
-                id: UUID().uuidString,
-                title: "求问图书馆自习室预约技巧",
-                authorName: "李四",
-                authorAvatar: "",
-                content: "最近自习室太难约了，大家有没有什么一定成功的预约技巧？在线等，挺急的。",
-                tags: ["#社团", "#讲座"],
-                commentCount: 30,
-                likeCount: 120,
-                createTime: Date(timeIntervalSinceNow: -3600 * 26),  // 1 天 + 2 小时前
-                updateTime: Date(timeIntervalSinceNow: -3600 * 25)
-            ),
+        allPosts = MockForumPostData.posts
+        applyFilterAndSort()
+    }
 
-            ForumPost(
-                id: UUID().uuidString,
-                title: "篮球社招新啦！",
-                authorName: "王五",
-                authorAvatar: "",
-                content: "篮球社正在招募新成员，无论水平如何，只要你热爱篮球，我们都欢迎！",
-                tags: ["#社团", "#讲座"],
-                commentCount: 5,
-                likeCount: 45,
-                createTime: Date(timeIntervalSinceNow: -3600 * 72),  // 3 天前
-                updateTime: Date(timeIntervalSinceNow: -3600 * 70)
-            ),
+    // 根据当前排序方式 / 标签 / 搜索关键字更新列表
+    private func applyFilterAndSort() {
+        var filtered = allPosts
 
-            ForumPost(
-                id: UUID().uuidString,
-                title: "分享一下最近的学习 App",
-                authorName: "小明",
-                authorAvatar: "https://example.com/avatar4.png",
-                content: "入坑一个非常好用的学习 App，支持自动规划学习计划，推荐给大家。",
-                tags: ["#社团", "#讲座"],
-                commentCount: 8,
-                likeCount: 33,
-                createTime: Date(timeIntervalSinceNow: -60 * 15),  // 15 分钟前
-                updateTime: Date(timeIntervalSinceNow: -60 * 10)
-            ),
-            ForumPost(
-                id: UUID().uuidString,
-                title: "分享一下最近的学习 App",
-                authorName: "小明",
-                authorAvatar: "https://example.com/avatar4.png",
-                content: "入坑一个非常好用的学习 App，支持自动规划学习计划，推荐给大家。",
-                tags: ["#社团", "#讲座"],
-                commentCount: 8,
-                likeCount: 33,
-                createTime: Date(timeIntervalSinceNow: -60 * 15),  // 15 分钟前
-                updateTime: Date(timeIntervalSinceNow: -60 * 10)
-            ),
-            ForumPost(
-                id: UUID().uuidString,
-                title: "分享一下最近的学习 App",
-                authorName: "小明",
-                authorAvatar: "https://example.com/avatar4.png",
-                content: "入坑一个非常好用的学习 App，支持自动规划学习计划，推荐给大家。",
-                tags: ["#社团", "#讲座"],
-                commentCount: 8,
-                likeCount: 33,
-                createTime: Date(timeIntervalSinceNow: -60 * 15),  // 15 分钟前
-                updateTime: Date(timeIntervalSinceNow: -60 * 10)
-            ),
-            ForumPost(
-                id: UUID().uuidString,
-                title: "分享一下最近的学习 App",
-                authorName: "小明",
-                authorAvatar: "https://example.com/avatar4.png",
-                content: "入坑一个非常好用的学习 App，支持自动规划学习计划，推荐给大家。",
-                tags: ["#社团", "#讲座"],
-                commentCount: 8,
-                likeCount: 33,
-                createTime: Date(timeIntervalSinceNow: -60 * 15),  // 15 分钟前
-                updateTime: Date(timeIntervalSinceNow: -60 * 10)
-            ),
-        ]
+        // 1. 标签筛选（除“全部”外，按 category 匹配）
+        let selectedCategory = categorys[selectedCategoryIndex]
+        if selectedCategory != "全部" {
+            filtered = filtered.filter { $0.category == selectedCategory }
+        }
+
+        // 2. 搜索关键词筛选（标题 / 内容）
+        if let keyword = searchTextField.text?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+            !keyword.isEmpty
+        {
+            filtered = filtered.filter {
+                $0.title.localizedCaseInsensitiveContains(keyword)
+                    || $0.content.localizedCaseInsensitiveContains(keyword)
+            }
+        }
+
+        // 3. 排序
+        switch sortMode {
+        case .latest:
+            // 按发布时间从新到旧
+            filtered.sort { $0.publishTime > $1.publishTime }
+            sortButton.setTitle("最新", for: .normal)
+        case .hot:
+            // 按热度从高到低（这里简单用点赞数衡量）
+            filtered.sort {
+                if $0.likeCount == $1.likeCount {
+                    return $0.publishTime > $1.publishTime
+                }
+                return $0.likeCount > $1.likeCount
+            }
+            sortButton.setTitle("热度", for: .normal)
+        }
+
+        posts = filtered
         mainView.tableView.reloadData()
+    }
+
+
+    @objc private func handleSortButtonTap() {
+        let alert = UIAlertController(
+            title: "选择排序方式",
+            message: nil,
+            preferredStyle: .actionSheet
+        )
+
+        alert.addAction(
+            UIAlertAction(
+                title: "最新",
+                style: .default,
+                handler: { [weak self] _ in
+                    self?.sortMode = .latest
+                    self?.sortButton.setTitle("最新", for: .normal)
+                    self?.applyFilterAndSort()
+                }
+            )
+        )
+
+        alert.addAction(
+            UIAlertAction(
+                title: "热度",
+                style: .default,
+                handler: { [weak self] _ in
+                    self?.sortMode = .hot
+                    self?.sortButton.setTitle("热度", for: .normal)
+                    self?.applyFilterAndSort()
+                }
+            )
+        )
+
+        present(alert, animated: true)
+    }
+
+    @objc private func handleSearchButtonTap() {
+        view.endEditing(true)
+        applyFilterAndSort()
+    }
+
+    @objc private func handleSearchReturn() {
+        applyFilterAndSort()
     }
 }
 
@@ -181,8 +312,7 @@ extension ForumViewController: UITableViewDelegate, UITableViewDataSource {
         else {
             return UITableViewCell()
         }
-        
-        
+
         cell.configure(with: posts[indexPath.row])
         return cell
     }
@@ -191,54 +321,76 @@ extension ForumViewController: UITableViewDelegate, UITableViewDataSource {
         _ tableView: UITableView,
         didSelectRowAt indexPath: IndexPath
     ) {
-        print("点击了第 \(indexPath.row) 个帖子")
+        let forumDetailController = ForumDetailViewController(
+            post: posts[indexPath.row]
+        )
+
+        // 导航到详情页
+        navigationController?.pushViewController(
+            forumDetailController,
+            animated: true
+        )
     }
 }
 
-
 // 扩展实现 CollectionView 代理和数据源
-extension ForumViewController: UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
-    
-    // MARK: DataSource
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return tags.count
+extension ForumViewController: UICollectionViewDelegate,
+    UICollectionViewDataSource, UICollectionViewDelegateFlowLayout
+{
+    // 每个分区有多少项目
+    func collectionView(
+        _ collectionView: UICollectionView,
+        numberOfItemsInSection section: Int
+    ) -> Int {
+        return categorys.count
     }
-    
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: TagCell.identifier, for: indexPath) as? TagCell else {
+
+    func collectionView(
+        _ collectionView: UICollectionView,
+        cellForItemAt indexPath: IndexPath
+    ) -> UICollectionViewCell {
+        guard
+            let cell = collectionView.dequeueReusableCell(
+                withReuseIdentifier: CategoryCell.identifier,
+                for: indexPath
+            ) as? CategoryCell
+        else {
             return UICollectionViewCell()
         }
-        
-        let isSelected = (indexPath.row == selectedTagIndex) //是否选中
-        cell.configure(with: tags[indexPath.row], isSelected: isSelected)
+
+        let isSelected = (indexPath.row == selectedCategoryIndex)  //是否选中
+        cell.configure(with: categorys[indexPath.row], isSelected: isSelected)
         return cell
     }
-    
-    // MARK: Delegate
-    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        selectedTagIndex = indexPath.row
-        collectionView.reloadData() // 刷新 CollectionView 来更新选中状态
-        
-        let selectedTag = tags[indexPath.row]
-        print("选中了标签: \(selectedTag)")
-        
-        // todo筛选逻辑
 
+    // 点击调用
+    func collectionView(
+        _ collectionView: UICollectionView,
+        didSelectItemAt indexPath: IndexPath
+    ) {
+        selectedCategoryIndex = indexPath.row
+        collectionView.reloadData()  // 刷新 CollectionView 来更新选中状态
+
+        // 重新应用标签 + 排序 + 搜索逻辑
+        applyFilterAndSort()
     }
-    
-    // 返回 Cell 尺寸
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        
+
+    // 根据每一个内容的长度设置每一个 cell 的宽度和高度
+    func collectionView(
+        _ collectionView: UICollectionView,
+        layout collectionViewLayout: UICollectionViewLayout,
+        sizeForItemAt indexPath: IndexPath
+    ) -> CGSize {
         // 1. 创建一个临时的 Label，计算文本实际需要的宽度
         let tempLabel = UILabel()
         tempLabel.font = .systemFont(ofSize: 14, weight: .medium)
-        tempLabel.text = tags[indexPath.row]
+        tempLabel.text = categorys[indexPath.row]
         tempLabel.sizeToFit()
-        
+
         // 2. 宽度 = 文本宽度 + 左右各 16pt 的边距 (总共 32pt 额外填充)
-        let width = tempLabel.frame.width + 32
-        
-        // 3. 高度固定为 CollectionView 的高度 (44pt)
-        return CGSize(width: width, height: 44)
+        let width = tempLabel.frame.width + 8
+
+        return CGSize(width: width, height: 32)
     }
+
 }
