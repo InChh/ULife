@@ -199,7 +199,7 @@ class ForumDetailViewController: UIViewController {
                     title: reason,
                     style: .default,
                     handler: { _ in
-                        var rea  = if(reason == "垃圾广告"){
+                        let rea  = if(reason == "垃圾广告"){
                             Reason.ad
                         }else if(reason == "政治敏感"){
                             Reason.politics
@@ -208,7 +208,7 @@ class ForumDetailViewController: UIViewController {
                         }
                         // 发送举报请求到服务器
                         let request = ReportRequest(description: nil, reason: rea, targetid: self.post.id, targetType: TargetType.post)
-                        let Response = ForumRequest().Report(request: request)
+                        _ = ForumRequest().Report(request: request)
                         
                         print("举报理由: \(reason)")
                         Toast.show("举报成功", style: .normal)
@@ -250,7 +250,7 @@ class ForumDetailViewController: UIViewController {
                 // 如果用户没填，可以提示或者直接当作"其他"处理
                 // 发送举报请求到服务器
                 let request = ReportRequest(description: nil, reason: Reason.other, targetid: self.post.id, targetType: TargetType.post)
-                let Response = ForumRequest().Report(request: request)
+                _ = ForumRequest().Report(request: request)
                 
                 print("举报理由: 其他,用户未填写详情")
                 Toast.show("举报成功", style: .normal)
@@ -259,7 +259,7 @@ class ForumDetailViewController: UIViewController {
             // 提交带详情的举报
             // 发送举报请求到服务器
             let request = ReportRequest(description: text, reason: Reason.other, targetid: self.post.id, targetType: TargetType.post)
-            let Response = ForumRequest().Report(request: request)
+            _ = ForumRequest().Report(request: request)
             print("举报理由: 其他\(text)")
             Toast.show("举报成功", style: .normal)
         }
