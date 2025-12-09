@@ -27,7 +27,7 @@ final class CalendarViewController: UIViewController, UITableViewDataSource, UIT
     private var selectedSegementIndex = 0
     private var courses: [Course] = []
     private var groupedCourses: [[Course]] = []
-
+    
     // 节次时间表（示例，可按校历替换）
     private let sectionSlots: [Int: SectionSlot] = [
         1: SectionSlot(start: "08:00", end: "08:45"),
@@ -82,7 +82,7 @@ final class CalendarViewController: UIViewController, UITableViewDataSource, UIT
             tableView.topAnchor.constraint(equalTo: segmentedControl.bottomAnchor, constant: 16),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         ])
 
         tableView.delegate = self
