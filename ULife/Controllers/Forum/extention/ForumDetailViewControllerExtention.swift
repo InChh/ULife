@@ -13,7 +13,7 @@ extension ForumDetailViewController: UITableViewDelegate, UITableViewDataSource
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int)
         -> Int
     {
-        return comments.count
+        return maincomments.count
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath)
@@ -27,13 +27,12 @@ extension ForumDetailViewController: UITableViewDelegate, UITableViewDataSource
         else {
             return UITableViewCell()
         }
+        
 
-        let comment = comments[indexPath.row]
-        let isLiked = likedCommentIDs.contains(comment.id)
+        let comment = maincomments[indexPath.row]
+        
         cell.configure(
             with: comment,
-            isLiked: isLiked,
-            likedReplyIDs: likedReplyIDs
         )
 
         // 实现 cell 的声明出来的方法
@@ -67,7 +66,7 @@ extension ForumDetailViewController: UITableViewDelegate, UITableViewDataSource
             cell.onReplyTap = { [weak self] reply in
                 self?.presentReplyAlert(
                     commentIndex: indexPath.row,
-                    replyingToName: reply.authorName
+                    replyingToName: reply.author.name
                 )
             }
         }

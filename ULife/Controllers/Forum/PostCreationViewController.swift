@@ -76,16 +76,20 @@ class PostCreationViewController: UIViewController {
         // 禁用按钮防止重复提交
         publishButton?.isEnabled = false
         
-        var createPostRequest = CreatePostRequest()
-        createPostRequest.title = postCreationView.titleTextField.text!
-        createPostRequest.content = postCreationView.contentTextView.text!
-        createPostRequest.category = CreateCategorys[CreateselectedCategoryIndex]
-        createPostRequest.tags = customTags
+
+        let title = postCreationView.titleTextField.text!
+        let content = postCreationView.contentTextView.text!
+        let category = categorys[CreateselectedCategoryIndex]
+        let tags = customTags
+        
+        var createPostRequest = CreatePostRequest(boardid: "\(category.id ?? "")", content: content, media: nil, tags: tags, title: title)
+        
+        let post = ForumRequest().CreatePost(request: createPostRequest)
         
         navigationController?.popViewController(animated: true)
         Toast.show("发布成功", style: .normal, duration: 1.0)
         
-        print(createPostRequest)
+        print(post)
     }
     
     // 添加标签

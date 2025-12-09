@@ -32,7 +32,7 @@ extension PostCreationViewController: UICollectionViewDelegate,
         _ collectionView: UICollectionView,
         numberOfItemsInSection section: Int
     ) -> Int {
-        return CreateCategorys.count
+        return categorys.count
     }
     
     func collectionView(
@@ -49,7 +49,7 @@ extension PostCreationViewController: UICollectionViewDelegate,
         }
 
         let isSelected = indexPath.row == CreateselectedCategoryIndex
-        cell.configure(with: CreateCategorys[indexPath.row], isSelected: isSelected)
+        cell.configure(with: categorys[indexPath.row], isSelected: isSelected)
         return cell
     }
 
@@ -71,7 +71,7 @@ extension PostCreationViewController: UICollectionViewDelegate,
         // 创建一个临时的 Label，计算文本实际需要的宽度
         let tempLabel = UILabel()
         tempLabel.font = .systemFont(ofSize: 14, weight: .medium)
-        tempLabel.text = CreateCategorys[indexPath.row]
+        tempLabel.text = categorys[indexPath.row].name
         tempLabel.sizeToFit()
 
         return CGSize(width: tempLabel.frame.width + 8, height: 32)

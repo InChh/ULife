@@ -7,13 +7,14 @@
 
 // View/CommentCell.swift
 import UIKit
+import Kingfisher
 
 class CommentCell: UITableViewCell {
 
     static let identifier = "CommentCell"
     
     //评论的回复数组
-    private var replies: [CommentReply] = []
+    private var replies: [Comment] = []
 
     // 对整条评论点击的回调
     var onCommentTap: (() -> Void)?
@@ -22,10 +23,10 @@ class CommentCell: UITableViewCell {
     var onCommentLikeTap: (() -> Void)?
 
     // 对某一条回复点击的回调
-    var onReplyTap: ((CommentReply) -> Void)?
+    var onReplyTap: ((Comment) -> Void)?
 
     // 点赞某一条回复的回调
-    var onReplyLikeTap: ((CommentReply) -> Void)?
+    var onReplyLikeTap: ((Comment) -> Void)?
     
     private lazy var avatarImageView: UIImageView = {
         let iv = UIImageView()
@@ -212,40 +213,76 @@ class CommentCell: UITableViewCell {
         onCommentLikeTap?()
     }
     
+    /// Cell 被复用队列取出并重新显示之前
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        // 取消当前 imageView 的下载任务（防止错图/残留）
+        avatarImageView.kf.cancelDownloadTask()
+        // 恢复占位图或清空
+        avatarImageView.image = UIImage(named: "avatar_placeholder")
+    }
+    
     
     // 配置 cell
     func configure(
-        with comment: Comment2,
-        isLiked: Bool,
-        likedReplyIDs: Set<String>
+        with comment: Comment
     ) {
-        authorLabel.text = comment.authorName
-        timeLabel.text = comment.createTime.timeAgoString()
+        authorLabel.text = comment.author.name
+        timeLabel.text = comment.createdAt.timeAgoString()
         contentLabel.text = comment.content
+        
+        
+        // 加载图片
+        // 加载提示器,加载完成前转圈动画
+        avatarImageView.kf.indicatorType = .activity
+        avatarImageView.kf.setImage(
+            with: URL(string: comment.author.avatarurl),
+            placeholder: UIImage(named: "avatar_placeholder"),
+            options: [
+               
+                .scaleFactor(UIScreen.main.scale), //告诉 Kingfisher 当前屏幕的缩放因子
+                .transition(.fade(0.25)), // 渐变动画
+            ],
+            progressBlock: nil
+        ) { result in
+            switch result {
+            case .success(let value):
+                print("Loaded: \(value.source.url?.absoluteString ?? "")")
+                break
+            case .failure(let error):
+                // 可根据需要重试或者记录日志
+                print("KF load failed: \(error.localizedDescription)")
+            }
+        }
+        
 
         //根据是否点赞更新 button 图标
         // 顶层评论点赞显示：基础数量 + 是否点赞
         let baseCount = comment.likeCount
-        let displayCount = baseCount + (isLiked ? 1 : 0)
+        let displayCount = baseCount + (comment.isLiked ? 1 : 0)
         // 重要：无论是否为 0，都要重置标题，避免 cell 复用时显示旧的数字
         let title = displayCount == 0 ? "" : "\(displayCount)"
         likeButton.setTitle(title, for: .normal)
-        let color: UIColor = isLiked ? .systemRed : .secondaryLabel
-        let imageName = isLiked ? "heart.fill" : "heart"
+        let color: UIColor = comment.isLiked ? .systemRed : .secondaryLabel
+        let imageName = comment.isLiked ? "heart.fill" : "heart"
         likeButton.setImage(UIImage(systemName: imageName), for: .normal)
         likeButton.tintColor = color
         likeButton.setTitleColor(color, for: .normal)
 
-        // 更新回复列表
-        let newReplies = comment.replies ?? []
+        // 更新回复列表 comments 中
+        let newReplies = comments.filter { item in
+            // 检查 parentid 是否存在 (非 nil)
+            // 如果存在，检查其值是否等于目标 ID
+            return item.parentid == comment.id
+        }
+        
         self.replies = newReplies
-        updateRepliesStackView(with: newReplies, likedReplyIDs: likedReplyIDs)
+        updateRepliesStackView(with: newReplies)
     }
 
     // 更新回复 StackView
     private func updateRepliesStackView(
-        with replies: [CommentReply],
-        likedReplyIDs: Set<String>
+        with replies: [Comment],
     ) {
         // 清除所有现有的回复视图
         repliesStackView.arrangedSubviews.forEach { view in
@@ -264,8 +301,8 @@ class CommentCell: UITableViewCell {
         // 为每个回复创建 ReplyView 并添加到 StackView
         for reply in replies {
             let replyView = ReplyView()
-            let isLiked = likedReplyIDs.contains(reply.id)
-            replyView.configure(with: reply, isLiked: isLiked)
+            
+            replyView.configure(with: reply)
 
             // 为replyView绑定事件
             replyView.onTap = { [weak self] in

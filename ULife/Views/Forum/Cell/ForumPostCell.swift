@@ -221,39 +221,37 @@ class ForumPostCell: UITableViewCell {
 
         ])
     }
-
+    
+    /// Cell 被复用队列取出并重新显示之前
     override func prepareForReuse() {
         super.prepareForReuse()
         // 取消当前 imageView 的下载任务（防止错图/残留）
         avatarImageView.kf.cancelDownloadTask()
         // 恢复占位图或清空
-        avatarImageView.image = UIImage(named: "icon")
+        avatarImageView.image = UIImage(named: "avatar_placeholder")
     }
 
     /// Configure Data
-    func configure(with post: ForumPost) {
+    func configure(with post: PostLite) {
         titleLabel.text = post.title
-        contentLabel.text = post.content
-        authorLabel.text = post.authorName
-        timeLabel.text = post.publishTime.timeAgoString()
-        /// todo 加载图片
+        contentLabel.text = post.summary
+        authorLabel.text = post.author.name
+        timeLabel.text = post.createdAt.timeAgoString()
 
-        // 指示器（可选）
+        // 加载提示器,加载完成前转圈动画
         avatarImageView.kf.indicatorType = .activity
 
-        // Downsampling 以及其他选项（按 imageView 大小下采样）
-        let processor =
-            DownsamplingImageProcessor(size: avatarImageView.bounds.size)
-            |> RoundCornerImageProcessor(cornerRadius: 18)  // 可链式处理
+//        // 处理器,下采样 (处理器原图可能很大,直接加载到 ios 内存中可能导致内存暴涨,该处理器可以先缩小图片尺寸再加载到内存中)
+//        let processor = DownsamplingImageProcessor(size: avatarImageView.bounds.size)
         
         avatarImageView.kf.setImage(
-            with: URL(string: post.authorAvatar),
+            with: URL(string: post.author.avatarurl),
             placeholder: UIImage(named: "avatar_placeholder"),
             options: [
-                .processor(processor),
-                .scaleFactor(UIScreen.main.scale),
-                .transition(.fade(0.25)),
-                .cacheOriginalImage,
+                //.processor(processor),
+                .scaleFactor(UIScreen.main.scale), //告诉 Kingfisher 当前屏幕的缩放因子
+                .transition(.fade(0.25)), // 渐变动画
+                //.cacheOriginalImage, //默认情况下，Kingfisher 只会缓存“处理后”（小图+圆角）的图片。加上这个选项后，Kingfisher 会同时缓存服务器下载的原始大图。
             ],
             progressBlock: nil
         ) { result in
@@ -267,7 +265,7 @@ class ForumPostCell: UITableViewCell {
             }
         }
 
-        CategoryLabel.text = " \(post.category) "
-        ViewCountLabel.text = " \(post.viewCount)人围观 "
+        CategoryLabel.text = " \(post.boardName ?? "其他") "
+        ViewCountLabel.text = " \(post.stats.viewCount)人围观 "
     }
 }

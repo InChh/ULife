@@ -41,8 +41,8 @@ class CategoryCell: UICollectionViewCell {
     }
     
     // 配置数据 选中/未选中状态
-    func configure(with Category: String, isSelected: Bool) {
-        CategoryLabel.text = Category
+    func configure(with Category: Board, isSelected: Bool) {
+        CategoryLabel.text = Category.name
         if isSelected {
             CategoryLabel.textColor = .systemBlue
         } else {

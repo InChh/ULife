@@ -7,6 +7,7 @@
 
 // Controller/ForumDetailViewController.swift
 import UIKit
+import Kingfisher
 
 class ForumDetailViewController: UIViewController {
 
@@ -16,13 +17,11 @@ class ForumDetailViewController: UIViewController {
     private var commentTableHeightConstraint: NSLayoutConstraint?
 
     // 接收从上一个 Controller 传入的帖子数据（初始化传入）
-    private let post: ForumPost
+    private var post: Post
 
     // 初始化
-    init(post: ForumPost) {
+    init(post: Post) {
         self.post = post
-        isPostLiked = post.isLiked
-        iscollected = post.isreplyed
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -84,7 +83,7 @@ class ForumDetailViewController: UIViewController {
     // 初始数据绑定
     private func configurePostDetails() {
         detailView.titleLabel.text = post.title
-        detailView.authorNameLabel.text = post.authorName
+        detailView.authorNameLabel.text = post.author.name
         detailView.contentBodyLabel.text = post.content
 
         // 标签展示：将 tags 数组渲染为 #tag 样式
@@ -98,28 +97,54 @@ class ForumDetailViewController: UIViewController {
         }
 
         // 格式化日期
-        let formatter = DateFormatter()
-        formatter.dateStyle = .short
-        formatter.timeStyle = .short
-        detailView.createTimeLabel.text = formatter.string(
-            from: post.publishTime
-        )
-
-        // 获取评论列表
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            comments = MockCommentData.comments
-
-            // 更新评论区标题和 TableView
-            self.detailView.commentHeaderLabel.text =
-                "评论 (\(comments.count))"
-
-            self.detailView.commentTableView.reloadData()  // tabelview
-            // 通知 ScrollView 更新内容高度
-            self.updateTableViewHeight()
+//        let formatter = DateFormatter()
+//        formatter.dateStyle = .short
+//        formatter.timeStyle = .short
+//        detailView.createTimeLabel.text = formatter.string(
+//            from: post.createdAt
+//        )
+        
+        detailView.createTimeLabel.text = post.createdAt
+        
+        //设置头像
+        let avatarImageView = detailView.authorAvatar
+        // 加载提示器,加载完成前转圈动画
+        avatarImageView.kf.indicatorType = .activity
+        avatarImageView.kf.setImage(
+            with: URL(string: post.author.avatarurl),
+            placeholder: UIImage(named: "avatar_placeholder"),
+            options: [
+                .scaleFactor(UIScreen.main.scale), //告诉 Kingfisher 当前屏幕的缩放因子
+                .transition(.fade(0.25)), // 渐变动画
+            ],
+            progressBlock: nil
+        ) { result in
+            switch result {
+            case .success(let value):
+                print("Loaded: \(value.source.url?.absoluteString ?? "")")
+                break
+            case .failure(let error):
+                print("KF load failed: \(error.localizedDescription)")
+            }
         }
 
-        // 假设这里会使用你的图片加载库加载 post.authorAvatar
-        // detailView.authorAvatar.kf.setImage(with: URL(string: post.authorAvatar))
+        // 获取评论列表
+        comments = ForumRequest().GetCommentList(id: post.id)
+        
+        maincomments = comments.filter { item in
+            // 检查 parentid 是否存在 (非 nil)
+            // 如果存在，检查其值是否等于目标 ID
+            return item.parentid == nil
+        }
+
+        // 更新评论区标题和 TableView
+        self.detailView.commentHeaderLabel.text =
+            "评论 (\(comments.count))"
+
+        self.detailView.commentTableView.reloadData()  // tabelview
+        // 通知 ScrollView 更新内容高度
+        self.updateTableViewHeight()
+        
     }
 
     // 动态调整 TableView 高度，解决 ScrollView 嵌套 TableView 的问题
@@ -146,20 +171,17 @@ class ForumDetailViewController: UIViewController {
 
     //点赞
     @objc private func handleLikeTap() {
-        isPostLiked.toggle()
-
+        post.userInteraction.isLiked.toggle()
+        
         updateLikeButtonState()
-
-        /// 成功调用 API 后，你应该更新 post.likeCount 并通知列表页刷新
     }
 
     //收藏
     @objc private func handleCollectionTap() {
-        iscollected.toggle()
+        post.userInteraction.isCollected.toggle()
 
         updatecollectedButtonState()
 
-        /// 成功调用 API 后，你应该更新 post.likeCount 并通知列表页刷新
     }
 
     //举报
@@ -170,14 +192,24 @@ class ForumDetailViewController: UIViewController {
             preferredStyle: .actionSheet
         )
 
-        let reasons = ["垃圾广告", "不友善内容", "违法违规"]
+        let reasons = ["垃圾广告", "政治敏感", "人身攻击"]
         for reason in reasons {
             alert.addAction(
                 UIAlertAction(
                     title: reason,
                     style: .default,
                     handler: { _ in
-                        // TODO: 发送举报请求到服务器
+                        var rea  = if(reason == "垃圾广告"){
+                            Reason.ad
+                        }else if(reason == "政治敏感"){
+                            Reason.politics
+                        }else{
+                            Reason.abuse
+                        }
+                        // 发送举报请求到服务器
+                        let request = ReportRequest(description: nil, reason: rea, targetid: self.post.id, targetType: TargetType.post)
+                        let Response = ForumRequest().Report(request: request)
+                        
                         print("举报理由: \(reason)")
                         Toast.show("举报成功", style: .normal)
                     }
@@ -216,11 +248,18 @@ class ForumDetailViewController: UIViewController {
             guard let text = inputAlert.textFields?.first?.text, !text.isEmpty
             else {
                 // 如果用户没填，可以提示或者直接当作"其他"处理
+                // 发送举报请求到服务器
+                let request = ReportRequest(description: nil, reason: Reason.other, targetid: self.post.id, targetType: TargetType.post)
+                let Response = ForumRequest().Report(request: request)
+                
                 print("举报理由: 其他,用户未填写详情")
                 Toast.show("举报成功", style: .normal)
                 return
             }
             // 提交带详情的举报
+            // 发送举报请求到服务器
+            let request = ReportRequest(description: text, reason: Reason.other, targetid: self.post.id, targetType: TargetType.post)
+            let Response = ForumRequest().Report(request: request)
             print("举报理由: 其他\(text)")
             Toast.show("举报成功", style: .normal)
         }
@@ -259,16 +298,8 @@ class ForumDetailViewController: UIViewController {
                     return
                 }
 
-                // 创建本地评论对象（实际项目中应调用后端接口）
-                let newComment = Comment2(
-                    id: UUID().uuidString,
-                    authorName: "我",
-                    authorAvatar: "",
-                    content: text,
-                    createTime: Date(),
-                    likeCount: 0,
-                    replies: nil
-                )
+                // 调用后端接口发表评论
+                let newComment = ForumRequest().CreateComment(id: post.id, content: text, replyToCommentid: nil).comment
 
                 self.insertNewComment(newComment)
             }
@@ -281,8 +312,9 @@ class ForumDetailViewController: UIViewController {
     }
 
     // 将一条新的一级评论插入到列表顶部，并刷新 UI
-    private func insertNewComment(_ comment: Comment2) {
+    private func insertNewComment(_ comment: Comment) {
         comments.insert(comment, at: 0)
+        maincomments.insert(comment, at: 0)
         detailView.commentHeaderLabel.text = "评论 (\(comments.count))"
         detailView.commentTableView.reloadData()
         updateTableViewHeight()  //更新 tabelview 的高度
@@ -290,9 +322,15 @@ class ForumDetailViewController: UIViewController {
 
     // 更新底部工具栏点赞按钮的 UI 样式
     private func updateLikeButtonState() {
-        let systemName = isPostLiked ? "hand.thumbsup.fill" : "hand.thumbsup"
-        let color: UIColor = isPostLiked ? .systemRed : .label
-        let text = isPostLiked ? "\(post.likeCount + 1)" : "点赞"
+        let isLiked = post.userInteraction.isLiked
+        
+        // 发送帖子点赞请求
+        var request = LikeOrDisListRequest(id: post.id, actions: isLiked ? Actions.like : Actions.unlike)
+        let response = ForumRequest().LikeOrDisList(Requst: request)
+        
+        let systemName = isLiked ? "hand.thumbsup.fill" : "hand.thumbsup"
+        let color: UIColor = isLiked ? .systemRed : .label
+        let text = isLiked ? "\(response.currentLikeCount)" : "点赞"
 
         // 获取当前的配置进行修改
         var config = detailView.likeButton.configuration
@@ -312,9 +350,14 @@ class ForumDetailViewController: UIViewController {
 
     // 更新底部工具栏收藏按钮的 UI 样式
     private func updatecollectedButtonState() {
-        let systemName = iscollected ? "star.fill" : "star"
-        let color: UIColor = iscollected ? .systemRed : .label
-        let text = iscollected ? "\(post.replyCount + 1)" : "收藏"
+        let isCollected = post.userInteraction.isCollected
+        
+        var request = ColectOrDisColectRequest(id: post.id, action: isCollected ? Action.collect : Action.uncollect)
+        let response = ForumRequest().ColectOrDisColect(Requst: request)
+        
+        let systemName = isCollected ? "star.fill" : "star"
+        let color: UIColor = isCollected ? .systemRed : .label
+        let text = isCollected ? "\(response.currentCollectCount)" : "收藏"
 
         var config = detailView.CollectButton.configuration
         config?.image = UIImage(systemName: systemName)
@@ -334,15 +377,12 @@ class ForumDetailViewController: UIViewController {
     // 切换某条评论的点赞状态
     func toggleCommentLike(at index: Int) {
         // 获取这条评论
-        guard comments.indices.contains(index) else { return }
-        let comment = comments[index]
-
-        // 改变数据
-        if likedCommentIDs.contains(comment.id) {
-            likedCommentIDs.remove(comment.id)
-        } else {
-            likedCommentIDs.insert(comment.id)
-        }
+        guard maincomments.indices.contains(index) else { return }
+        
+        maincomments[index].isLiked.toggle()
+        let request = LikeOrDisListRequest(id: maincomments[index].id, actions: maincomments[index].isLiked ? Actions.like : Actions.unlike)
+        let response = ForumRequest().LikeOrDisListComment(Requst: request)
+        maincomments[index].likeCount = response.currentLikeCount
 
         // 重新加载该条评论
         let indexPath = IndexPath(row: index, section: 0)
@@ -351,16 +391,18 @@ class ForumDetailViewController: UIViewController {
     }
 
     // 切换某条回复的点赞状态
-    func toggleReplyLike(_ reply: CommentReply, inCommentAt index: Int) {
-        guard comments.indices.contains(index) else { return }
-
+    func toggleReplyLike(_ reply: Comment, inCommentAt index: Int) {
+        guard maincomments.indices.contains(index) else { return }
+        
+        
+        let replyindex = comments.firstIndex(where: { $0.id == reply.id })
+        
         //修改数据
-        if likedReplyIDs.contains(reply.id) {
-            likedReplyIDs.remove(reply.id)
-        } else {
-            likedReplyIDs.insert(reply.id)
-        }
-
+        comments[replyindex!].isLiked.toggle()
+        let request = LikeOrDisListRequest(id: comments[replyindex!].id, actions: comments[replyindex!].isLiked ? Actions.like : Actions.unlike)
+        let response = ForumRequest().LikeOrDisListComment(Requst: request)
+        comments[replyindex!].likeCount = response.currentLikeCount
+        
         let indexPath = IndexPath(row: index, section: 0)
         detailView.commentTableView.reloadRows(at: [indexPath], with: .none)
         updateTableViewHeight()
@@ -391,7 +433,14 @@ class ForumDetailViewController: UIViewController {
                 title: "删除",
                 style: .destructive,
                 handler: { _ in
-                    comments.remove(at: commentIndex)
+                    let id = maincomments[commentIndex].id
+                    maincomments.remove(at: commentIndex)
+                    
+                    comments.removeAll { comment in
+                        return comment.parentid == id || comment.id == id
+                    }
+                    ForumRequest().deleteComment(id: id)
+                    
                     self.detailView.commentHeaderLabel.text =
                         "评论 (\(comments.count))"
                     self.detailView.commentTableView.reloadData()
@@ -406,7 +455,7 @@ class ForumDetailViewController: UIViewController {
     }
 
     // 本人的回复点击回复 选择进行删除还是回复
-    func ReplyReplyOrDelete(_ commentIndex: Int, _ reply: CommentReply) {
+    func ReplyReplyOrDelete(_ commentIndex: Int, _ reply: Comment) {
         let alert = UIAlertController(
             title: nil,
             message: nil,
@@ -417,24 +466,17 @@ class ForumDetailViewController: UIViewController {
             UIAlertAction(title: "回复", style: .default) { [weak self] _ in
                 self?.presentReplyAlert(
                     commentIndex: commentIndex,
-                    replyingToName: reply.authorName
+                    replyingToName: reply.author.name
                 )
             }
         )
 
         alert.addAction(
-            UIAlertAction(title: "删除", style: .destructive) { [weak self] _ in
-                guard
-                    let self = self,
-                    comments.indices.contains(commentIndex),
-                    var replies = comments[commentIndex].replies,  // 取出原来的数组
-                    let idx = replies.firstIndex(of: reply)  // 找到要删的那条
-                else { return }
-
-                // 从本地数组删除
-                replies.remove(at: idx)
-                // 写回到数据源
-                comments[commentIndex].replies = replies
+            UIAlertAction(title: "删除", style: .destructive) { _ in
+                comments.removeAll { comment in
+                    return comment.id == reply.id
+                }
+                ForumRequest().deleteComment(id: reply.id)
 
                 // 刷新列表和高度
                 self.detailView.commentTableView.reloadData()
@@ -449,7 +491,7 @@ class ForumDetailViewController: UIViewController {
 
     // 弹出回复框
     func presentReplyAlert(
-        commentIndex: Int,
+        commentIndex: Int, //主评论 id
         replyingToName: String?
     ) {
         let title: String = {
@@ -478,7 +520,7 @@ class ForumDetailViewController: UIViewController {
                 //校验数据
                 guard
                     let self = self,
-                    commentIndex < comments.count,
+                    commentIndex < maincomments.count,
                     let text = alert.textFields?.first?.text?
                         .trimmingCharacters(in: .whitespacesAndNewlines),
                     !text.isEmpty
@@ -488,22 +530,11 @@ class ForumDetailViewController: UIViewController {
                 }
 
                 //获取回复的评论和回复
-                var comment = comments[commentIndex]
-                var existingReplies = comment.replies ?? []
+                var comment = maincomments[commentIndex]
+                
+                let response = ForumRequest().CreateComment(id: comment.postid, content: text, replyToCommentid: comment.id)
+                comments.append(response.comment)
 
-                let reply = CommentReply(
-                    id: UUID().uuidString,
-                    authorName: "我",
-                    repliedToUser: replyingToName,
-                    content: text,
-                    createTime: Date(),
-                    likeCount: 0
-                )
-                existingReplies.append(reply)
-
-                comment.replies = existingReplies
-
-                comments[commentIndex] = comment
                 self.detailView.commentTableView.reloadData()  //刷新数据
                 self.updateTableViewHeight()  //更新高度
             }

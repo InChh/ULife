@@ -10,9 +10,6 @@ import UIKit
 class ForumViewController: UIViewController {
     
     private let mainView = ForumMainView()
-
-    // 原始帖子列表数据
-    private var allPosts: [ForumPost] = []
     
     // 导航栏中的排序按钮 + 搜索框 + 搜索按钮
     private lazy var sortButton: UIButton = {
@@ -65,7 +62,7 @@ class ForumViewController: UIViewController {
         setupLayout()
         setupBindings()
 
-        loadMockData()
+        loadData()
     }
 
     private func setupViews() {
@@ -119,9 +116,11 @@ class ForumViewController: UIViewController {
     }
     
     // 装载原始数据
-    private func loadMockData() {
-        allPosts = MockForumPostData.posts
-        applyFilterAndSort()
+    private func loadData() {
+        // 获取板块数组
+        categorys = ForumRequest().getBoard()
+       
+        refresh()
     }
 
 
@@ -179,7 +178,7 @@ class ForumViewController: UIViewController {
                 handler: { [weak self] _ in
                     sortMode = .latest
                     self?.sortButton.setTitle("最新", for: .normal)
-                    self?.applyFilterAndSort()
+                    self?.refresh()
                 }
             )
         )
@@ -191,7 +190,7 @@ class ForumViewController: UIViewController {
                 handler: { [weak self] _ in
                     sortMode = .hot
                     self?.sortButton.setTitle("热度", for: .normal)
-                    self?.applyFilterAndSort()
+                    self?.refresh()
                 }
             )
         )
@@ -202,61 +201,66 @@ class ForumViewController: UIViewController {
     
     @objc private func handleSearchButtonTap() {
         view.endEditing(true)
-        applyFilterAndSort()
+        refresh()
     }
 
     @objc private func handleSearchReturn() {
-        applyFilterAndSort()
+        refresh()
     }
     
 
     
-    
+    func refresh(){
+        pageState.page = 1
+        pageState.hasMore = true
+        pageState.isLoading = false
+        applyFilterAndSort(isFresh: true)
+    }
     
     ///搜索 并更新 tableView
     // 根据当前排序方式 / 标签 / 搜索关键字更新列表
-    func applyFilterAndSort() {
-        var filtered = allPosts
-
-        // 1. 标签筛选（除“全部”外，按 category 匹配）
-        let selectedCategory = categorys[MainselectedCategoryIndex]
-        if selectedCategory != "全部" {
-            filtered = filtered.filter { $0.category == selectedCategory }
+    func applyFilterAndSort(isFresh: Bool){
+        guard !pageState.isLoading else { return }
+        pageState.isLoading = true
+        
+        
+        // 标签
+        var selectedCategoryID: String? = nil
+        if MainselectedCategoryIndex != -1 {
+            selectedCategoryID = categorys[MainselectedCategoryIndex].id
         }
         
-        var key = ""
-        // 2. 搜索关键词筛选（标题 / 内容）
+        var key: String? = nil
+        // 关键词
         if let keyword = searchTextField.text?
             .trimmingCharacters(in: .whitespacesAndNewlines),
-            !keyword.isEmpty
+           !keyword.isEmpty
         {
-            filtered = filtered.filter {
-                $0.title.localizedCaseInsensitiveContains(keyword)
-                    || $0.content.localizedCaseInsensitiveContains(keyword)
-            }
             key = keyword
         }
-
-        // 3. 排序
-        switch sortMode {
-        case .latest:
-            // 按发布时间从新到旧
-            filtered.sort { $0.publishTime > $1.publishTime }
-            sortButton.setTitle("最新", for: .normal)
-        case .hot:
-            // 按热度从高到低（这里简单用点赞数衡量）
-            filtered.sort {
-                if $0.likeCount == $1.likeCount {
-                    return $0.publishTime > $1.publishTime
-                }
-                return $0.likeCount > $1.likeCount
-            }
-            sortButton.setTitle("热度", for: .normal)
+        
+        
+        let request = GetPostListRequest(boardId: selectedCategoryID, filter: Filter.all, keyword: key, page: pageState.page,pageSize: pageState.pageSize, sort: sortMode)
+        
+        //print("\(categorys[MainselectedCategoryIndex].name ?? "") \(key ?? "")  \(sortMode)")
+        
+        
+        let newPosts = ForumRequest().GetPostList(request: request).posts
+        if isFresh {
+            posts = newPosts
+        }else{
+            posts.append(contentsOf: newPosts)
         }
         
-        print("\(selectedCategory) \(key)  \(sortMode)")
-
-        posts = filtered
+        // 判断是否还有更多数据
+        if newPosts.count < pageState.pageSize {
+            pageState.hasMore = false
+        } else {
+            pageState.page += 1
+        }
+        
+        pageState.isLoading = false
         mainView.tableView.reloadData()
     }
+
 }

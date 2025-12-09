@@ -35,8 +35,12 @@ extension ForumViewController: UITableViewDelegate, UITableViewDataSource {
         _ tableView: UITableView,
         didSelectRowAt indexPath: IndexPath
     ) {
+        /// TODO 根据 postLite 的帖子 id 查询详细的 post
+        let postid = posts[indexPath.row].id
+      
+        
         let forumDetailController = ForumDetailViewController(
-            post: posts[indexPath.row]
+            post: ForumRequest().GetPostDetail(id: postid)
         )
         // 导航到详情页
         navigationController?.pushViewController(
@@ -44,6 +48,17 @@ extension ForumViewController: UITableViewDelegate, UITableViewDataSource {
             animated: true
         )
     }
+    
+    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+
+        guard pageState.hasMore, !pageState.isLoading else { return }
+
+        // 如果即将显示的是最后一个 cell → 触发下一页
+        if indexPath.row == posts.count - 1 {
+            applyFilterAndSort(isFresh: false)
+        }
+    }
+
 }
 
 // 扩展实现 CollectionView 代理和数据源
@@ -80,11 +95,15 @@ extension ForumViewController: UICollectionViewDelegate,
         _ collectionView: UICollectionView,
         didSelectItemAt indexPath: IndexPath
     ) {
-        MainselectedCategoryIndex = indexPath.row // 更新选中的标签
+        if MainselectedCategoryIndex == indexPath.row{
+            MainselectedCategoryIndex = -1
+        }else{
+            MainselectedCategoryIndex = indexPath.row // 更新选中的标签
+        }
         collectionView.reloadData()  // 刷新 CollectionView 来更新选中状态
 
         /// 重新应用标签 + 排序 + 搜索逻辑 进行搜索
-        applyFilterAndSort()
+        refresh()
     }
 
     // 根据每一个内容的长度设置每一个 cell 的宽度和高度
@@ -96,7 +115,7 @@ extension ForumViewController: UICollectionViewDelegate,
         // 创建一个临时的 Label，计算文本实际需要的宽度
         let tempLabel = UILabel()
         tempLabel.font = .systemFont(ofSize: 14, weight: .medium)
-        tempLabel.text = categorys[indexPath.row]
+        tempLabel.text = categorys[indexPath.row].name
         tempLabel.sizeToFit()
 
         return CGSize(width: tempLabel.frame.width + 8, height: 32)

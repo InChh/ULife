@@ -6,6 +6,7 @@
 //  回复视图(每一条评论的回复就是一个ReplyView)
 
 import UIKit
+import Kingfisher
 
 class ReplyView: UIView {
     
@@ -166,24 +167,55 @@ class ReplyView: UIView {
         onLikeTap?()
     }
 
-    func configure(with reply: CommentReply, isLiked: Bool) {
-        nameLabel.text = reply.authorName
-        if let to = reply.repliedToUser {
-            replyToLabel.text = "回复 \(to)"
+    func configure(with reply: Comment) {
+        nameLabel.text = reply.author.name
+        
+        if let to = reply.replyTo {
+            replyToLabel.text = "回复 \(to.name)"
         } else {
             replyToLabel.text = ""
         }
+        
+        
         contentLabel.text = reply.content
+        
+        //加载图片
+        // 加载提示器,加载完成前转圈动画
+        avatarImageView.kf.indicatorType = .activity
+
+//        // 处理器,下采样 (处理器原图可能很大,直接加载到 ios 内存中可能导致内存暴涨,该处理器可以先缩小图片尺寸再加载到内存中)
+//        let processor = DownsamplingImageProcessor(size: avatarImageView.bounds.size)
+        
+        avatarImageView.kf.setImage(
+            with: URL(string: reply.author.avatarurl),
+            placeholder: UIImage(named: "avatar_placeholder"),
+            options: [
+                //.processor(processor),
+                .scaleFactor(UIScreen.main.scale), //告诉 Kingfisher 当前屏幕的缩放因子
+                .transition(.fade(0.25)), // 渐变动画
+                //.cacheOriginalImage, //默认情况下，Kingfisher 只会缓存“处理后”（小图+圆角）的图片。加上这个选项后，Kingfisher 会同时缓存服务器下载的原始大图。
+            ],
+            progressBlock: nil
+        ) { result in
+            switch result {
+            case .success(let value):
+                print("Loaded: \(value.source.url?.absoluteString ?? "")")
+                break
+            case .failure(let error):
+                // 可根据需要重试或者记录日志
+                print("KF load failed: \(error.localizedDescription)")
+            }
+        }
 
         
         // 根据点赞状态更新 UI
         let baseCount = reply.likeCount
-        let displayCount = baseCount + (isLiked ? 1 : 0)
+        let displayCount = baseCount + (reply.isLiked ? 1 : 0)
         // 点赞数为 0 时不显示数字，否则显示具体数量
         let title = displayCount == 0 ? "" : "\(displayCount)"
         likeButton.setTitle(title, for: .normal)
-        let color: UIColor = isLiked ? .systemRed : .secondaryLabel
-        let imageName = isLiked ? "heart.fill" : "heart"
+        let color: UIColor = reply.isLiked ? .systemRed : .secondaryLabel
+        let imageName = reply.isLiked ? "heart.fill" : "heart"
         likeButton.setImage(UIImage(systemName: imageName), for: .normal)
         likeButton.tintColor = color
         likeButton.setTitleColor(color, for: .normal)

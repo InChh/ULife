@@ -22,9 +22,9 @@ public struct Post: Equatable {
     /// 唯一id
     public var id: String
     /// 最新回复时间（iso08601)，实现最新回复排序
-    public var lastRepliedAt: String
+    public var lastRepliedAt: String?
     /// 附件，无附件时，可省略或者传空数组
-    public var media: [MediaItem]
+    public var media: [MediaItem]?
     /// 被举报次数，用户不可见，管理员可见，系统内部参数
     public var reportCount: Int
     /// 统计信息
@@ -179,3 +179,5 @@ public struct UserInteraction: Equatable {
         self.isLiked = isLiked
     }
 }
+
+
