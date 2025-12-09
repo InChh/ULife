@@ -14,6 +14,11 @@ enum UIHelper {
                                             createActivityNavigationController(),
                                             createForumNavigationController(),
                                             createProfileNavigationController()]
+        
+        tabBarController.tabBar.isTranslucent = false
+        tabBarController.tabBar.backgroundColor = .white
+        tabBarController.tabBar.barTintColor = .white
+        tabBarController.tabBar.unselectedItemTintColor = .gray
                                 
         return tabBarController
     }

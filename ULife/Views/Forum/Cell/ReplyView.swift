@@ -106,7 +106,7 @@ class ReplyView: UIView {
                 constant: 6
             ),
             avatarImageView.leadingAnchor.constraint(
-                equalTo: leadingAnchor,
+                equalTo: leadingAnchor
             ),
             avatarImageView.widthAnchor.constraint(equalToConstant: 28),
             avatarImageView.heightAnchor.constraint(equalToConstant: 28),

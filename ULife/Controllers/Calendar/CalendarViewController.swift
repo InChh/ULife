@@ -3,15 +3,401 @@
 //  ULife
 //
 //  Created by 刘宏伟 on 2025/12/1.
+//  Edited by 高煜尧
 //
 
 import UIKit
 
-class CalendarViewController: UIViewController {
+/// UI 层课程模型
+struct Course {
+    let courseId: Int
+    let name: String
+    let timeRange: String
+    let location: String
+    let teacher: String
+    let dayOfWeek: Int
+    let typeDisplay: String
+    let credits: Int
+    let descriptionText: String
+    let color: UIColor
+}
+
+final class CalendarViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
+
+    private var selectedSegementIndex = 0
+    private var courses: [Course] = []
+    private var groupedCourses: [[Course]] = []
+    
+    // 节次时间表（示例，可按校历替换）
+    private let sectionSlots: [Int: SectionSlot] = [
+        1: SectionSlot(start: "08:00", end: "08:45"),
+        2: SectionSlot(start: "08:55", end: "09:40"),
+        3: SectionSlot(start: "10:00", end: "10:45"),
+        4: SectionSlot(start: "10:55", end: "11:40"),
+        5: SectionSlot(start: "14:00", end: "14:45"),
+        6: SectionSlot(start: "14:55", end: "15:40")
+    ]
+
+    private let segmentedControl: UISegmentedControl = {
+        let control = UISegmentedControl(items: ["课程显示", "视图显示"])
+        control.selectedSegmentIndex = 0
+        control.selectedSegmentTintColor = .systemBlue
+        control.setTitleTextAttributes([.foregroundColor: UIColor.systemBlue], for: .normal)
+        control.setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
+        return control
+    }()
+
+    private let tableView: UITableView = {
+        let tv = UITableView(frame: .zero, style: .plain)
+        tv.separatorStyle = .none
+        tv.backgroundColor = .systemGroupedBackground
+        tv.register(CourseCell.self, forCellReuseIdentifier: CourseCell.identifier)
+        return tv
+    }()
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .systemPink
+        title = "课程"
+        view.backgroundColor = .systemGroupedBackground
+
+        setupLayout()
+        //loadMockData()
+        loadData()
+    }
+
+    private func setupLayout() {
+        view.addSubview(segmentedControl)
+        view.addSubview(tableView)
+
+        segmentedControl.translatesAutoresizingMaskIntoConstraints = false
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+
+        segmentedControl.addTarget(self, action: #selector(segmentChanged(_:)), for: .valueChanged)
+
+        NSLayoutConstraint.activate([
+            segmentedControl.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 12),
+            segmentedControl.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            segmentedControl.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.75),
+
+            tableView.topAnchor.constraint(equalTo: segmentedControl.bottomAnchor, constant: 16),
+            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        ])
+
+        tableView.delegate = self
+        tableView.dataSource = self
+    }
+
+    @objc private func segmentChanged(_ sender: UISegmentedControl) {
+        selectedSegementIndex = sender.selectedSegmentIndex
+        // 视图显示模式可在此扩展
+        regroupWeekly()
+        tableView.reloadData()
+    }
+
+    /*
+    /// 使用 PublicCourse 模拟数据并映射到 UI Course
+    private func loadMockData() {
+        let apiCourses: [PublicCourse] = [
+            PublicCourse(courseId: 1, 
+                         courseName: "高等数学（上）",
+                         teacherName: "王教授",
+                         teacherId: 1001,
+                         location: "教二-201",
+                         dayOfWeek: 1,
+                         startSection: 1,
+                         endSection: 2,
+                         weeksRange: [1,2,3,4,5,6],
+                         type: .compulsory,
+                         credits: 4,
+                         description: "高等数学（上）描述"),
+            PublicCourse(courseId: 2,
+                         courseName: "大学英语 II",
+                         teacherName: "李老师",
+                         teacherId: 1002,
+                         location: "外语楼-105",
+                         dayOfWeek: 1,
+                         startSection: 3,
+                         endSection: 4,
+                         weeksRange: [1,2,3,4,5,6],
+                         type: .compulsory,
+                         credits: 3,
+                         description: "大学英语 II描述"),
+            PublicCourse(courseId: 3,
+                         courseName: "计算机网络",
+                         teacherName: "赵老师",
+                         teacherId: 1003,
+                         location: "综教-302",
+                         dayOfWeek: 1,
+                         startSection: 5,
+                         endSection: 6,
+                         weeksRange: [1,2,3,4,5,6],
+                         type: .elective,
+                         credits: 3,
+                         description: "计算机网络描述")
+        ]
+
+        courses = apiCourses.map { $0.toUICourse(sectionSlots: sectionSlots, color: .white) }
+        tableView.reloadData()
+    }
+     */
+    
+    private func loadData(){
+        let apiCourses = CalendarDataManager.shared.fetchPublicCoursesMock()
+        courses = apiCourses.map { $0.toUICourse(sectionSlots: sectionSlots, color: .white)}
+        regroupWeekly()
+        tableView.reloadData()
     }
     
+    private func regroupWeekly(){
+        let weekdayOrder = [1, 2, 3, 4, 5, 6, 7]
+        groupedCourses = weekdayOrder.map{
+            day in courses.filter{ $0.dayOfWeek == day}
+        }
+    }
+
+    // MARK: - UITableViewDataSource
+        func numberOfSections(in tableView: UITableView) -> Int {
+            if selectedSegementIndex == 1 {
+                return groupedCourses.count
+            }
+            return 1
+        }
+
+
+        func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+            if selectedSegementIndex == 1 {
+                return groupedCourses[section].count
+            }
+            return courses.count
+        }
+
+
+        func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+            guard let cell = tableView.dequeueReusableCell(withIdentifier: CourseCell.identifier, for: indexPath) as? CourseCell else {
+                return UITableViewCell()
+            }
+            if selectedSegementIndex == 1 {
+                cell.configure(with: groupedCourses[indexPath.section][indexPath.row])
+            } else {
+                cell.configure(with: courses[indexPath.row])
+            }
+            return cell
+        }
+
+
+        // section 头部标题
+        func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+            guard selectedSegementIndex == 1 else { return nil }
+            let header = UIView()
+            header.backgroundColor = .systemGroupedBackground
+            let label = UILabel()
+            label.font = .systemFont(ofSize: 14, weight: .semibold)
+            label.textColor = .secondaryLabel
+            label.text = weekdayText(section + 1)
+            label.translatesAutoresizingMaskIntoConstraints = false
+            header.addSubview(label)
+            NSLayoutConstraint.activate([
+                label.leadingAnchor.constraint(equalTo: header.leadingAnchor, constant: 16),
+                label.centerYAnchor.constraint(equalTo: header.centerYAnchor)
+            ])
+            return header
+        }
+
+
+        func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+            return selectedSegementIndex == 1 ? 30 : 0
+        }
+
+
+        // MARK: - UITableViewDelegate
+        func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+            tableView.deselectRow(at: indexPath, animated: true)
+            let course: Course
+            if selectedSegementIndex == 1 {
+                course = groupedCourses[indexPath.section][indexPath.row]
+            } else {
+                course = courses[indexPath.row]
+            }
+            let detailVC = CourseDetailViewController(course: course)
+            navigationController?.pushViewController(detailVC, animated: true)
+        }
+    }
+    
+    private func weekdayText(_ day: Int) -> String {
+        let names = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+        let idx = day - 1
+        if idx >= 0 && idx < names.count { return names[idx] }
+        return "周\(day)"
+    }
+
+
+
+
+
+// 课程详情页
+final class CourseDetailViewController: UIViewController {
+
+
+    private let course: Course
+
+
+    private let nameLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 22, weight: .bold)
+        label.textColor = .label
+        label.numberOfLines = 0
+        return label
+    }()
+
+
+    private let courseIdLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 14, weight: .regular)
+        label.textColor = .secondaryLabel
+        label.numberOfLines = 0
+        return label
+    }()
+
+
+    private let teacherLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 16, weight: .regular)
+        label.textColor = .secondaryLabel
+        label.numberOfLines = 0
+        return label
+    }()
+
+
+    private let timeLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 16, weight: .regular)
+        label.textColor = .secondaryLabel
+        label.numberOfLines = 0
+        return label
+    }()
+
+
+    private let locationLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 16, weight: .regular)
+        label.textColor = .secondaryLabel
+        label.numberOfLines = 0
+        return label
+    }()
+
+    private let typeLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 16, weight: .regular)
+        label.textColor = .secondaryLabel
+        label.numberOfLines = 0
+        return label
+    }()
+
+
+    private let creditsLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 16, weight: .regular)
+        label.textColor = .secondaryLabel
+        label.numberOfLines = 0
+        return label
+    }()
+
+
+    private let descriptionLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 15, weight: .regular)
+        label.textColor = .secondaryLabel
+        label.numberOfLines = 0
+        return label
+    }()
+
+
+    init(course: Course) {
+        self.course = course
+        super.init(nibName: nil, bundle: nil)
+    }
+
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        title = "课程详情"
+        view.backgroundColor = .systemGroupedBackground
+        setupUI()
+        configure()
+    }
+
+
+    private func setupUI() {
+        let stack = UIStackView(arrangedSubviews: [
+            nameLabel,
+            courseIdLabel,
+            teacherLabel,
+            timeLabel,
+            locationLabel,
+            typeLabel,
+            creditsLabel,
+            descriptionLabel
+        ])
+        stack.axis = .vertical
+        stack.spacing = 12
+        stack.alignment = .leading
+
+
+        let card = UIView()
+        card.backgroundColor = .white
+        card.layer.cornerRadius = 12
+        card.layer.masksToBounds = true
+
+
+        card.addSubview(stack)
+        view.addSubview(card)
+
+
+        card.translatesAutoresizingMaskIntoConstraints = false
+        stack.translatesAutoresizingMaskIntoConstraints = false
+
+
+        NSLayoutConstraint.activate([
+            card.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
+            card.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            card.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+
+
+            stack.topAnchor.constraint(equalTo: card.topAnchor, constant: 20),
+            stack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 20),
+            stack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -20),
+            stack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -20)
+        ])
+    }
+
+
+    private func configure() {
+        nameLabel.text = course.name
+        courseIdLabel.text = "课程ID：\(course.courseId)"
+        teacherLabel.text = "老师：\(course.teacher)"
+        timeLabel.text = "时间：\(weekdayText(course.dayOfWeek))\(course.timeRange)"
+        locationLabel.text = "地点：\(course.location)"
+        typeLabel.text = "课程类型：\(course.typeDisplay)"
+        creditsLabel.text = "学分：\(course.credits)"
+        descriptionLabel.text = "课程描述：\(course.descriptionText)"
+    }
+
+
+    private func weekdayText(_ day: Int) -> String {
+        let names = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+        let idx = day - 1
+        if idx >= 0 && idx < names.count { return names[idx] }
+        return "周\(day)"
+    }
 }
+
+
+
+
