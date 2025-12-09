@@ -64,6 +64,8 @@ extension ScheduleItem {
             courseId: Int(id),
             name: courseName,
             timeRange: timeRange,
+            startSection: startSection,
+            endSection: endSection,
             location: location ?? "",
             teacher: teacherName ?? "",
             dayOfWeek: dayOfWeek,

@@ -13,6 +13,8 @@ struct Course {
     let courseId: Int
     let name: String
     let timeRange: String
+    let startSection: Int
+    let endSection: Int
     let location: String
     let teacher: String
     let dayOfWeek: Int
@@ -106,9 +108,11 @@ final class CalendarViewController: UIViewController, UITableViewDataSource, UIT
     
     private func regroupWeekly(){
         let weekdayOrder = [1, 2, 3, 4, 5, 6, 7]
-        groupedCourses = weekdayOrder.map{
-            day in courses.filter{ $0.dayOfWeek == day}
-        }
+        groupedCourses = weekdayOrder.map { day in
+                    courses
+                        .filter { $0.dayOfWeek == day }
+                        .sorted { $0.startSection < $1.startSection }
+                }
     }
 
     // MARK: - UITableViewDataSource
