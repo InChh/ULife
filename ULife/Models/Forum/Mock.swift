@@ -6,7 +6,7 @@
 //
 import Foundation
 
-public extension Board {
+extension Board {
     static var mockBoards: [Board] {
         return [
             Board(
@@ -85,7 +85,7 @@ public extension Board {
 }
 
 
-public extension UserLite {
+extension UserLite {
     static var mockAuthor1: UserLite {
         return UserLite(
             avatarurl: "https://example.com/avatars/user_A.jpg",
@@ -106,13 +106,13 @@ public extension UserLite {
     }
 }
 
-public extension Stats {
+extension Stats {
     static func mockStats(comments: Int, likes: Int, views: Int) -> Stats {
         return Stats(commentCount: comments, likeCount: likes, viewCount: views)
     }
 }
 
-public extension UserInteraction {
+extension UserInteraction {
     static var collectedAndLiked: UserInteraction {
         return UserInteraction(isCollected: true, isLiked: true)
     }
@@ -124,7 +124,7 @@ public extension UserInteraction {
 // MARK: - PostLite Helper Function
 
 /// 快速生成一个带有索引的 PostLite 实例
-public func mockPostLite(index: Int) -> PostLite {
+func mockPostLite(index: Int) -> PostLite {
     let isOdd = index % 2 != 0
     let author = isOdd ? UserLite.mockAuthor1 : UserLite.mockAuthor2
     let stats = Stats.mockStats(
@@ -152,7 +152,7 @@ public func mockPostLite(index: Int) -> PostLite {
 
 // MARK: - Post Detail Mock
 
-public extension Post {
+extension Post {
     
     /// 根据帖子 ID 返回一个模拟的帖子详情 `Post`
     /// - Parameter id: 帖子唯一 ID（例如："P-001"）
@@ -228,7 +228,7 @@ public extension Post {
 // MARK: - Post List Paginator Mock
 
 
-public extension PostLite {
+extension PostLite {
     
     /// 总共 35 个帖子的数据源
     static var mockPosts: [PostLite] {
@@ -259,10 +259,10 @@ public extension PostLite {
         
         // 生成分页模型
         let pagination = Pagination(
+            total: total,
             page: safePage,
-            pages: totalPages,
             pageSize: pageSize,
-            total: total
+            pages: totalPages
         )
         
         return PostListResponse(posts: currentPosts, pagination: pagination)
@@ -274,80 +274,61 @@ public extension PostLite {
 // MARK: - Comment Mock Data
 
 /// 根据帖子 ID 生成一组包含层级关系的模拟评论数据
-public func mockComments(for postID: String) -> [Comment] {
+func mockComments(for postID: String) -> [Comment] {
     let userA = UserLite.mockAuthor1
     let userB = UserLite.mockAuthor2
     
-    // 基础时间点（最新评论）
     let now = Date()
     
-    // c1: 帖子 P-001 的一级评论
-    let comment1 = Comment(
-        author: userA,
-        content: "这个帖子很有启发性！尤其是关于\(postID)的部分。",
-        createdAt: Calendar.current.date(byAdding: .minute, value: -5, to: now)!,
-        id: "\(postID)-C01",
-        isLiked: true,
-        likeCount: 15,
-        parentid: nil, // 一级评论
-        postid: postID,
-        replyTo: nil // 回复帖子
-    )
-
-    // c2: 帖子 P-001 的一级评论
-    let comment2 = Comment(
-        author: userB,
-        content: "我试过楼主提到的方法，确实有效，赞一个！",
-        createdAt: Calendar.current.date(byAdding: .minute, value: -8, to: now)!,
-        id: "\(postID)-C02",
-        isLiked: false,
-        likeCount: 8,
-        parentid: nil, // 一级评论
-        postid: postID,
-        replyTo: nil
-    )
-    
-    // c3: 楼中楼回复 (回复 c1)
-    let comment3 = Comment(
-        author: userB,
+    let reply1 = CommentReply(
+        id: "\(postID)-R01",
+        authorName: userB.name,
+        repliedToUser: userA.name,
         content: "同意楼上，\(userA.name) 的观点总是很独到。",
-        createdAt: Calendar.current.date(byAdding: .minute, value: -2, to: now)!,
-        id: "\(postID)-C03",
-        isLiked: true,
-        likeCount: 5,
-        parentid: comment1.id, // 父评论 ID 是 C01
-        postid: postID,
-        replyTo: userA // 回复的是 userA
+        createTime: Calendar.current.date(byAdding: .minute, value: -2, to: now)!,
+        likeCount: 5
     )
     
-    // c4: 楼中楼回复 (回复 c3，即回复 userB)
-    let comment4 = Comment(
-        author: userA,
+    let reply2 = CommentReply(
+        id: "\(postID)-R02",
+        authorName: userA.name,
+        repliedToUser: userB.name,
         content: "谢谢 \(userB.name)，我们互相学习！",
-        createdAt: Calendar.current.date(byAdding: .minute, value: -1, to: now)!,
-        id: "\(postID)-C04",
-        isLiked: false,
-        likeCount: 2,
-        parentid: comment1.id, // 父评论 ID 仍然是 C01
-        postid: postID,
-        replyTo: userB // 回复的是 userB
+        createTime: Calendar.current.date(byAdding: .minute, value: -1, to: now)!,
+        likeCount: 2
     )
     
-    // c5: 另一条一级评论
-    let comment5 = Comment(
-        author: userA,
+    let comment1 = Comment(
+        id: "\(postID)-C01",
+        authorName: userA.name,
+        authorAvatar: userA.avatarurl,
+        content: "这个帖子很有启发性！尤其是关于\(postID)的部分。",
+        createTime: Calendar.current.date(byAdding: .minute, value: -5, to: now)!,
+        likeCount: 15,
+        replies: [reply1, reply2]
+    )
+    
+    let comment2 = Comment(
+        id: "\(postID)-C02",
+        authorName: userB.name,
+        authorAvatar: userB.avatarurl,
+        content: "我试过楼主提到的方法，确实有效，赞一个！",
+        createTime: Calendar.current.date(byAdding: .minute, value: -8, to: now)!,
+        likeCount: 8,
+        replies: nil
+    )
+    
+    let comment3 = Comment(
+        id: "\(postID)-C03",
+        authorName: userA.name,
+        authorAvatar: userA.avatarurl,
         content: "有一个小问题，如果遇到边缘情况该如何处理？",
-        createdAt: Calendar.current.date(byAdding: .minute, value: -10, to: now)!,
-        id: "\(postID)-C05",
-        isLiked: true,
+        createTime: Calendar.current.date(byAdding: .minute, value: -10, to: now)!,
         likeCount: 1,
-        parentid: nil,
-        postid: postID,
-        replyTo: nil
+        replies: nil
     )
     
-    // 按照时间降序排列 (最新的在最前)
-    return [comment1, comment2, comment3, comment4, comment5].sorted { $0.createdAt > $1.createdAt }
+    return [comment1, comment2, comment3].sorted { $0.createTime > $1.createTime }
 }
 
 

@@ -117,7 +117,7 @@ class UserManager {
     // MARK: - Update User Info
     
     func updateUserInfo(_ updateRequest: UserUpdateRequest, completion: @escaping (Result<User, Error>) -> Void) {
-        guard let currentUser = getCurrentUser() else {
+        guard var currentUser = getCurrentUser() else {
             completion(.failure(NSError(domain: "UserManager", code: 401, userInfo: [NSLocalizedDescriptionKey: "用户未登录"])))
             return
         }

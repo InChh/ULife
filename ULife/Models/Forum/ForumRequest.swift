@@ -137,12 +137,12 @@ public struct ColectOrDisColectResponse: Equatable {
 }
 
 // MARK: - DataClass
-public struct CreateCommentResponse: Equatable {
-    public var comment: Comment
+struct CreateCommentResponse: Equatable {
+    var comment: Comment
     /// 新创建评论id
-    public var commentid: String
+    var commentid: String
 
-    public init(comment: Comment, commentid: String) {
+    init(comment: Comment, commentid: String) {
         self.comment = comment
         self.commentid = commentid
     }
@@ -236,19 +236,17 @@ class ForumRequest {
     ) -> CreateCommentResponse {
         return CreateCommentResponse(
             comment: Comment(
-                author: UserLite.mockAuthor1,
+                id: "xxx-C05",
+                authorName: UserLite.mockAuthor1.name,
+                authorAvatar: UserLite.mockAuthor1.avatarurl,
                 content: content,
-                createdAt: Calendar.current.date(
+                createTime: Calendar.current.date(
                     byAdding: .minute,
                     value: -10,
                     to: Date()
                 )!,
-                id: "xxx-C05",
-                isLiked: true,
                 likeCount: 1,
-                parentid: replyToCommentid,
-                postid: id,
-                replyTo: UserLite.mockAuthor2
+                replies: nil
             ),
             commentid: "xxx"
         )

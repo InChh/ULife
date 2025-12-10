@@ -16,6 +16,7 @@ final class CourseCell: UITableViewCell {
         let view = UIView()
         view.layer.cornerRadius = 14
         view.layer.masksToBounds = true
+        view.backgroundColor = .white
         return view
     }()
 
@@ -85,11 +86,7 @@ final class CourseCell: UITableViewCell {
 
 
     func configure(with course: Course) {
-        if course.color == .white {
-            containerView.backgroundColor = course.color
-        }else{
-            containerView.backgroundColor = course.color.withAlphaComponent(0.15)
-        }
+        containerView.backgroundColor = .white
         idLabel.text = "课程ID：\(course.courseId)"
         nameLabel.text = course.name
         timeLabel.text = "\(weekdayText(course.dayOfWeek)): \(course.timeRange)"

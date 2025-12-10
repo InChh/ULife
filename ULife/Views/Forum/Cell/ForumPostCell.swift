@@ -3,9 +3,8 @@
 //  ULife
 //
 //  Created by 骑鱼的猫 on 2025/12/2.
-//  帖子简介展示单元格 (Cell)
+//  帖子展示单元格 (Cell)
 
-import Kingfisher
 import UIKit
 
 class ForumPostCell: UITableViewCell {
@@ -13,13 +12,12 @@ class ForumPostCell: UITableViewCell {
     // 标识符
     static let identifier = "ForumPostCell"
 
+
     // 卡片背景容器
     private lazy var cardView: UIView = {
         let view = UIView()
         view.backgroundColor = .systemBackground
-        view.layer.cornerRadius = 12
-
-        // 设置阴影
+        view.layer.cornerRadius = 12 //设置圆角
         view.layer.shadowColor = UIColor.black.cgColor
         view.layer.shadowOpacity = 0.08
         view.layer.shadowOffset = CGSize(width: 0, height: 2)
@@ -63,7 +61,16 @@ class ForumPostCell: UITableViewCell {
         return label
     }()
 
-    // 板块标签
+//    // 标签容器(存多个标签 label)
+//    private lazy var CategoryStackView: UIStackView = {
+//        let stack = UIStackView()
+//        stack.axis = .horizontal  // 水平排列
+//        stack.spacing = 6  // 标签之间的间距
+//        stack.alignment = .center  // 垂直居中
+//        stack.distribution = .fillProportionally
+//        return stack
+//    }()
+    
     private lazy var CategoryLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 12, weight: .medium)
@@ -73,8 +80,7 @@ class ForumPostCell: UITableViewCell {
         label.layer.masksToBounds = true
         return label
     }()
-
-    //访问人数标签
+    
     private lazy var ViewCountLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 12, weight: .regular)
@@ -82,8 +88,9 @@ class ForumPostCell: UITableViewCell {
         label.textAlignment = .right
         return label
     }()
+    
 
-    // 创建时间
+    // 时间
     private lazy var timeLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 12, weight: .regular)
@@ -92,7 +99,7 @@ class ForumPostCell: UITableViewCell {
         return label
     }()
 
-    /// - Init
+    // - Init
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         setupUI()
@@ -102,9 +109,10 @@ class ForumPostCell: UITableViewCell {
         fatalError("init(coder:) has not been implemented")
     }
 
-    ///UI
+
     private func setupUI() {
         backgroundColor = .clear  // Cell 本身透明，显示 cardView
+        selectionStyle = .gray  // 点击时要变灰
 
         contentView.addSubview(cardView)
         cardView.addSubview(titleLabel)
@@ -185,6 +193,7 @@ class ForumPostCell: UITableViewCell {
                 constant: -16
             ),
 
+
             // 作者名布局
             authorLabel.centerYAnchor.constraint(
                 equalTo: avatarImageView.centerYAnchor
@@ -202,7 +211,8 @@ class ForumPostCell: UITableViewCell {
                 equalTo: cardView.trailingAnchor,
                 constant: -16
             ),
-
+            
+            
             CategoryLabel.centerYAnchor.constraint(
                 equalTo: avatarImageView.centerYAnchor
             ),
@@ -210,7 +220,7 @@ class ForumPostCell: UITableViewCell {
                 lessThanOrEqualTo: ViewCountLabel.leadingAnchor,
                 constant: -6
             ),
-
+            
             ViewCountLabel.centerYAnchor.constraint(
                 equalTo: avatarImageView.centerYAnchor
             ),
@@ -218,54 +228,21 @@ class ForumPostCell: UITableViewCell {
                 lessThanOrEqualTo: timeLabel.leadingAnchor,
                 constant: -6
             ),
-
+            
         ])
     }
-    
-    /// Cell 被复用队列取出并重新显示之前
-    override func prepareForReuse() {
-        super.prepareForReuse()
-        // 取消当前 imageView 的下载任务（防止错图/残留）
-        avatarImageView.kf.cancelDownloadTask()
-        // 恢复占位图或清空
-        avatarImageView.image = UIImage(named: "avatar_placeholder")
-    }
 
-    /// Configure Data
-    func configure(with post: PostLite) {
+    // MARK: - Configure Data
+    func configure(with post: ForumPost) {
         titleLabel.text = post.title
-        contentLabel.text = post.summary
-        authorLabel.text = post.author.name
-        timeLabel.text = post.createdAt.timeAgoString()
-
-        // 加载提示器,加载完成前转圈动画
-        avatarImageView.kf.indicatorType = .activity
-
-//        // 处理器,下采样 (处理器原图可能很大,直接加载到 ios 内存中可能导致内存暴涨,该处理器可以先缩小图片尺寸再加载到内存中)
-//        let processor = DownsamplingImageProcessor(size: avatarImageView.bounds.size)
+        contentLabel.text = post.content
+        authorLabel.text = post.authorName
+        timeLabel.text = post.publishTime.timeAgoString()
+        // todo 加载图片
         
-        avatarImageView.kf.setImage(
-            with: URL(string: post.author.avatarurl),
-            placeholder: UIImage(named: "avatar_placeholder"),
-            options: [
-                //.processor(processor),
-                .scaleFactor(UIScreen.main.scale), //告诉 Kingfisher 当前屏幕的缩放因子
-                .transition(.fade(0.25)), // 渐变动画
-                //.cacheOriginalImage, //默认情况下，Kingfisher 只会缓存“处理后”（小图+圆角）的图片。加上这个选项后，Kingfisher 会同时缓存服务器下载的原始大图。
-            ],
-            progressBlock: nil
-        ) { result in
-            switch result {
-            case .success(let value):
-                print("Loaded: \(value.source.url?.absoluteString ?? "")")
-                break
-            case .failure(let error):
-                // 可根据需要重试或者记录日志
-                print("KF load failed: \(error.localizedDescription)")
-            }
-        }
+        // 动态生成标签
+        CategoryLabel.text = " \(post.category) "
+        ViewCountLabel.text = " \(post.viewCount)人围观 "
 
-        CategoryLabel.text = " \(post.boardName ?? "其他") "
-        ViewCountLabel.text = " \(post.stats.viewCount)人围观 "
     }
 }

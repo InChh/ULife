@@ -3,13 +3,12 @@
 //  ULife
 //
 //  Created by 骑鱼的猫 on 2025/12/5.
-//  帖子创建页面
+//
 
 import UIKit
 
 class PostCreationView: UIView {
-    
-    //标题输入框
+
     let titleTextField: UITextField = {
         let textField = UITextField()
         textField.placeholder = "标题"
@@ -28,8 +27,7 @@ class PostCreationView: UIView {
         ])
         return textField
     }()
-    
-    //帖子内容输入框
+
     let contentTextView: UITextView = {
         let textView = UITextView()
         textView.font = UIFont.systemFont(ofSize: 20)
@@ -45,7 +43,7 @@ class PostCreationView: UIView {
     // 底部：帖子板块标签提示
     let categoryTitleLabel: UILabel = {
         let label = UILabel()
-        label.text = "请选择帖子板块"
+        label.text = "选择帖子板块"
         label.font = UIFont.systemFont(ofSize: 14, weight: .medium)
         label.textColor = .secondaryLabel
         return label
@@ -53,19 +51,20 @@ class PostCreationView: UIView {
 
     // 底部：帖子板块选择滚动栏
     lazy var CategoryCollectionView: UICollectionView = {
-        let layout = UICollectionViewFlowLayout()
-        layout.scrollDirection = .horizontal
-        layout.minimumInteritemSpacing = 8
+        let layout = UICollectionViewFlowLayout()  //定义了排列方式
+        layout.scrollDirection = .horizontal  // 关键：设置水平滚动
+        layout.minimumInteritemSpacing = 8  // 标签之间的最小间距
         layout.sectionInset = UIEdgeInsets(
             top: 0,
             left: 16,
             bottom: 0,
             right: 16
-        )
+        )  // 左右内边距
 
         let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
         cv.backgroundColor = .systemBackground
         cv.showsHorizontalScrollIndicator = false  //是否显示横向滚动条
+        // 注册标签删选栏的元素
         cv.register(
             CategoryCell.self,
             forCellWithReuseIdentifier: CategoryCell.identifier
@@ -78,9 +77,9 @@ class PostCreationView: UIView {
         let textField = UITextField()
         textField.placeholder = "添加标签，例如 社团活动"
         textField.font = UIFont.systemFont(ofSize: 14)
-        textField.borderStyle = .roundedRect //带有圆角的矩形边框
-        textField.clearButtonMode = .whileEditing //清除按钮
-        textField.returnKeyType = .done //键盘上的返回键文本设置为 “完成”
+        textField.borderStyle = .roundedRect
+        textField.clearButtonMode = .whileEditing
+        textField.returnKeyType = .done
         return textField
     }()
 
@@ -104,8 +103,7 @@ class PostCreationView: UIView {
         label.text = nil
         return label
     }()
-    
-    ///初始化
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupUI()
@@ -114,8 +112,7 @@ class PostCreationView: UIView {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
-    ///设置 UI
+
     private func setupUI() {
         backgroundColor = .systemBackground
 
@@ -136,10 +133,12 @@ class PostCreationView: UIView {
         tagInputTextField.translatesAutoresizingMaskIntoConstraints = false
         tagAddButton.translatesAutoresizingMaskIntoConstraints = false
 
+        let margins = safeAreaLayoutGuide
+
         //  标题输入框约束
         NSLayoutConstraint.activate([
             titleTextField.topAnchor.constraint(
-                equalTo: safeAreaLayoutGuide.topAnchor,
+                equalTo: margins.topAnchor,
                 constant: 16
             ),
             titleTextField.leadingAnchor.constraint(
@@ -160,7 +159,7 @@ class PostCreationView: UIView {
                 constant: 16
             ),
             tagInputTextField.bottomAnchor.constraint(
-                equalTo: safeAreaLayoutGuide.bottomAnchor,
+                equalTo: margins.bottomAnchor,
                 constant: -8
             ),
             tagAddButton.leadingAnchor.constraint(
@@ -174,9 +173,9 @@ class PostCreationView: UIView {
             tagAddButton.centerYAnchor.constraint(
                 equalTo: tagInputTextField.centerYAnchor
             ),
-            
             tagInputTextField.heightAnchor.constraint(equalToConstant: 34),
             tagAddButton.heightAnchor.constraint(equalToConstant: 34),
+            // 文本框和按钮整体宽度
             tagInputTextField.widthAnchor.constraint(
                 greaterThanOrEqualToConstant: 120
             ),
@@ -233,6 +232,7 @@ class PostCreationView: UIView {
                 equalTo: trailingAnchor,
                 constant: -16
             ),
+            // 底部：明确约束到 CategoryCollectionView 的顶部，有 8pt 间距
             contentTextView.bottomAnchor.constraint(
                 equalTo: CategoryCollectionView.topAnchor,
                 constant: -8
