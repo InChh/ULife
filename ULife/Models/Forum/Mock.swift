@@ -1,0 +1,357 @@
+//
+//  Mock.swift
+//  ULife
+//
+//  Created by 骑鱼的猫 on 2025/12/9.
+//
+import Foundation
+
+public extension Board {
+    static var mockBoards: [Board] {
+        return [
+            Board(
+                description: "发布和寻找各种闲置物品，支持同城交易。",
+                icon: "💰",
+                id: "B-001",
+                name: "二手交易",
+                type: .typeStatic
+            ),
+            Board(
+                description: "分享学习经验、笔记和考试资料。",
+                icon: "📚",
+                id: "B-002",
+                name: "学术交流",
+                type: .typeStatic
+            ),
+            Board(
+                description: "记录生活点滴、分享心情、吐槽日常。",
+                icon: "☕",
+                id: "B-003",
+                name: "校园生活",
+                type: .typeStatic
+            ),
+            Board(
+                description: "寻找志同道合的小伙伴，组队游戏、运动或活动。",
+                icon: "🤝",
+                id: "B-004",
+                name: "兴趣交友",
+                type: .typeStatic
+            ),
+            Board(
+                description: "近期热门影视、音乐、书籍的讨论区。",
+                icon: "🎬",
+                id: "B-005",
+                name: "文娱热议",
+                type: .typeStatic
+            ),
+            // 以下模拟管理员临时创建的板块 (dynamic)
+            Board(
+                description: "本周校园歌手大赛的报名及投票专区。",
+                icon: "🎤",
+                id: "B-006",
+                name: "校园歌手大赛",
+                type: .typeDynamic
+            ),
+            Board(
+                description: "针对食堂菜品和服务的意见征集。",
+                icon: "🍽️",
+                id: "B-007",
+                name: "食堂改进建议",
+                type: .typeDynamic
+            ),
+            Board(
+                description: "毕业季招聘信息和面试经验分享。",
+                icon: "💼",
+                id: "B-008",
+                name: "实习招聘季",
+                type: .typeDynamic
+            ),
+            Board(
+                description: "紧急通知：校内停电及检修信息发布。",
+                icon: "⚠️",
+                id: "B-009",
+                name: "临时公告栏",
+                type: .typeDynamic
+            ),
+            Board(
+                description: "记录和讨论各种计算机技术和编程话题。",
+                icon: "💻",
+                id: "B-010",
+                name: "代码人生",
+                type: .typeStatic
+            )
+        ]
+    }
+}
+
+
+public extension UserLite {
+    static var mockAuthor1: UserLite {
+        return UserLite(
+            avatarurl: "https://example.com/avatars/user_A.jpg",
+            college: "信息工程学院",
+            id: "U-A001",
+            name: "Allen",
+            studentid: "20210001"
+        )
+    }
+    static var mockAuthor2: UserLite {
+        return UserLite(
+            avatarurl: "https://example.com/avatars/user_B.jpg",
+            college: "经济管理学院",
+            id: "U-B002",
+            name: "Betty",
+            studentid: "20210002"
+        )
+    }
+}
+
+public extension Stats {
+    static func mockStats(comments: Int, likes: Int, views: Int) -> Stats {
+        return Stats(commentCount: comments, likeCount: likes, viewCount: views)
+    }
+}
+
+public extension UserInteraction {
+    static var collectedAndLiked: UserInteraction {
+        return UserInteraction(isCollected: true, isLiked: true)
+    }
+    static var notInteracted: UserInteraction {
+        return UserInteraction(isCollected: false, isLiked: false)
+    }
+}
+
+// MARK: - PostLite Helper Function
+
+/// 快速生成一个带有索引的 PostLite 实例
+public func mockPostLite(index: Int) -> PostLite {
+    let isOdd = index % 2 != 0
+    let author = isOdd ? UserLite.mockAuthor1 : UserLite.mockAuthor2
+    let stats = Stats.mockStats(
+        comments: 10 + index,
+        likes: 50 + index * 2,
+        views: 300 + index * 10
+    )
+    let summaryContent = "这是关于帖子主题 \(index) 的摘要内容。内容越长越好，但为了演示需要截断..."
+    
+    return PostLite(
+        author: author,
+        boardid: isOdd ? "B-001" : "B-002",
+        boardName: isOdd ? "二手交易" : "学术交流",
+        coverImageurl: index % 3 == 0 ? "https://example.com/images/post_\(index).jpg" : nil,
+        createdAt: Calendar.current.date(byAdding: .hour, value: -index, to: Date())!, // 模拟递减的创建时间
+        id: "P-\(String(format: "%03d", index))",
+        stats: stats,
+        summary: String(summaryContent.prefix(50)) + "...",
+        tags: ["热门", isOdd ? "交易" : "学习"],
+        title: "这是一个模拟帖子标题 \(index)",
+        userInteraction: index < 5 ? UserInteraction.collectedAndLiked : UserInteraction.notInteracted
+    )
+}
+
+
+// MARK: - Post Detail Mock
+
+public extension Post {
+    
+    /// 根据帖子 ID 返回一个模拟的帖子详情 `Post`
+    /// - Parameter id: 帖子唯一 ID（例如："P-001"）
+    /// - Returns: 对应的 `Post` 详情（若未找到则返回第一条帖子为基础的详情）
+    static func mockDetail(for id: String) -> Post {
+        // 先在已有的列表数据中查找 PostLite
+        let baseLite = PostLite.mockPosts.first { $0.id == id } ?? PostLite.mockPosts.first!
+        
+        // 统一使用 ISO8601 字符串作为 createdAt / lastRepliedAt
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        
+        let createdAtString = formatter.string(from: baseLite.createdAt)
+        // 模拟「最后回复时间」比创建时间稍晚一些
+        let lastRepliedDate = Calendar.current.date(byAdding: .minute, value: 5, to: baseLite.createdAt) ?? baseLite.createdAt
+        let lastRepliedAtString = formatter.string(from: lastRepliedDate)
+        
+        // 模拟附件：如果列表里有封面图，就用它构造一条图片媒体
+        let mediaItems: [MediaItem]
+        if let cover = baseLite.coverImageurl {
+            let meta = Meta(
+                filename: "post_\(baseLite.id)_image.jpg",
+                height: "1080",
+                size: "204800",
+                width: "1920"
+            )
+            mediaItems = [
+                MediaItem(
+                    meta: meta,
+                    thumbnailurl: cover,
+                    type: "image",
+                    url: cover
+                )
+            ]
+        } else {
+            mediaItems = []
+        }
+        
+        // 模拟较长的正文内容
+        let content = """
+        这是帖子 \(id) 的完整正文内容，用于模拟详情接口返回的数据。
+        在真实环境中，这里会包含用户发布的详细文字、说明、步骤、思考等信息。
+        
+        为了展示滚动效果，这里特意加长了一些内容：
+        - 支持多段文本
+        - 支持换行
+        - 可以用于调试富文本/Label 自动布局等场景
+        
+        感谢你使用 ULife 的论坛功能，这只是 Mock 数据，并不会真正发布到服务器上。
+        """
+        
+        return Post(
+            author: baseLite.author,
+            boardid: baseLite.boardid,
+            boardName: baseLite.boardName ?? "",
+            content: content,
+            createdAt: createdAtString,
+            id: id,
+            lastRepliedAt: lastRepliedAtString,
+            media: mediaItems,
+            reportCount: 0,
+            stats: baseLite.stats,
+            status: .approved,
+            tags: baseLite.tags ?? [],
+            title: baseLite.title,
+            userInteraction: baseLite.userInteraction
+        )
+    }
+}
+
+
+
+// MARK: - Post List Paginator Mock
+
+
+public extension PostLite {
+    
+    /// 总共 35 个帖子的数据源
+    static var mockPosts: [PostLite] {
+        return (1...35).map { mockPostLite(index: $0) }
+    }
+    
+    /**
+     *  模拟 API 请求，根据页码返回帖子列表和分页信息。
+     *  默认每页 10 个帖子。
+     */
+    static func getMockPostList(page: Int, pageSize: Int = 10) -> PostListResponse {
+        let allPosts = PostLite.mockPosts
+        let total = allPosts.count
+        let totalPages = (total + pageSize - 1) / pageSize
+        
+        let safePage = max(1, min(page, totalPages)) // 确保页码在有效范围内
+        
+        let startIndex = (safePage - 1) * pageSize
+        let endIndex = min(startIndex + pageSize, total)
+        
+        // 提取当前页的帖子数据
+        let currentPosts: [PostLite]
+        if startIndex < total {
+            currentPosts = Array(allPosts[startIndex..<endIndex])
+        } else {
+            currentPosts = []
+        }
+        
+        // 生成分页模型
+        let pagination = Pagination(
+            page: safePage,
+            pages: totalPages,
+            pageSize: pageSize,
+            total: total
+        )
+        
+        return PostListResponse(posts: currentPosts, pagination: pagination)
+    }
+}
+
+
+
+// MARK: - Comment Mock Data
+
+/// 根据帖子 ID 生成一组包含层级关系的模拟评论数据
+public func mockComments(for postID: String) -> [Comment] {
+    let userA = UserLite.mockAuthor1
+    let userB = UserLite.mockAuthor2
+    
+    // 基础时间点（最新评论）
+    let now = Date()
+    
+    // c1: 帖子 P-001 的一级评论
+    let comment1 = Comment(
+        author: userA,
+        content: "这个帖子很有启发性！尤其是关于\(postID)的部分。",
+        createdAt: Calendar.current.date(byAdding: .minute, value: -5, to: now)!,
+        id: "\(postID)-C01",
+        isLiked: true,
+        likeCount: 15,
+        parentid: nil, // 一级评论
+        postid: postID,
+        replyTo: nil // 回复帖子
+    )
+
+    // c2: 帖子 P-001 的一级评论
+    let comment2 = Comment(
+        author: userB,
+        content: "我试过楼主提到的方法，确实有效，赞一个！",
+        createdAt: Calendar.current.date(byAdding: .minute, value: -8, to: now)!,
+        id: "\(postID)-C02",
+        isLiked: false,
+        likeCount: 8,
+        parentid: nil, // 一级评论
+        postid: postID,
+        replyTo: nil
+    )
+    
+    // c3: 楼中楼回复 (回复 c1)
+    let comment3 = Comment(
+        author: userB,
+        content: "同意楼上，\(userA.name) 的观点总是很独到。",
+        createdAt: Calendar.current.date(byAdding: .minute, value: -2, to: now)!,
+        id: "\(postID)-C03",
+        isLiked: true,
+        likeCount: 5,
+        parentid: comment1.id, // 父评论 ID 是 C01
+        postid: postID,
+        replyTo: userA // 回复的是 userA
+    )
+    
+    // c4: 楼中楼回复 (回复 c3，即回复 userB)
+    let comment4 = Comment(
+        author: userA,
+        content: "谢谢 \(userB.name)，我们互相学习！",
+        createdAt: Calendar.current.date(byAdding: .minute, value: -1, to: now)!,
+        id: "\(postID)-C04",
+        isLiked: false,
+        likeCount: 2,
+        parentid: comment1.id, // 父评论 ID 仍然是 C01
+        postid: postID,
+        replyTo: userB // 回复的是 userB
+    )
+    
+    // c5: 另一条一级评论
+    let comment5 = Comment(
+        author: userA,
+        content: "有一个小问题，如果遇到边缘情况该如何处理？",
+        createdAt: Calendar.current.date(byAdding: .minute, value: -10, to: now)!,
+        id: "\(postID)-C05",
+        isLiked: true,
+        likeCount: 1,
+        parentid: nil,
+        postid: postID,
+        replyTo: nil
+    )
+    
+    // 按照时间降序排列 (最新的在最前)
+    return [comment1, comment2, comment3, comment4, comment5].sorted { $0.createdAt > $1.createdAt }
+}
+
+
+
+
+
+
