@@ -265,7 +265,7 @@ uint64_t uniffi_ulife_lib_fn_method_apiclient_add_comment_to_post(uint64_t ptr, 
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_ADD_SCHEDULE_ITEM
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_ADD_SCHEDULE_ITEM
-uint64_t uniffi_ulife_lib_fn_method_apiclient_add_schedule_item(uint64_t ptr
+uint64_t uniffi_ulife_lib_fn_method_apiclient_add_schedule_item(uint64_t ptr, RustBuffer input
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_CHANGE_PASSWORD
@@ -275,7 +275,7 @@ uint64_t uniffi_ulife_lib_fn_method_apiclient_change_password(uint64_t ptr, Rust
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_CREATE_POST
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_CREATE_POST
-uint64_t uniffi_ulife_lib_fn_method_apiclient_create_post(uint64_t ptr, RustBuffer board_id, RustBuffer title, RustBuffer content, RustBuffer tags, RustBuffer medias
+uint64_t uniffi_ulife_lib_fn_method_apiclient_create_post(uint64_t ptr, uint64_t input
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_DELETE_COMMENT
@@ -290,7 +290,7 @@ uint64_t uniffi_ulife_lib_fn_method_apiclient_delete_post(uint64_t ptr, uint64_t
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_DELETE_SCHEDULE_ITEM
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_DELETE_SCHEDULE_ITEM
-uint64_t uniffi_ulife_lib_fn_method_apiclient_delete_schedule_item(uint64_t ptr
+uint64_t uniffi_ulife_lib_fn_method_apiclient_delete_schedule_item(uint64_t ptr, int64_t item_id
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_DOWNLOAD_FILE
@@ -308,9 +308,9 @@ uint64_t uniffi_ulife_lib_fn_method_apiclient_enroll_activity(uint64_t ptr, uint
 uint64_t uniffi_ulife_lib_fn_method_apiclient_favorite_activity(uint64_t ptr, uint64_t activity_id
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_FAVOURITE_POST
-#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_FAVOURITE_POST
-uint64_t uniffi_ulife_lib_fn_method_apiclient_favourite_post(uint64_t ptr, uint64_t post_id
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_FAVORITE_POST
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_FAVORITE_POST
+uint64_t uniffi_ulife_lib_fn_method_apiclient_favorite_post(uint64_t ptr, uint64_t post_id
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_GET_ACTIVITY_DETAILS
@@ -318,19 +318,19 @@ uint64_t uniffi_ulife_lib_fn_method_apiclient_favourite_post(uint64_t ptr, uint6
 uint64_t uniffi_ulife_lib_fn_method_apiclient_get_activity_details(uint64_t ptr, uint64_t activity_id
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_GET_CURRENT_USER_PROFILE
-#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_GET_CURRENT_USER_PROFILE
-uint64_t uniffi_ulife_lib_fn_method_apiclient_get_current_user_profile(uint64_t ptr
-);
-#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_GET_POST
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_GET_POST
-uint64_t uniffi_ulife_lib_fn_method_apiclient_get_post(uint64_t ptr, uint64_t post_id
+uint64_t uniffi_ulife_lib_fn_method_apiclient_get_post(uint64_t ptr, uint64_t post_id, int8_t is_cached
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_GET_POST_COMMENTS
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_GET_POST_COMMENTS
-uint64_t uniffi_ulife_lib_fn_method_apiclient_get_post_comments(uint64_t ptr, uint64_t post_id, uint64_t page, uint64_t page_size
+uint64_t uniffi_ulife_lib_fn_method_apiclient_get_post_comments(uint64_t ptr, uint64_t post_id, uint64_t page, uint64_t page_size, int8_t is_cached
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_GET_USER_PROFILE
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_GET_USER_PROFILE
+uint64_t uniffi_ulife_lib_fn_method_apiclient_get_user_profile(uint64_t ptr
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_LIKE_COMMENT
@@ -355,7 +355,7 @@ uint64_t uniffi_ulife_lib_fn_method_apiclient_list_boards(uint64_t ptr
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_LIST_COURSES
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_LIST_COURSES
-uint64_t uniffi_ulife_lib_fn_method_apiclient_list_courses(uint64_t ptr
+uint64_t uniffi_ulife_lib_fn_method_apiclient_list_courses(uint64_t ptr, RustBuffer query_params, int8_t is_cached
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_LIST_MY_ACTIVITIES
@@ -365,17 +365,17 @@ uint64_t uniffi_ulife_lib_fn_method_apiclient_list_my_activities(uint64_t ptr
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_LIST_POSTS
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_LIST_POSTS
-uint64_t uniffi_ulife_lib_fn_method_apiclient_list_posts(uint64_t ptr, RustBuffer params
+uint64_t uniffi_ulife_lib_fn_method_apiclient_list_posts(uint64_t ptr, RustBuffer params, int8_t is_cached
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_LIST_SCHEDULE_ITEMS
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_LIST_SCHEDULE_ITEMS
-uint64_t uniffi_ulife_lib_fn_method_apiclient_list_schedule_items(uint64_t ptr, RustBuffer semester_id, RustBuffer week
+uint64_t uniffi_ulife_lib_fn_method_apiclient_list_schedule_items(uint64_t ptr, int64_t semester_id, RustBuffer week, int8_t is_cached
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_LIST_SEMESTERS
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_LIST_SEMESTERS
-uint64_t uniffi_ulife_lib_fn_method_apiclient_list_semesters(uint64_t ptr
+uint64_t uniffi_ulife_lib_fn_method_apiclient_list_semesters(uint64_t ptr, int8_t is_cached
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_LOGIN
@@ -390,7 +390,7 @@ uint64_t uniffi_ulife_lib_fn_method_apiclient_logout(uint64_t ptr
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_REGISTER
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_REGISTER
-uint64_t uniffi_ulife_lib_fn_method_apiclient_register(uint64_t ptr, RustBuffer student_id, RustBuffer password, RustBuffer name, RustBuffer college, RustBuffer major, RustBuffer phone
+uint64_t uniffi_ulife_lib_fn_method_apiclient_register(uint64_t ptr, RustBuffer input
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_REPLY_COMMENT
@@ -408,9 +408,9 @@ uint64_t uniffi_ulife_lib_fn_method_apiclient_report(uint64_t ptr, RustBuffer ta
 uint64_t uniffi_ulife_lib_fn_method_apiclient_unfavorite_activity(uint64_t ptr, uint64_t activity_id
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_UNFAVOURITE_POST
-#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_UNFAVOURITE_POST
-uint64_t uniffi_ulife_lib_fn_method_apiclient_unfavourite_post(uint64_t ptr, uint64_t post_id
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_UNFAVORITE_POST
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_UNFAVORITE_POST
+uint64_t uniffi_ulife_lib_fn_method_apiclient_unfavorite_post(uint64_t ptr, uint64_t post_id
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_UNLIKE_COMMENT
@@ -428,19 +428,50 @@ uint64_t uniffi_ulife_lib_fn_method_apiclient_unlike_post(uint64_t ptr, uint64_t
 uint64_t uniffi_ulife_lib_fn_method_apiclient_unroll_activity(uint64_t ptr, uint64_t activity_id
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_UPDATE_CURRENT_USER_PROFILE
-#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_UPDATE_CURRENT_USER_PROFILE
-uint64_t uniffi_ulife_lib_fn_method_apiclient_update_current_user_profile(uint64_t ptr
-);
-#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_UPDATE_POST
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_UPDATE_POST
-uint64_t uniffi_ulife_lib_fn_method_apiclient_update_post(uint64_t ptr, uint64_t post_id, RustBuffer title, RustBuffer content, RustBuffer tags, RustBuffer medias
+uint64_t uniffi_ulife_lib_fn_method_apiclient_update_post(uint64_t ptr, uint64_t post_id, RustBuffer input
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_UPDATE_SCHEDULE_ITEM
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_UPDATE_SCHEDULE_ITEM
-uint64_t uniffi_ulife_lib_fn_method_apiclient_update_schedule_item(uint64_t ptr
+uint64_t uniffi_ulife_lib_fn_method_apiclient_update_schedule_item(uint64_t ptr, RustBuffer input
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_UPDATE_USER_PROFILE
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_UPDATE_USER_PROFILE
+uint64_t uniffi_ulife_lib_fn_method_apiclient_update_user_profile(uint64_t ptr, RustBuffer input
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_UPLOAD_FILE
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_UPLOAD_FILE
+uint64_t uniffi_ulife_lib_fn_method_apiclient_upload_file(uint64_t ptr, RustBuffer data, RustBuffer filename
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_CLONE_CREATEPOSTREQ
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_CLONE_CREATEPOSTREQ
+uint64_t uniffi_ulife_lib_fn_clone_createpostreq(uint64_t handle, RustCallStatus *_Nonnull out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_FREE_CREATEPOSTREQ
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_FREE_CREATEPOSTREQ
+void uniffi_ulife_lib_fn_free_createpostreq(uint64_t handle, RustCallStatus *_Nonnull out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_CONSTRUCTOR_CREATEPOSTREQ_NEW
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_CONSTRUCTOR_CREATEPOSTREQ_NEW
+uint64_t uniffi_ulife_lib_fn_constructor_createpostreq_new(RustCallStatus *_Nonnull out_status
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_CREATEPOSTREQ_IS_VALID
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_CREATEPOSTREQ_IS_VALID
+int8_t uniffi_ulife_lib_fn_method_createpostreq_is_valid(uint64_t ptr, RustCallStatus *_Nonnull out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_CREATEPOSTREQ_TO_PROTO
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_CREATEPOSTREQ_TO_PROTO
+RustBuffer uniffi_ulife_lib_fn_method_createpostreq_to_proto(uint64_t ptr, RustCallStatus *_Nonnull out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_CLONE_PERSISTENCEMANAGER
@@ -458,6 +489,11 @@ void uniffi_ulife_lib_fn_free_persistencemanager(uint64_t handle, RustCallStatus
 uint64_t uniffi_ulife_lib_fn_constructor_persistencemanager_new(RustBuffer base_folder, RustCallStatus *_Nonnull out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_PERSISTENCEMANAGER_GET_CURRENT_USER
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_PERSISTENCEMANAGER_GET_CURRENT_USER
+uint64_t uniffi_ulife_lib_fn_method_persistencemanager_get_current_user(uint64_t ptr
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_PERSISTENCEMANAGER_GET_CURRENT_USER_TOKEN
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_PERSISTENCEMANAGER_GET_CURRENT_USER_TOKEN
 RustBuffer uniffi_ulife_lib_fn_method_persistencemanager_get_current_user_token(uint64_t ptr, RustCallStatus *_Nonnull out_status
@@ -465,7 +501,7 @@ RustBuffer uniffi_ulife_lib_fn_method_persistencemanager_get_current_user_token(
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_PERSISTENCEMANAGER_SAVE_CURRENT_USER
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_PERSISTENCEMANAGER_SAVE_CURRENT_USER
-uint64_t uniffi_ulife_lib_fn_method_persistencemanager_save_current_user(uint64_t ptr, RustBuffer current_user
+uint64_t uniffi_ulife_lib_fn_method_persistencemanager_save_current_user(uint64_t ptr, RustBuffer login_data
 );
 #endif
 #ifndef UNIFFI_FFIDEF_FFI_ULIFE_LIB_RUSTBUFFER_ALLOC
@@ -788,21 +824,15 @@ uint16_t uniffi_ulife_lib_checksum_method_apiclient_favorite_activity(void
     
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_FAVOURITE_POST
-#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_FAVOURITE_POST
-uint16_t uniffi_ulife_lib_checksum_method_apiclient_favourite_post(void
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_FAVORITE_POST
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_FAVORITE_POST
+uint16_t uniffi_ulife_lib_checksum_method_apiclient_favorite_post(void
     
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_GET_ACTIVITY_DETAILS
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_GET_ACTIVITY_DETAILS
 uint16_t uniffi_ulife_lib_checksum_method_apiclient_get_activity_details(void
-    
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_GET_CURRENT_USER_PROFILE
-#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_GET_CURRENT_USER_PROFILE
-uint16_t uniffi_ulife_lib_checksum_method_apiclient_get_current_user_profile(void
     
 );
 #endif
@@ -815,6 +845,12 @@ uint16_t uniffi_ulife_lib_checksum_method_apiclient_get_post(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_GET_POST_COMMENTS
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_GET_POST_COMMENTS
 uint16_t uniffi_ulife_lib_checksum_method_apiclient_get_post_comments(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_GET_USER_PROFILE
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_GET_USER_PROFILE
+uint16_t uniffi_ulife_lib_checksum_method_apiclient_get_user_profile(void
     
 );
 #endif
@@ -908,9 +944,9 @@ uint16_t uniffi_ulife_lib_checksum_method_apiclient_unfavorite_activity(void
     
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_UNFAVOURITE_POST
-#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_UNFAVOURITE_POST
-uint16_t uniffi_ulife_lib_checksum_method_apiclient_unfavourite_post(void
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_UNFAVORITE_POST
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_UNFAVORITE_POST
+uint16_t uniffi_ulife_lib_checksum_method_apiclient_unfavorite_post(void
     
 );
 #endif
@@ -932,12 +968,6 @@ uint16_t uniffi_ulife_lib_checksum_method_apiclient_unroll_activity(void
     
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_UPDATE_CURRENT_USER_PROFILE
-#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_UPDATE_CURRENT_USER_PROFILE
-uint16_t uniffi_ulife_lib_checksum_method_apiclient_update_current_user_profile(void
-    
-);
-#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_UPDATE_POST
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_UPDATE_POST
 uint16_t uniffi_ulife_lib_checksum_method_apiclient_update_post(void
@@ -947,6 +977,36 @@ uint16_t uniffi_ulife_lib_checksum_method_apiclient_update_post(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_UPDATE_SCHEDULE_ITEM
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_UPDATE_SCHEDULE_ITEM
 uint16_t uniffi_ulife_lib_checksum_method_apiclient_update_schedule_item(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_UPDATE_USER_PROFILE
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_UPDATE_USER_PROFILE
+uint16_t uniffi_ulife_lib_checksum_method_apiclient_update_user_profile(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_UPLOAD_FILE
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_UPLOAD_FILE
+uint16_t uniffi_ulife_lib_checksum_method_apiclient_upload_file(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_CREATEPOSTREQ_IS_VALID
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_CREATEPOSTREQ_IS_VALID
+uint16_t uniffi_ulife_lib_checksum_method_createpostreq_is_valid(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_CREATEPOSTREQ_TO_PROTO
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_CREATEPOSTREQ_TO_PROTO
+uint16_t uniffi_ulife_lib_checksum_method_createpostreq_to_proto(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_PERSISTENCEMANAGER_GET_CURRENT_USER
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_PERSISTENCEMANAGER_GET_CURRENT_USER
+uint16_t uniffi_ulife_lib_checksum_method_persistencemanager_get_current_user(void
     
 );
 #endif
@@ -965,6 +1025,12 @@ uint16_t uniffi_ulife_lib_checksum_method_persistencemanager_save_current_user(v
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_CONSTRUCTOR_APICLIENT_NEW
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_CONSTRUCTOR_APICLIENT_NEW
 uint16_t uniffi_ulife_lib_checksum_constructor_apiclient_new(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_CONSTRUCTOR_CREATEPOSTREQ_NEW
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_CONSTRUCTOR_CREATEPOSTREQ_NEW
+uint16_t uniffi_ulife_lib_checksum_constructor_createpostreq_new(void
     
 );
 #endif

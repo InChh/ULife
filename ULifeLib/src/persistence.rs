@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use dashmap::DashMap;
 use prost::Message;
 
-use crate::{error::Result, profile::CurrentUser};
+use crate::{error::Result, pb::user::LoginData};
 
 #[derive(uniffi::Object)]
 pub struct PersistenceManager {
@@ -22,22 +22,20 @@ impl PersistenceManager {
     }
 
     /// 保存当前用户信息到本地存储
-    pub async fn save_current_user(&self, current_user: CurrentUser) -> Result<()> {
-        // encode and save the token to a file
+    pub async fn save_current_user(&self, login_data: LoginData) -> Result<()> {
         let file_path = PathBuf::from(&self.base_folder).join("current_user");
-        // encode to protobuf
         let mut buf = Vec::new();
-        current_user.encode(&mut buf)?;
+        login_data.encode(&mut buf)?;
         tokio::fs::write(&file_path, buf).await?;
         self.key_to_file.insert("current_user".to_string(), file_path.to_string_lossy().to_string());
         Ok(())
     }
 
     /// 获取当前用户信息
-    pub async fn get_current_user(&self) -> Result<Option<CurrentUser>> {
+    pub async fn get_current_user(&self) -> Result<Option<LoginData>> {
         if let Some(file_path) = self.key_to_file.get("current_user") {
             let data = tokio::fs::read(&*file_path).await?;
-            let current_user = CurrentUser::decode(&*data)?;
+            let current_user = LoginData::decode(&*data)?;
             return Ok(Some(current_user));
         }
         Ok(None)
@@ -47,7 +45,7 @@ impl PersistenceManager {
     pub fn get_current_user_token(&self) -> Result<Option<String>> {
         if let Some(file_path) = self.key_to_file.get("current_user") {
             let data = std::fs::read(&*file_path)?;
-            let current_user = CurrentUser::decode(&*data)?;
+            let current_user = LoginData::decode(&*data)?;
             return Ok(Some(current_user.token));
         }
         Ok(None)

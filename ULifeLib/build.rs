@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use std::path::PathBuf;
 
 use walkdir::WalkDir;
@@ -18,42 +17,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 生成
     let mut config = prost_build::Config::new();
     config.out_dir(&out_dir); // 默认是 OUT_DIR，这里改为自定义目录
-
-    // 给除 Common 包外的所有 message 添加自定义属性
-    // prost 的 type_attribute 需要完整的 protobuf 路径，如 "Forum.ForumPost" 或 "Test"
-    let mut targets = HashSet::new();
-    for proto in &protos {
-        let content = std::fs::read_to_string(proto)?;
-        let package = content
-            .lines()
-            .find_map(|line| {
-                let trimmed = line.trim();
-                trimmed
-                    .strip_prefix("package ")
-                    .map(|pkg| pkg.trim_end_matches(';').trim().to_owned())
-            });
-
-        for line in content.lines() {
-            let trimmed = line.trim();
-            if let Some(rest) = trimmed.strip_prefix("message ")
-                && let Some(name) = rest
-                    .split_whitespace()
-                    .next()
-                    .map(|s| s.trim_end_matches('{').to_owned())
-                {
-                    let qualified = match &package {
-                        Some(pkg) => format!("{pkg}.{name}"),
-                        None => name,
-                    };
-                    if package.as_deref() != Some("Common") {
-                        targets.insert(qualified);
-                    }
-                }
-        }
-    }
-    for target in targets {
-        config.type_attribute(target, "#[derive(uniffi::Record)]");
-    }
+    config.type_attribute(".", "#[derive(uniffi::Record)]");
 
     config
         .compile_protos(&protos, &[proto_root])
