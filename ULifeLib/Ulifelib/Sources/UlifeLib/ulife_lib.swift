@@ -414,7 +414,13 @@ fileprivate final class UniffiHandleMap<T>: @unchecked Sendable {
 
 
 // Public interface members begin here.
-
+// Magic number for the Rust proxy to call using the same mechanism as every other method,
+// to free the callback once it's dropped by Rust.
+private let IDX_CALLBACK_FREE: Int32 = 0
+// Callback return codes
+private let UNIFFI_CALLBACK_SUCCESS: Int32 = 0
+private let UNIFFI_CALLBACK_ERROR: Int32 = 1
+private let UNIFFI_CALLBACK_UNEXPECTED_ERROR: Int32 = 2
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
@@ -605,7 +611,10 @@ public protocol ApiClientProtocol: AnyObject, Sendable {
      */
     func deleteScheduleItem(itemId: Int64) async throws 
     
-    func downloadFile(url: String) async throws  -> Data
+    /**
+     * 下载文件
+     */
+    func downloadFile(url: String, isCached: Bool) async throws  -> Data
     
     /**
      * 报名参加活动
@@ -755,7 +764,7 @@ public protocol ApiClientProtocol: AnyObject, Sendable {
      */
     func updateUserProfile(input: UpdateProfileRequest) async throws 
     
-    func uploadFile(data: Data, filename: String) async throws  -> String
+    func uploadFile(data: Data, filename: String) async throws  -> UploadResult
     
 }
 open class ApiClient: ApiClientProtocol, @unchecked Sendable {
@@ -813,6 +822,17 @@ public convenience init(baseUrl: String, cacheFolder: String, cacheSize: UInt64)
         try! rustCall { uniffi_ulife_lib_fn_free_apiclient(handle, $0) }
     }
 
+    
+public static func newWithFs(baseUrl: String, cacheFolder: String, cacheSize: UInt64, fs: FileSystem)throws  -> ApiClient  {
+    return try  FfiConverterTypeApiClient_lift(try rustCallWithError(FfiConverterTypeError_lift) {
+    uniffi_ulife_lib_fn_constructor_apiclient_new_with_fs(
+        FfiConverterString.lower(baseUrl),
+        FfiConverterString.lower(cacheFolder),
+        FfiConverterUInt64.lower(cacheSize),
+        FfiConverterTypeFileSystem_lower(fs),$0
+    )
+})
+}
     
 
     
@@ -958,13 +978,16 @@ open func deleteScheduleItem(itemId: Int64)async throws   {
         )
 }
     
-open func downloadFile(url: String)async throws  -> Data  {
+    /**
+     * 下载文件
+     */
+open func downloadFile(url: String, isCached: Bool = true)async throws  -> Data  {
     return
         try  await uniffiRustCallAsync(
             rustFutureFunc: {
                 uniffi_ulife_lib_fn_method_apiclient_download_file(
                     self.uniffiCloneHandle(),
-                    FfiConverterString.lower(url)
+                    FfiConverterString.lower(url),FfiConverterBool.lower(isCached)
                 )
             },
             pollFunc: ffi_ulife_lib_rust_future_poll_rust_buffer,
@@ -1558,7 +1581,7 @@ open func updateUserProfile(input: UpdateProfileRequest)async throws   {
         )
 }
     
-open func uploadFile(data: Data, filename: String)async throws  -> String  {
+open func uploadFile(data: Data, filename: String)async throws  -> UploadResult  {
     return
         try  await uniffiRustCallAsync(
             rustFutureFunc: {
@@ -1570,7 +1593,7 @@ open func uploadFile(data: Data, filename: String)async throws  -> String  {
             pollFunc: ffi_ulife_lib_rust_future_poll_rust_buffer,
             completeFunc: ffi_ulife_lib_rust_future_complete_rust_buffer,
             freeFunc: ffi_ulife_lib_rust_future_free_rust_buffer,
-            liftFunc: FfiConverterString.lift,
+            liftFunc: FfiConverterTypeUploadResult_lift,
             errorHandler: FfiConverterTypeError_lift
         )
 }
@@ -1753,6 +1776,555 @@ public func FfiConverterTypeCreatePostReq_lower(_ value: CreatePostReq) -> UInt6
 
 
 
+public protocol FileSystem: AnyObject, Sendable {
+    
+    func createDirAll(path: String) async throws 
+    
+    func write(path: String, data: Data) async throws 
+    
+    func read(path: String) async throws  -> Data
+    
+    func removeFile(path: String) async throws 
+    
+    func rename(from: String, to: String) async throws 
+    
+    func removeDirAll(path: String) async throws 
+    
+    func readBlocking(path: String) throws  -> Data
+    
+}
+open class FileSystemImpl: FileSystem, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_ulife_lib_fn_clone_filesystem(self.handle, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        try! rustCall { uniffi_ulife_lib_fn_free_filesystem(handle, $0) }
+    }
+
+    
+
+    
+open func createDirAll(path: String)async throws   {
+    return
+        try  await uniffiRustCallAsync(
+            rustFutureFunc: {
+                uniffi_ulife_lib_fn_method_filesystem_create_dir_all(
+                    self.uniffiCloneHandle(),
+                    FfiConverterString.lower(path)
+                )
+            },
+            pollFunc: ffi_ulife_lib_rust_future_poll_void,
+            completeFunc: ffi_ulife_lib_rust_future_complete_void,
+            freeFunc: ffi_ulife_lib_rust_future_free_void,
+            liftFunc: { $0 },
+            errorHandler: FfiConverterTypeError_lift
+        )
+}
+    
+open func write(path: String, data: Data)async throws   {
+    return
+        try  await uniffiRustCallAsync(
+            rustFutureFunc: {
+                uniffi_ulife_lib_fn_method_filesystem_write(
+                    self.uniffiCloneHandle(),
+                    FfiConverterString.lower(path),FfiConverterData.lower(data)
+                )
+            },
+            pollFunc: ffi_ulife_lib_rust_future_poll_void,
+            completeFunc: ffi_ulife_lib_rust_future_complete_void,
+            freeFunc: ffi_ulife_lib_rust_future_free_void,
+            liftFunc: { $0 },
+            errorHandler: FfiConverterTypeError_lift
+        )
+}
+    
+open func read(path: String)async throws  -> Data  {
+    return
+        try  await uniffiRustCallAsync(
+            rustFutureFunc: {
+                uniffi_ulife_lib_fn_method_filesystem_read(
+                    self.uniffiCloneHandle(),
+                    FfiConverterString.lower(path)
+                )
+            },
+            pollFunc: ffi_ulife_lib_rust_future_poll_rust_buffer,
+            completeFunc: ffi_ulife_lib_rust_future_complete_rust_buffer,
+            freeFunc: ffi_ulife_lib_rust_future_free_rust_buffer,
+            liftFunc: FfiConverterData.lift,
+            errorHandler: FfiConverterTypeError_lift
+        )
+}
+    
+open func removeFile(path: String)async throws   {
+    return
+        try  await uniffiRustCallAsync(
+            rustFutureFunc: {
+                uniffi_ulife_lib_fn_method_filesystem_remove_file(
+                    self.uniffiCloneHandle(),
+                    FfiConverterString.lower(path)
+                )
+            },
+            pollFunc: ffi_ulife_lib_rust_future_poll_void,
+            completeFunc: ffi_ulife_lib_rust_future_complete_void,
+            freeFunc: ffi_ulife_lib_rust_future_free_void,
+            liftFunc: { $0 },
+            errorHandler: FfiConverterTypeError_lift
+        )
+}
+    
+open func rename(from: String, to: String)async throws   {
+    return
+        try  await uniffiRustCallAsync(
+            rustFutureFunc: {
+                uniffi_ulife_lib_fn_method_filesystem_rename(
+                    self.uniffiCloneHandle(),
+                    FfiConverterString.lower(from),FfiConverterString.lower(to)
+                )
+            },
+            pollFunc: ffi_ulife_lib_rust_future_poll_void,
+            completeFunc: ffi_ulife_lib_rust_future_complete_void,
+            freeFunc: ffi_ulife_lib_rust_future_free_void,
+            liftFunc: { $0 },
+            errorHandler: FfiConverterTypeError_lift
+        )
+}
+    
+open func removeDirAll(path: String)async throws   {
+    return
+        try  await uniffiRustCallAsync(
+            rustFutureFunc: {
+                uniffi_ulife_lib_fn_method_filesystem_remove_dir_all(
+                    self.uniffiCloneHandle(),
+                    FfiConverterString.lower(path)
+                )
+            },
+            pollFunc: ffi_ulife_lib_rust_future_poll_void,
+            completeFunc: ffi_ulife_lib_rust_future_complete_void,
+            freeFunc: ffi_ulife_lib_rust_future_free_void,
+            liftFunc: { $0 },
+            errorHandler: FfiConverterTypeError_lift
+        )
+}
+    
+open func readBlocking(path: String)throws  -> Data  {
+    return try  FfiConverterData.lift(try rustCallWithError(FfiConverterTypeError_lift) {
+    uniffi_ulife_lib_fn_method_filesystem_read_blocking(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(path),$0
+    )
+})
+}
+    
+
+    
+}
+
+
+
+// Put the implementation in a struct so we don't pollute the top-level namespace
+fileprivate struct UniffiCallbackInterfaceFileSystem {
+
+    // Create the VTable using a series of closures.
+    // Swift automatically converts these into C callback functions.
+    //
+    // This creates 1-element array, since this seems to be the only way to construct a const
+    // pointer that we can pass to the Rust code.
+    static let vtable: [UniffiVTableCallbackInterfaceFileSystem] = [UniffiVTableCallbackInterfaceFileSystem(
+        uniffiFree: { (uniffiHandle: UInt64) -> () in
+            do {
+                try FfiConverterTypeFileSystem.handleMap.remove(handle: uniffiHandle)
+            } catch {
+                print("Uniffi callback interface FileSystem: handle missing in uniffiFree")
+            }
+        },
+        uniffiClone: { (uniffiHandle: UInt64) -> UInt64 in
+            do {
+                return try FfiConverterTypeFileSystem.handleMap.clone(handle: uniffiHandle)
+            } catch {
+                fatalError("Uniffi callback interface FileSystem: handle missing in uniffiClone")
+            }
+        },
+        createDirAll: { (
+            uniffiHandle: UInt64,
+            path: RustBuffer,
+            uniffiFutureCallback: @escaping UniffiForeignFutureCompleteVoid,
+            uniffiCallbackData: UInt64,
+            uniffiOutDroppedCallback: UnsafeMutablePointer<UniffiForeignFutureDroppedCallbackStruct>
+        ) in
+            let makeCall = {
+                () async throws -> () in
+                guard let uniffiObj = try? FfiConverterTypeFileSystem.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return try await uniffiObj.createDirAll(
+                     path: try FfiConverterString.lift(path)
+                )
+            }
+
+            let uniffiHandleSuccess = { (returnValue: ()) in
+                uniffiFutureCallback(
+                    uniffiCallbackData,
+                    UniffiForeignFutureResultVoid(
+                        callStatus: RustCallStatus()
+                    )
+                )
+            }
+            let uniffiHandleError = { (statusCode, errorBuf) in
+                uniffiFutureCallback(
+                    uniffiCallbackData,
+                    UniffiForeignFutureResultVoid(
+                        callStatus: RustCallStatus(code: statusCode, errorBuf: errorBuf)
+                    )
+                )
+            }
+            uniffiTraitInterfaceCallAsyncWithError(
+                makeCall: makeCall,
+                handleSuccess: uniffiHandleSuccess,
+                handleError: uniffiHandleError,
+                lowerError: FfiConverterTypeError_lower,
+                droppedCallback: uniffiOutDroppedCallback
+            )
+        },
+        write: { (
+            uniffiHandle: UInt64,
+            path: RustBuffer,
+            data: RustBuffer,
+            uniffiFutureCallback: @escaping UniffiForeignFutureCompleteVoid,
+            uniffiCallbackData: UInt64,
+            uniffiOutDroppedCallback: UnsafeMutablePointer<UniffiForeignFutureDroppedCallbackStruct>
+        ) in
+            let makeCall = {
+                () async throws -> () in
+                guard let uniffiObj = try? FfiConverterTypeFileSystem.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return try await uniffiObj.write(
+                     path: try FfiConverterString.lift(path),
+                     data: try FfiConverterData.lift(data)
+                )
+            }
+
+            let uniffiHandleSuccess = { (returnValue: ()) in
+                uniffiFutureCallback(
+                    uniffiCallbackData,
+                    UniffiForeignFutureResultVoid(
+                        callStatus: RustCallStatus()
+                    )
+                )
+            }
+            let uniffiHandleError = { (statusCode, errorBuf) in
+                uniffiFutureCallback(
+                    uniffiCallbackData,
+                    UniffiForeignFutureResultVoid(
+                        callStatus: RustCallStatus(code: statusCode, errorBuf: errorBuf)
+                    )
+                )
+            }
+            uniffiTraitInterfaceCallAsyncWithError(
+                makeCall: makeCall,
+                handleSuccess: uniffiHandleSuccess,
+                handleError: uniffiHandleError,
+                lowerError: FfiConverterTypeError_lower,
+                droppedCallback: uniffiOutDroppedCallback
+            )
+        },
+        read: { (
+            uniffiHandle: UInt64,
+            path: RustBuffer,
+            uniffiFutureCallback: @escaping UniffiForeignFutureCompleteRustBuffer,
+            uniffiCallbackData: UInt64,
+            uniffiOutDroppedCallback: UnsafeMutablePointer<UniffiForeignFutureDroppedCallbackStruct>
+        ) in
+            let makeCall = {
+                () async throws -> Data in
+                guard let uniffiObj = try? FfiConverterTypeFileSystem.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return try await uniffiObj.read(
+                     path: try FfiConverterString.lift(path)
+                )
+            }
+
+            let uniffiHandleSuccess = { (returnValue: Data) in
+                uniffiFutureCallback(
+                    uniffiCallbackData,
+                    UniffiForeignFutureResultRustBuffer(
+                        returnValue: FfiConverterData.lower(returnValue),
+                        callStatus: RustCallStatus()
+                    )
+                )
+            }
+            let uniffiHandleError = { (statusCode, errorBuf) in
+                uniffiFutureCallback(
+                    uniffiCallbackData,
+                    UniffiForeignFutureResultRustBuffer(
+                        returnValue: RustBuffer.empty(),
+                        callStatus: RustCallStatus(code: statusCode, errorBuf: errorBuf)
+                    )
+                )
+            }
+            uniffiTraitInterfaceCallAsyncWithError(
+                makeCall: makeCall,
+                handleSuccess: uniffiHandleSuccess,
+                handleError: uniffiHandleError,
+                lowerError: FfiConverterTypeError_lower,
+                droppedCallback: uniffiOutDroppedCallback
+            )
+        },
+        removeFile: { (
+            uniffiHandle: UInt64,
+            path: RustBuffer,
+            uniffiFutureCallback: @escaping UniffiForeignFutureCompleteVoid,
+            uniffiCallbackData: UInt64,
+            uniffiOutDroppedCallback: UnsafeMutablePointer<UniffiForeignFutureDroppedCallbackStruct>
+        ) in
+            let makeCall = {
+                () async throws -> () in
+                guard let uniffiObj = try? FfiConverterTypeFileSystem.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return try await uniffiObj.removeFile(
+                     path: try FfiConverterString.lift(path)
+                )
+            }
+
+            let uniffiHandleSuccess = { (returnValue: ()) in
+                uniffiFutureCallback(
+                    uniffiCallbackData,
+                    UniffiForeignFutureResultVoid(
+                        callStatus: RustCallStatus()
+                    )
+                )
+            }
+            let uniffiHandleError = { (statusCode, errorBuf) in
+                uniffiFutureCallback(
+                    uniffiCallbackData,
+                    UniffiForeignFutureResultVoid(
+                        callStatus: RustCallStatus(code: statusCode, errorBuf: errorBuf)
+                    )
+                )
+            }
+            uniffiTraitInterfaceCallAsyncWithError(
+                makeCall: makeCall,
+                handleSuccess: uniffiHandleSuccess,
+                handleError: uniffiHandleError,
+                lowerError: FfiConverterTypeError_lower,
+                droppedCallback: uniffiOutDroppedCallback
+            )
+        },
+        rename: { (
+            uniffiHandle: UInt64,
+            from: RustBuffer,
+            to: RustBuffer,
+            uniffiFutureCallback: @escaping UniffiForeignFutureCompleteVoid,
+            uniffiCallbackData: UInt64,
+            uniffiOutDroppedCallback: UnsafeMutablePointer<UniffiForeignFutureDroppedCallbackStruct>
+        ) in
+            let makeCall = {
+                () async throws -> () in
+                guard let uniffiObj = try? FfiConverterTypeFileSystem.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return try await uniffiObj.rename(
+                     from: try FfiConverterString.lift(from),
+                     to: try FfiConverterString.lift(to)
+                )
+            }
+
+            let uniffiHandleSuccess = { (returnValue: ()) in
+                uniffiFutureCallback(
+                    uniffiCallbackData,
+                    UniffiForeignFutureResultVoid(
+                        callStatus: RustCallStatus()
+                    )
+                )
+            }
+            let uniffiHandleError = { (statusCode, errorBuf) in
+                uniffiFutureCallback(
+                    uniffiCallbackData,
+                    UniffiForeignFutureResultVoid(
+                        callStatus: RustCallStatus(code: statusCode, errorBuf: errorBuf)
+                    )
+                )
+            }
+            uniffiTraitInterfaceCallAsyncWithError(
+                makeCall: makeCall,
+                handleSuccess: uniffiHandleSuccess,
+                handleError: uniffiHandleError,
+                lowerError: FfiConverterTypeError_lower,
+                droppedCallback: uniffiOutDroppedCallback
+            )
+        },
+        removeDirAll: { (
+            uniffiHandle: UInt64,
+            path: RustBuffer,
+            uniffiFutureCallback: @escaping UniffiForeignFutureCompleteVoid,
+            uniffiCallbackData: UInt64,
+            uniffiOutDroppedCallback: UnsafeMutablePointer<UniffiForeignFutureDroppedCallbackStruct>
+        ) in
+            let makeCall = {
+                () async throws -> () in
+                guard let uniffiObj = try? FfiConverterTypeFileSystem.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return try await uniffiObj.removeDirAll(
+                     path: try FfiConverterString.lift(path)
+                )
+            }
+
+            let uniffiHandleSuccess = { (returnValue: ()) in
+                uniffiFutureCallback(
+                    uniffiCallbackData,
+                    UniffiForeignFutureResultVoid(
+                        callStatus: RustCallStatus()
+                    )
+                )
+            }
+            let uniffiHandleError = { (statusCode, errorBuf) in
+                uniffiFutureCallback(
+                    uniffiCallbackData,
+                    UniffiForeignFutureResultVoid(
+                        callStatus: RustCallStatus(code: statusCode, errorBuf: errorBuf)
+                    )
+                )
+            }
+            uniffiTraitInterfaceCallAsyncWithError(
+                makeCall: makeCall,
+                handleSuccess: uniffiHandleSuccess,
+                handleError: uniffiHandleError,
+                lowerError: FfiConverterTypeError_lower,
+                droppedCallback: uniffiOutDroppedCallback
+            )
+        },
+        readBlocking: { (
+            uniffiHandle: UInt64,
+            path: RustBuffer,
+            uniffiOutReturn: UnsafeMutablePointer<RustBuffer>,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> Data in
+                guard let uniffiObj = try? FfiConverterTypeFileSystem.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return try uniffiObj.readBlocking(
+                     path: try FfiConverterString.lift(path)
+                )
+            }
+
+            
+            let writeReturn = { uniffiOutReturn.pointee = FfiConverterData.lower($0) }
+            uniffiTraitInterfaceCallWithError(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn,
+                lowerError: FfiConverterTypeError_lower
+            )
+        }
+    )]
+}
+
+private func uniffiCallbackInitFileSystem() {
+    uniffi_ulife_lib_fn_init_callback_vtable_filesystem(UniffiCallbackInterfaceFileSystem.vtable)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeFileSystem: FfiConverter {
+    fileprivate static let handleMap = UniffiHandleMap<FileSystem>()
+
+    typealias FfiType = UInt64
+    typealias SwiftType = FileSystem
+
+    public static func lift(_ handle: UInt64) throws -> FileSystem {
+        if ((handle & 1) == 0) {
+            // Rust-generated handle, construct a new class that uses the handle to implement the
+            // interface
+            return FileSystemImpl(unsafeFromHandle: handle)
+        } else {
+            // Swift-generated handle, get the object from the handle map
+            return try handleMap.remove(handle: handle)
+        }
+    }
+
+    public static func lower(_ value: FileSystem) -> UInt64 {
+         if let rustImpl = value as? FileSystemImpl {
+             // Rust-implemented object.  Clone the handle and return it
+            return rustImpl.uniffiCloneHandle()
+         } else {
+            // Swift object, generate a new vtable handle and return that.
+            return handleMap.insert(obj: value)
+         }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> FileSystem {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: FileSystem, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFileSystem_lift(_ handle: UInt64) throws -> FileSystem {
+    return try FfiConverterTypeFileSystem.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFileSystem_lower(_ value: FileSystem) -> UInt64 {
+    return FfiConverterTypeFileSystem.lower(value)
+}
+
+
+
+
+
+
 public protocol PersistenceManagerProtocol: AnyObject, Sendable {
     
     /**
@@ -1827,6 +2399,15 @@ public convenience init(baseFolder: String)throws  {
         try! rustCall { uniffi_ulife_lib_fn_free_persistencemanager(handle, $0) }
     }
 
+    
+public static func newWithFs(baseFolder: String, fs: FileSystem)throws  -> PersistenceManager  {
+    return try  FfiConverterTypePersistenceManager_lift(try rustCallWithError(FfiConverterTypeError_lift) {
+    uniffi_ulife_lib_fn_constructor_persistencemanager_new_with_fs(
+        FfiConverterString.lower(baseFolder),
+        FfiConverterTypeFileSystem_lower(fs),$0
+    )
+})
+}
     
 
     
@@ -7903,6 +8484,237 @@ public func FfiConverterTypeUpdateScheduleItemResponse_lower(_ value: UpdateSche
 
 
 /**
+ * 文件上传请求
+ */
+public struct UploadFileRequest: Equatable, Hashable {
+    /**
+     * 文件二进制数据
+     */
+    public var file: Data
+    /**
+     * 文件类型提示 (可选，服务端会自动检测)
+     */
+    public var fileType: String?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * 文件二进制数据
+         */file: Data, 
+        /**
+         * 文件类型提示 (可选，服务端会自动检测)
+         */fileType: String?) {
+        self.file = file
+        self.fileType = fileType
+    }
+
+    
+}
+
+#if compiler(>=6)
+extension UploadFileRequest: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeUploadFileRequest: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> UploadFileRequest {
+        return
+            try UploadFileRequest(
+                file: FfiConverterData.read(from: &buf), 
+                fileType: FfiConverterOptionString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: UploadFileRequest, into buf: inout [UInt8]) {
+        FfiConverterData.write(value.file, into: &buf)
+        FfiConverterOptionString.write(value.fileType, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeUploadFileRequest_lift(_ buf: RustBuffer) throws -> UploadFileRequest {
+    return try FfiConverterTypeUploadFileRequest.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeUploadFileRequest_lower(_ value: UploadFileRequest) -> RustBuffer {
+    return FfiConverterTypeUploadFileRequest.lower(value)
+}
+
+
+/**
+ * 文件上传响应
+ */
+public struct UploadFileResponse: Equatable, Hashable {
+    /**
+     * 业务状态码，通常200表示成功
+     */
+    public var code: Int32
+    /**
+     * 状态信息，对code的简要描述
+     */
+    public var message: String
+    /**
+     * 业务数据主体
+     */
+    public var data: UploadResult?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * 业务状态码，通常200表示成功
+         */code: Int32, 
+        /**
+         * 状态信息，对code的简要描述
+         */message: String, 
+        /**
+         * 业务数据主体
+         */data: UploadResult?) {
+        self.code = code
+        self.message = message
+        self.data = data
+    }
+
+    
+}
+
+#if compiler(>=6)
+extension UploadFileResponse: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeUploadFileResponse: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> UploadFileResponse {
+        return
+            try UploadFileResponse(
+                code: FfiConverterInt32.read(from: &buf), 
+                message: FfiConverterString.read(from: &buf), 
+                data: FfiConverterOptionTypeUploadResult.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: UploadFileResponse, into buf: inout [UInt8]) {
+        FfiConverterInt32.write(value.code, into: &buf)
+        FfiConverterString.write(value.message, into: &buf)
+        FfiConverterOptionTypeUploadResult.write(value.data, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeUploadFileResponse_lift(_ buf: RustBuffer) throws -> UploadFileResponse {
+    return try FfiConverterTypeUploadFileResponse.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeUploadFileResponse_lower(_ value: UploadFileResponse) -> RustBuffer {
+    return FfiConverterTypeUploadFileResponse.lower(value)
+}
+
+
+/**
+ * 文件上传结果
+ */
+public struct UploadResult: Equatable, Hashable {
+    /**
+     * 文件在对象存储中的永久访问链接 (OSS URL)
+     */
+    public var url: String
+    /**
+     * 如果是图片，返回自动生成的缩略图 URL (可选)
+     */
+    public var thumbnailUrl: String?
+    /**
+     * 服务器保存的文件名
+     */
+    public var filename: String
+    /**
+     * 文件大小，单位：字节 (Bytes)
+     */
+    public var size: Int64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * 文件在对象存储中的永久访问链接 (OSS URL)
+         */url: String, 
+        /**
+         * 如果是图片，返回自动生成的缩略图 URL (可选)
+         */thumbnailUrl: String?, 
+        /**
+         * 服务器保存的文件名
+         */filename: String, 
+        /**
+         * 文件大小，单位：字节 (Bytes)
+         */size: Int64) {
+        self.url = url
+        self.thumbnailUrl = thumbnailUrl
+        self.filename = filename
+        self.size = size
+    }
+
+    
+}
+
+#if compiler(>=6)
+extension UploadResult: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeUploadResult: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> UploadResult {
+        return
+            try UploadResult(
+                url: FfiConverterString.read(from: &buf), 
+                thumbnailUrl: FfiConverterOptionString.read(from: &buf), 
+                filename: FfiConverterString.read(from: &buf), 
+                size: FfiConverterInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: UploadResult, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.url, into: &buf)
+        FfiConverterOptionString.write(value.thumbnailUrl, into: &buf)
+        FfiConverterString.write(value.filename, into: &buf)
+        FfiConverterInt64.write(value.size, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeUploadResult_lift(_ buf: RustBuffer) throws -> UploadResult {
+    return try FfiConverterTypeUploadResult.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeUploadResult_lower(_ value: UploadResult) -> RustBuffer {
+    return FfiConverterTypeUploadResult.lower(value)
+}
+
+
+/**
  * 用户信息
  */
 public struct User: Equatable, Hashable {
@@ -9157,6 +9969,30 @@ fileprivate struct FfiConverterOptionTypeUpdateScheduleItemData: FfiConverterRus
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionTypeUploadResult: FfiConverterRustBuffer {
+    typealias SwiftType = UploadResult?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeUploadResult.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeUploadResult.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypeUser: FfiConverterRustBuffer {
     typealias SwiftType = User?
 
@@ -9647,6 +10483,85 @@ fileprivate func uniffiFutureContinuationCallback(handle: UInt64, pollResult: In
         print("uniffiFutureContinuationCallback invalid handle")
     }
 }
+private func uniffiTraitInterfaceCallAsync<T>(
+    makeCall: @escaping () async throws -> T,
+    handleSuccess: @escaping (T) -> (),
+    handleError: @escaping (Int8, RustBuffer) -> (),
+    droppedCallback: UnsafeMutablePointer<UniffiForeignFutureDroppedCallbackStruct>
+) {
+    let task = Task {
+        do {
+            handleSuccess(try await makeCall())
+        } catch {
+            handleError(CALL_UNEXPECTED_ERROR, FfiConverterString.lower(String(describing: error)))
+        }
+    }
+    let handle = UNIFFI_FOREIGN_FUTURE_HANDLE_MAP.insert(obj: task)
+    droppedCallback.pointee = UniffiForeignFutureDroppedCallbackStruct(
+        handle: handle,
+        free: uniffiForeignFutureDroppedCallback
+    )
+}
+
+private func uniffiTraitInterfaceCallAsyncWithError<T, E>(
+    makeCall: @escaping () async throws -> T,
+    handleSuccess: @escaping (T) -> (),
+    handleError: @escaping (Int8, RustBuffer) -> (),
+    lowerError: @escaping (E) -> RustBuffer,
+    droppedCallback: UnsafeMutablePointer<UniffiForeignFutureDroppedCallbackStruct>
+) {
+    let task = Task {
+        do {
+            handleSuccess(try await makeCall())
+        } catch let error as E {
+            handleError(CALL_ERROR, lowerError(error))
+        } catch {
+            handleError(CALL_UNEXPECTED_ERROR, FfiConverterString.lower(String(describing: error)))
+        }
+    }
+    let handle = UNIFFI_FOREIGN_FUTURE_HANDLE_MAP.insert(obj: task)
+    droppedCallback.pointee = UniffiForeignFutureDroppedCallbackStruct(
+        handle: handle,
+        free: uniffiForeignFutureDroppedCallback
+    )
+}
+
+// Borrow the callback handle map implementation to store foreign future handles
+// TODO: consolidate the handle-map code (https://github.com/mozilla/uniffi-rs/pull/1823)
+fileprivate let UNIFFI_FOREIGN_FUTURE_HANDLE_MAP = UniffiHandleMap<UniffiForeignFutureTask>()
+
+// Protocol for tasks that handle foreign futures.
+//
+// Defining a protocol allows all tasks to be stored in the same handle map.  This can't be done
+// with the task object itself, since has generic parameters.
+fileprivate protocol UniffiForeignFutureTask {
+    func cancel()
+}
+
+extension Task: UniffiForeignFutureTask {}
+
+private func uniffiForeignFutureDroppedCallback(handle: UInt64) {
+    do {
+        let task = try UNIFFI_FOREIGN_FUTURE_HANDLE_MAP.remove(handle: handle)
+        // Set the cancellation flag on the task.  If it's still running, the code can check the
+        // cancellation flag or call `Task.checkCancellation()`.  If the task has completed, this is
+        // a no-op.
+        task.cancel()
+    } catch {
+        print("uniffiForeignFutureDroppedCallback: handle missing from handlemap")
+    }
+}
+
+// For testing
+public func uniffiForeignFutureHandleCountUlifeLib() -> Int {
+    UNIFFI_FOREIGN_FUTURE_HANDLE_MAP.count
+}
+public func initPersistenceManager(baseFolder: String)throws   {try rustCallWithError(FfiConverterTypeError_lift) {
+    uniffi_ulife_lib_fn_func_init_persistence_manager(
+        FfiConverterString.lower(baseFolder),$0
+    )
+}
+}
 
 private enum InitializationResult {
     case ok
@@ -9662,6 +10577,9 @@ private let initializationResult: InitializationResult = {
     let scaffolding_contract_version = ffi_ulife_lib_uniffi_contract_version()
     if bindings_contract_version != scaffolding_contract_version {
         return InitializationResult.contractVersionMismatch
+    }
+    if (uniffi_ulife_lib_checksum_func_init_persistence_manager() != 29513) {
+        return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ulife_lib_checksum_method_apiclient_add_comment_to_post() != 9642) {
         return InitializationResult.apiChecksumMismatch
@@ -9684,7 +10602,7 @@ private let initializationResult: InitializationResult = {
     if (uniffi_ulife_lib_checksum_method_apiclient_delete_schedule_item() != 2176) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_ulife_lib_checksum_method_apiclient_download_file() != 53861) {
+    if (uniffi_ulife_lib_checksum_method_apiclient_download_file() != 51435) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ulife_lib_checksum_method_apiclient_enroll_activity() != 7237) {
@@ -9774,13 +10692,34 @@ private let initializationResult: InitializationResult = {
     if (uniffi_ulife_lib_checksum_method_apiclient_update_user_profile() != 41271) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_ulife_lib_checksum_method_apiclient_upload_file() != 64122) {
+    if (uniffi_ulife_lib_checksum_method_apiclient_upload_file() != 18190) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ulife_lib_checksum_method_createpostreq_is_valid() != 62138) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ulife_lib_checksum_method_createpostreq_to_proto() != 4600) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ulife_lib_checksum_method_filesystem_create_dir_all() != 7643) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ulife_lib_checksum_method_filesystem_write() != 59449) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ulife_lib_checksum_method_filesystem_read() != 4915) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ulife_lib_checksum_method_filesystem_remove_file() != 15098) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ulife_lib_checksum_method_filesystem_rename() != 23297) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ulife_lib_checksum_method_filesystem_remove_dir_all() != 36941) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ulife_lib_checksum_method_filesystem_read_blocking() != 35606) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ulife_lib_checksum_method_persistencemanager_get_current_user() != 3291) {
@@ -9795,13 +10734,20 @@ private let initializationResult: InitializationResult = {
     if (uniffi_ulife_lib_checksum_constructor_apiclient_new() != 13980) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_ulife_lib_checksum_constructor_apiclient_new_with_fs() != 654) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_ulife_lib_checksum_constructor_createpostreq_new() != 29188) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ulife_lib_checksum_constructor_persistencemanager_new() != 46732) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_ulife_lib_checksum_constructor_persistencemanager_new_with_fs() != 23086) {
+        return InitializationResult.apiChecksumMismatch
+    }
 
+    uniffiCallbackInitFileSystem()
     return InitializationResult.ok
 }()
 

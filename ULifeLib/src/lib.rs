@@ -5,23 +5,24 @@ use std::time::Duration;
 
 use crate::{
     error::{Error, Result},
+    fs::{FsHandle, default_fs},
     persistence::PersistenceManager,
 };
 
-
 pub mod error;
+pub mod fs;
 pub mod hybrid_cache;
 pub mod pb;
 pub mod persistence;
 
-pub mod util;
-pub mod model;
 pub mod api;
+pub mod model;
+pub mod util;
 pub use hybrid_cache::{CacheOptions, HybridCache, HybridCacheConfig};
 
 uniffi::setup_scaffolding!();
 
-#[derive(Debug, uniffi::Object)]
+#[derive(uniffi::Object)]
 pub struct ApiClient {
     client: reqwest::Client,
     base_url: String,
@@ -31,7 +32,12 @@ pub struct ApiClient {
 #[uniffi::export]
 impl ApiClient {
     #[uniffi::constructor]
-    pub fn new(base_url: String, cache_folder: String, cache_size: u64) -> Result<Self> {
+    pub fn new(
+        base_url: String,
+        cache_folder: String,
+        cache_size: u64,
+        fs: FsHandle,
+    ) -> Result<Self> {
         let client = reqwest::Client::builder()
             .user_agent("ULife.ios/1.0")
             .build()?;
@@ -41,6 +47,7 @@ impl ApiClient {
             memory_capacity: cache_size,
             default_ttl: Some(Duration::from_hours(24)),
             memory_time_to_idle: Some(Duration::from_secs(60)),
+            fs,
         })?;
         Ok(ApiClient {
             client,
@@ -52,11 +59,9 @@ impl ApiClient {
 
 static PERSISTENCE_MANAGER: OnceCell<PersistenceManager> = OnceCell::new();
 
-#[uniffi::export]
-pub fn init_persistence_manager(base_folder: String) -> Result<()> {
-    let manager = PersistenceManager::new(base_folder)?;
-    PERSISTENCE_MANAGER
-        .set(manager);
+pub fn init_persistence_manager(base_folder: String, fs: FsHandle) -> Result<()> {
+    let manager = PersistenceManager::new_with_fs(base_folder, fs)?;
+    let _ = PERSISTENCE_MANAGER.set(manager);
     Ok(())
 }
 

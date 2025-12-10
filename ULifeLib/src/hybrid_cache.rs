@@ -8,12 +8,13 @@ use std::{
     sync::Arc,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
-use tokio::{fs, runtime::Handle};
+use tokio::runtime::Handle;
 
 use crate::error::{Error, Result};
+use crate::fs::{block_on_fs, default_fs, FsHandle};
 
 /// Global cache configuration.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct HybridCacheConfig {
     /// Directory used to store disk cache entries.
     pub disk_dir: PathBuf,
@@ -23,6 +24,8 @@ pub struct HybridCacheConfig {
     pub default_ttl: Option<Duration>,
     /// Time to idle before an entry is evicted from memory (and migrated to disk).
     pub memory_time_to_idle: Option<Duration>,
+    /// File system implementation used for disk persistence.
+    pub fs: FsHandle,
 }
 
 /// Per-insert options.
@@ -68,7 +71,6 @@ impl CacheEntry {
     }
 }
 
-#[derive(Debug)]
 /// Hybrid cache backed by an in-memory moka cache plus a disk layer.
 pub struct HybridCache<K, V>
 where
@@ -78,6 +80,7 @@ where
     memory: Cache<K, CacheEntry>,
     disk_dir: PathBuf,
     default_ttl: Option<Duration>,
+    fs: FsHandle,
     _value: PhantomData<V>,
 }
 
@@ -87,10 +90,11 @@ where
     V: Send + Sync + 'static + Into<Vec<u8>> + From<Vec<u8>>,
 {
     pub fn new(config: HybridCacheConfig) -> Result<Self> {
-        std::fs::create_dir_all(&config.disk_dir)?;
+        block_on_fs(config.fs.create_dir_all(config.disk_dir.to_string_lossy().to_string()))?;
 
         let disk_dir = config.disk_dir.clone();
         let eviction_dir = config.disk_dir.clone();
+        let eviction_fs = config.fs.clone();
         let builder = {
             let mut b = Cache::builder()
                 .max_capacity(config.memory_capacity)
@@ -101,11 +105,12 @@ where
             b.async_eviction_listener(
                 move |key: Arc<K>, entry: CacheEntry, _cause: RemovalCause| {
                     let path_root = eviction_dir.clone();
+                    let fs = eviction_fs.clone();
                     Box::pin(async move {
                         if entry.is_expired(SystemTime::now()) {
                             return;
                         }
-                        if let Err(err) = persist_entry(&path_root, &*key, &entry).await {
+                        if let Err(err) = persist_entry(&fs, &path_root, &*key, &entry).await {
                             eprintln!("hybrid cache: failed to persist evicted entry: {err}");
                         }
                     })
@@ -118,6 +123,7 @@ where
             memory: builder,
             disk_dir,
             default_ttl: config.default_ttl,
+            fs: config.fs,
             _value: PhantomData,
         })
     }
@@ -174,20 +180,18 @@ where
 
     async fn read_from_disk(&self, key: &K) -> Result<Option<CacheEntry>> {
         let path = key_to_path(&self.disk_dir, key);
-        let bytes = match fs::read(&path).await {
+        let bytes = match self.fs.read(path.to_string_lossy().to_string()).await {
             Ok(data) => data,
-            Err(err) if err.kind() == std::io::ErrorKind::NotFound => return Ok(None),
-            Err(err) => return Err(err.into()),
+            Err(err) => return Err(err),
         };
         deserialize_entry(&bytes)
     }
 
     async fn remove_from_disk(&self, key: &K) -> Result<()> {
         let path = key_to_path(&self.disk_dir, key);
-        match fs::remove_file(path).await {
+        match self.fs.remove_file(path.to_string_lossy().to_string()).await {
             Ok(()) => Ok(()),
-            Err(err) if err.kind() == std::io::ErrorKind::NotFound => Ok(()),
-            Err(err) => Err(err.into()),
+            Err(err) => Err(err),
         }
     }
 }
@@ -211,15 +215,15 @@ where
     }
 }
 
-async fn persist_entry<K>(disk_dir: &Path, key: &K, entry: &CacheEntry) -> Result<()>
+async fn persist_entry<K>(fs: &FsHandle, disk_dir: &Path, key: &K, entry: &CacheEntry) -> Result<()>
 where
     K: ToString + ?Sized,
 {
     let path = key_to_path(disk_dir, key);
     let temp_path = temp_path_for(&path);
     let data = serialize_entry(entry)?;
-    fs::write(&temp_path, data).await?;
-    fs::rename(&temp_path, &path).await?;
+    fs.write(temp_path.to_string_lossy().to_string(), data).await?;
+    fs.rename(temp_path.to_string_lossy().to_string(), path.to_string_lossy().to_string()).await?;
     Ok(())
 }
 
@@ -332,12 +336,14 @@ impl<K> moka::policy::Expiry<K, CacheEntry> for PerEntryExpiry {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::fs::{block_on_fs, default_fs};
     use tokio::time::{Duration, sleep};
 
     fn temp_root(name: &str) -> PathBuf {
         let mut path = std::env::temp_dir();
         path.push(format!("hybrid_cache_{name}_{}", std::process::id()));
-        let _ = std::fs::remove_dir_all(&path);
+        let fs = default_fs();
+        let _ = block_on_fs(fs.remove_dir_all(path.to_string_lossy().to_string()));
         path
     }
 
@@ -349,6 +355,7 @@ mod tests {
             memory_capacity: 10,
             default_ttl: None,
             memory_time_to_idle: None,
+            fs: default_fs(),
         })
         .unwrap();
 
@@ -373,6 +380,7 @@ mod tests {
             memory_capacity: 10,
             default_ttl: None,
             memory_time_to_idle: None,
+            fs: default_fs(),
         })
         .unwrap();
 
@@ -400,6 +408,7 @@ mod tests {
             memory_capacity: 1,
             default_ttl: None,
             memory_time_to_idle: None,
+            fs: default_fs(),
         })
         .unwrap();
 

@@ -243,6 +243,64 @@ typedef void (*UniffiForeignFutureCompleteVoid)(uint64_t, UniffiForeignFutureRes
     );
 
 #endif
+#ifndef UNIFFI_FFIDEF_CALLBACK_INTERFACE_FILE_SYSTEM_METHOD0
+#define UNIFFI_FFIDEF_CALLBACK_INTERFACE_FILE_SYSTEM_METHOD0
+typedef void (*UniffiCallbackInterfaceFileSystemMethod0)(uint64_t, RustBuffer, UniffiForeignFutureCompleteVoid _Nonnull, uint64_t, UniffiForeignFutureDroppedCallbackStruct* _Nonnull
+    );
+
+#endif
+#ifndef UNIFFI_FFIDEF_CALLBACK_INTERFACE_FILE_SYSTEM_METHOD1
+#define UNIFFI_FFIDEF_CALLBACK_INTERFACE_FILE_SYSTEM_METHOD1
+typedef void (*UniffiCallbackInterfaceFileSystemMethod1)(uint64_t, RustBuffer, RustBuffer, UniffiForeignFutureCompleteVoid _Nonnull, uint64_t, UniffiForeignFutureDroppedCallbackStruct* _Nonnull
+    );
+
+#endif
+#ifndef UNIFFI_FFIDEF_CALLBACK_INTERFACE_FILE_SYSTEM_METHOD2
+#define UNIFFI_FFIDEF_CALLBACK_INTERFACE_FILE_SYSTEM_METHOD2
+typedef void (*UniffiCallbackInterfaceFileSystemMethod2)(uint64_t, RustBuffer, UniffiForeignFutureCompleteRustBuffer _Nonnull, uint64_t, UniffiForeignFutureDroppedCallbackStruct* _Nonnull
+    );
+
+#endif
+#ifndef UNIFFI_FFIDEF_CALLBACK_INTERFACE_FILE_SYSTEM_METHOD3
+#define UNIFFI_FFIDEF_CALLBACK_INTERFACE_FILE_SYSTEM_METHOD3
+typedef void (*UniffiCallbackInterfaceFileSystemMethod3)(uint64_t, RustBuffer, UniffiForeignFutureCompleteVoid _Nonnull, uint64_t, UniffiForeignFutureDroppedCallbackStruct* _Nonnull
+    );
+
+#endif
+#ifndef UNIFFI_FFIDEF_CALLBACK_INTERFACE_FILE_SYSTEM_METHOD4
+#define UNIFFI_FFIDEF_CALLBACK_INTERFACE_FILE_SYSTEM_METHOD4
+typedef void (*UniffiCallbackInterfaceFileSystemMethod4)(uint64_t, RustBuffer, RustBuffer, UniffiForeignFutureCompleteVoid _Nonnull, uint64_t, UniffiForeignFutureDroppedCallbackStruct* _Nonnull
+    );
+
+#endif
+#ifndef UNIFFI_FFIDEF_CALLBACK_INTERFACE_FILE_SYSTEM_METHOD5
+#define UNIFFI_FFIDEF_CALLBACK_INTERFACE_FILE_SYSTEM_METHOD5
+typedef void (*UniffiCallbackInterfaceFileSystemMethod5)(uint64_t, RustBuffer, UniffiForeignFutureCompleteVoid _Nonnull, uint64_t, UniffiForeignFutureDroppedCallbackStruct* _Nonnull
+    );
+
+#endif
+#ifndef UNIFFI_FFIDEF_CALLBACK_INTERFACE_FILE_SYSTEM_METHOD6
+#define UNIFFI_FFIDEF_CALLBACK_INTERFACE_FILE_SYSTEM_METHOD6
+typedef void (*UniffiCallbackInterfaceFileSystemMethod6)(uint64_t, RustBuffer, RustBuffer* _Nonnull, 
+        RustCallStatus *_Nonnull uniffiCallStatus
+    );
+
+#endif
+#ifndef UNIFFI_FFIDEF_V_TABLE_CALLBACK_INTERFACE_FILE_SYSTEM
+#define UNIFFI_FFIDEF_V_TABLE_CALLBACK_INTERFACE_FILE_SYSTEM
+typedef struct UniffiVTableCallbackInterfaceFileSystem {
+    UniffiCallbackInterfaceFree _Nonnull uniffiFree;
+    UniffiCallbackInterfaceClone _Nonnull uniffiClone;
+    UniffiCallbackInterfaceFileSystemMethod0 _Nonnull createDirAll;
+    UniffiCallbackInterfaceFileSystemMethod1 _Nonnull write;
+    UniffiCallbackInterfaceFileSystemMethod2 _Nonnull read;
+    UniffiCallbackInterfaceFileSystemMethod3 _Nonnull removeFile;
+    UniffiCallbackInterfaceFileSystemMethod4 _Nonnull rename;
+    UniffiCallbackInterfaceFileSystemMethod5 _Nonnull removeDirAll;
+    UniffiCallbackInterfaceFileSystemMethod6 _Nonnull readBlocking;
+} UniffiVTableCallbackInterfaceFileSystem;
+
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_CLONE_APICLIENT
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_CLONE_APICLIENT
 uint64_t uniffi_ulife_lib_fn_clone_apiclient(uint64_t handle, RustCallStatus *_Nonnull out_status
@@ -256,6 +314,11 @@ void uniffi_ulife_lib_fn_free_apiclient(uint64_t handle, RustCallStatus *_Nonnul
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_CONSTRUCTOR_APICLIENT_NEW
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_CONSTRUCTOR_APICLIENT_NEW
 uint64_t uniffi_ulife_lib_fn_constructor_apiclient_new(RustBuffer base_url, RustBuffer cache_folder, uint64_t cache_size, RustCallStatus *_Nonnull out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_CONSTRUCTOR_APICLIENT_NEW_WITH_FS
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_CONSTRUCTOR_APICLIENT_NEW_WITH_FS
+uint64_t uniffi_ulife_lib_fn_constructor_apiclient_new_with_fs(RustBuffer base_url, RustBuffer cache_folder, uint64_t cache_size, uint64_t fs, RustCallStatus *_Nonnull out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_ADD_COMMENT_TO_POST
@@ -295,7 +358,7 @@ uint64_t uniffi_ulife_lib_fn_method_apiclient_delete_schedule_item(uint64_t ptr,
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_DOWNLOAD_FILE
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_DOWNLOAD_FILE
-uint64_t uniffi_ulife_lib_fn_method_apiclient_download_file(uint64_t ptr, RustBuffer url
+uint64_t uniffi_ulife_lib_fn_method_apiclient_download_file(uint64_t ptr, RustBuffer url, int8_t is_cached
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_ENROLL_ACTIVITY
@@ -474,6 +537,56 @@ int8_t uniffi_ulife_lib_fn_method_createpostreq_is_valid(uint64_t ptr, RustCallS
 RustBuffer uniffi_ulife_lib_fn_method_createpostreq_to_proto(uint64_t ptr, RustCallStatus *_Nonnull out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_CLONE_FILESYSTEM
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_CLONE_FILESYSTEM
+uint64_t uniffi_ulife_lib_fn_clone_filesystem(uint64_t handle, RustCallStatus *_Nonnull out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_FREE_FILESYSTEM
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_FREE_FILESYSTEM
+void uniffi_ulife_lib_fn_free_filesystem(uint64_t handle, RustCallStatus *_Nonnull out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_INIT_CALLBACK_VTABLE_FILESYSTEM
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_INIT_CALLBACK_VTABLE_FILESYSTEM
+void uniffi_ulife_lib_fn_init_callback_vtable_filesystem(const UniffiVTableCallbackInterfaceFileSystem* _Nonnull vtable
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_FILESYSTEM_CREATE_DIR_ALL
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_FILESYSTEM_CREATE_DIR_ALL
+uint64_t uniffi_ulife_lib_fn_method_filesystem_create_dir_all(uint64_t ptr, RustBuffer path
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_FILESYSTEM_WRITE
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_FILESYSTEM_WRITE
+uint64_t uniffi_ulife_lib_fn_method_filesystem_write(uint64_t ptr, RustBuffer path, RustBuffer data
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_FILESYSTEM_READ
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_FILESYSTEM_READ
+uint64_t uniffi_ulife_lib_fn_method_filesystem_read(uint64_t ptr, RustBuffer path
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_FILESYSTEM_REMOVE_FILE
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_FILESYSTEM_REMOVE_FILE
+uint64_t uniffi_ulife_lib_fn_method_filesystem_remove_file(uint64_t ptr, RustBuffer path
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_FILESYSTEM_RENAME
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_FILESYSTEM_RENAME
+uint64_t uniffi_ulife_lib_fn_method_filesystem_rename(uint64_t ptr, RustBuffer from, RustBuffer to
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_FILESYSTEM_REMOVE_DIR_ALL
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_FILESYSTEM_REMOVE_DIR_ALL
+uint64_t uniffi_ulife_lib_fn_method_filesystem_remove_dir_all(uint64_t ptr, RustBuffer path
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_FILESYSTEM_READ_BLOCKING
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_FILESYSTEM_READ_BLOCKING
+RustBuffer uniffi_ulife_lib_fn_method_filesystem_read_blocking(uint64_t ptr, RustBuffer path, RustCallStatus *_Nonnull out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_CLONE_PERSISTENCEMANAGER
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_CLONE_PERSISTENCEMANAGER
 uint64_t uniffi_ulife_lib_fn_clone_persistencemanager(uint64_t handle, RustCallStatus *_Nonnull out_status
@@ -489,6 +602,11 @@ void uniffi_ulife_lib_fn_free_persistencemanager(uint64_t handle, RustCallStatus
 uint64_t uniffi_ulife_lib_fn_constructor_persistencemanager_new(RustBuffer base_folder, RustCallStatus *_Nonnull out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_CONSTRUCTOR_PERSISTENCEMANAGER_NEW_WITH_FS
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_CONSTRUCTOR_PERSISTENCEMANAGER_NEW_WITH_FS
+uint64_t uniffi_ulife_lib_fn_constructor_persistencemanager_new_with_fs(RustBuffer base_folder, uint64_t fs, RustCallStatus *_Nonnull out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_PERSISTENCEMANAGER_GET_CURRENT_USER
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_PERSISTENCEMANAGER_GET_CURRENT_USER
 uint64_t uniffi_ulife_lib_fn_method_persistencemanager_get_current_user(uint64_t ptr
@@ -502,6 +620,11 @@ RustBuffer uniffi_ulife_lib_fn_method_persistencemanager_get_current_user_token(
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_PERSISTENCEMANAGER_SAVE_CURRENT_USER
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_PERSISTENCEMANAGER_SAVE_CURRENT_USER
 uint64_t uniffi_ulife_lib_fn_method_persistencemanager_save_current_user(uint64_t ptr, RustBuffer login_data
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_FUNC_INIT_PERSISTENCE_MANAGER
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_FUNC_INIT_PERSISTENCE_MANAGER
+void uniffi_ulife_lib_fn_func_init_persistence_manager(RustBuffer base_folder, RustCallStatus *_Nonnull out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_FFI_ULIFE_LIB_RUSTBUFFER_ALLOC
@@ -764,6 +887,12 @@ void ffi_ulife_lib_rust_future_free_void(uint64_t handle
 void ffi_ulife_lib_rust_future_complete_void(uint64_t handle, RustCallStatus *_Nonnull out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_FUNC_INIT_PERSISTENCE_MANAGER
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_FUNC_INIT_PERSISTENCE_MANAGER
+uint16_t uniffi_ulife_lib_checksum_func_init_persistence_manager(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_ADD_COMMENT_TO_POST
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_ADD_COMMENT_TO_POST
 uint16_t uniffi_ulife_lib_checksum_method_apiclient_add_comment_to_post(void
@@ -1004,6 +1133,48 @@ uint16_t uniffi_ulife_lib_checksum_method_createpostreq_to_proto(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_FILESYSTEM_CREATE_DIR_ALL
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_FILESYSTEM_CREATE_DIR_ALL
+uint16_t uniffi_ulife_lib_checksum_method_filesystem_create_dir_all(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_FILESYSTEM_WRITE
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_FILESYSTEM_WRITE
+uint16_t uniffi_ulife_lib_checksum_method_filesystem_write(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_FILESYSTEM_READ
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_FILESYSTEM_READ
+uint16_t uniffi_ulife_lib_checksum_method_filesystem_read(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_FILESYSTEM_REMOVE_FILE
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_FILESYSTEM_REMOVE_FILE
+uint16_t uniffi_ulife_lib_checksum_method_filesystem_remove_file(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_FILESYSTEM_RENAME
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_FILESYSTEM_RENAME
+uint16_t uniffi_ulife_lib_checksum_method_filesystem_rename(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_FILESYSTEM_REMOVE_DIR_ALL
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_FILESYSTEM_REMOVE_DIR_ALL
+uint16_t uniffi_ulife_lib_checksum_method_filesystem_remove_dir_all(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_FILESYSTEM_READ_BLOCKING
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_FILESYSTEM_READ_BLOCKING
+uint16_t uniffi_ulife_lib_checksum_method_filesystem_read_blocking(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_PERSISTENCEMANAGER_GET_CURRENT_USER
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_PERSISTENCEMANAGER_GET_CURRENT_USER
 uint16_t uniffi_ulife_lib_checksum_method_persistencemanager_get_current_user(void
@@ -1028,6 +1199,12 @@ uint16_t uniffi_ulife_lib_checksum_constructor_apiclient_new(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_CONSTRUCTOR_APICLIENT_NEW_WITH_FS
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_CONSTRUCTOR_APICLIENT_NEW_WITH_FS
+uint16_t uniffi_ulife_lib_checksum_constructor_apiclient_new_with_fs(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_CONSTRUCTOR_CREATEPOSTREQ_NEW
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_CONSTRUCTOR_CREATEPOSTREQ_NEW
 uint16_t uniffi_ulife_lib_checksum_constructor_createpostreq_new(void
@@ -1037,6 +1214,12 @@ uint16_t uniffi_ulife_lib_checksum_constructor_createpostreq_new(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_CONSTRUCTOR_PERSISTENCEMANAGER_NEW
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_CONSTRUCTOR_PERSISTENCEMANAGER_NEW
 uint16_t uniffi_ulife_lib_checksum_constructor_persistencemanager_new(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_CONSTRUCTOR_PERSISTENCEMANAGER_NEW_WITH_FS
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_CONSTRUCTOR_PERSISTENCEMANAGER_NEW_WITH_FS
+uint16_t uniffi_ulife_lib_checksum_constructor_persistencemanager_new_with_fs(void
     
 );
 #endif
