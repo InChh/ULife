@@ -57,7 +57,7 @@ extension PublicCourse {
     /// - Parameters:
     ///   - sectionSlots: 节次时间表，例如 [1: SectionSlot(start: "08:00", end: "08:45")]
     ///   - color: UI 颜色（默认白色，可按类型/冲突染色）
-    func toUICourse(sectionSlots: [Int: SectionSlot], color: UIColor = .white) -> Course {
+    func toUICourse(sectionSlots: [Int: SectionSlot]) -> Course {
         let startText = sectionSlots[startSection]?.start ?? "第\(startSection)节"
         let endText = sectionSlots[endSection]?.end ?? "第\(endSection)节"
         let timeRange = "\(startText) - \(endText)"
@@ -71,7 +71,7 @@ extension PublicCourse {
             typeDisplay: type == .compulsory ? "必修" : "选修",
             credits: credits,
             descriptionText: description ?? "",
-            color: color
+            color: .white
         )
     }
 
