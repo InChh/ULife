@@ -15,6 +15,11 @@ class ForumDetailViewController: UIViewController {
     
     // 记录评论表的高度约束，方便重复更新
     private var commentTableHeightConstraint: NSLayoutConstraint?
+    
+    // 弹出输入框
+    private var commentContainerView: UIView?
+    private var backgroundView: UIView?
+    private var commentInputView: CommentInputView?
 
     // 接收从上一个 Controller 传入的帖子数据（初始化传入）
     private var post: Post
@@ -95,14 +100,6 @@ class ForumDetailViewController: UIViewController {
             }.joined(separator: "  ")
             detailView.tagsLabel.text = "\(displayTags)"
         }
-
-        // 格式化日期
-//        let formatter = DateFormatter()
-//        formatter.dateStyle = .short
-//        formatter.timeStyle = .short
-//        detailView.createTimeLabel.text = formatter.string(
-//            from: post.createdAt
-//        )
         
         detailView.createTimeLabel.text = post.createdAt
         
@@ -272,43 +269,7 @@ class ForumDetailViewController: UIViewController {
 
     // 评论帖子
     @objc private func handleCommentTap() {
-        // 弹出评论输入框
-        let alert = UIAlertController(
-            title: "发表评论",
-            message: nil,
-            preferredStyle: .alert
-        )
-
-        alert.addTextField { textField in
-            textField.placeholder = "友善评论，传递温暖..."
-            textField.returnKeyType = .done  //将键盘右下角的“换行键”（Return Key）的样式和功能设置为 Done（完成）
-        }
-
-        let sendAction = UIAlertAction(
-            title: "发送",
-            style: .default,
-            handler: { [weak self] _ in
-                guard
-                    let self = self,
-                    let text = alert.textFields?.first?.text?
-                        .trimmingCharacters(in: .whitespacesAndNewlines),
-                    !text.isEmpty
-                else {
-                    Toast.show("评论内容不能为空", style: .error)
-                    return
-                }
-
-                // 调用后端接口发表评论
-                let newComment = ForumRequest().CreateComment(id: post.id, content: text, replyToCommentid: nil).comment
-
-                self.insertNewComment(newComment)
-            }
-        )
-        let cancelAction = UIAlertAction(title: "取消", style: .cancel)
-        alert.addAction(cancelAction)
-        alert.addAction(sendAction)
-
-        present(alert, animated: true)
+        showCommentInput()
     }
 
     // 将一条新的一级评论插入到列表顶部，并刷新 UI
@@ -318,6 +279,100 @@ class ForumDetailViewController: UIViewController {
         detailView.commentHeaderLabel.text = "评论 (\(comments.count))"
         detailView.commentTableView.reloadData()
         updateTableViewHeight()  //更新 tabelview 的高度
+    }
+
+    // 显示中间弹出的多行评论输入窗口
+    private func showCommentInput() {
+        // 已经显示则不重复创建
+        if backgroundView != nil { return }
+        
+        // 全屏背景窗口 暗淡
+        let bgView = UIView()
+        bgView.backgroundColor = UIColor.black.withAlphaComponent(0.4)
+        bgView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(bgView)
+        NSLayoutConstraint.activate([
+            bgView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            bgView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            bgView.topAnchor.constraint(equalTo: view.topAnchor),
+            bgView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
+        
+        //评论窗口外嵌一层内容窗口
+        let container = UIView()
+        container.backgroundColor = .white
+        container.layer.cornerRadius = 12
+        container.clipsToBounds = true
+        container.translatesAutoresizingMaskIntoConstraints = false
+        bgView.addSubview(container)
+        
+        let inputView = CommentInputView()
+        inputView.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(inputView)
+        
+        NSLayoutConstraint.activate([
+            //居中
+            container.centerXAnchor.constraint(equalTo: bgView.centerXAnchor),
+            container.centerYAnchor.constraint(equalTo: bgView.centerYAnchor),
+            // 固定一个相对宽度，避免过宽或过窄
+            container.widthAnchor.constraint(equalTo: bgView.widthAnchor, multiplier: 0.82),
+            
+            inputView.topAnchor.constraint(equalTo: container.topAnchor, constant: 16),
+            inputView.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
+            inputView.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -16),
+            inputView.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -16),
+        ])
+        
+        // 绑定手势 点击空白区域关闭窗口
+        let tap = UITapGestureRecognizer(target: self, action: #selector(handleBackgroundTap(_:)))
+        tap.cancelsTouchesInView = false //保证手势识别不会静止其他事件
+        bgView.addGestureRecognizer(tap) //点击背景页面
+        
+        // 按钮绑定方法
+        inputView.onSend = { [weak self] text in
+            guard let self = self else { return }
+            let content = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !content.isEmpty else {
+                Toast.show("评论内容不能为空", style: .error)
+                return
+            }
+            
+            let newComment = ForumRequest().CreateComment(
+                id: self.post.id,
+                content: content,
+                replyToCommentid: nil
+            ).comment
+            
+            self.insertNewComment(newComment)
+            self.hideCommentInput()
+        }
+        
+        backgroundView = bgView
+        commentContainerView = container
+        commentInputView = inputView
+        
+        // 弹出键盘
+        inputView.beginEditing()
+    }
+    
+    // 点击遮罩层时收起评论窗口（点击内容区域不会关闭）
+    @objc private func handleBackgroundTap(_ gesture: UITapGestureRecognizer) {
+        guard let bgView = backgroundView,
+              let container = commentContainerView else { return }
+        
+        let location = gesture.location(in: bgView) //获取手势点击的位置
+        if !container.frame.contains(location) {
+            hideCommentInput()
+        }
+    }
+    
+    // 点击评论后消除所有 UI
+    private func hideCommentInput() {
+        view.endEditing(true)
+        backgroundView?.removeFromSuperview() //将 backgroundView 从父视图删除
+        backgroundView = nil
+        commentContainerView = nil
+        commentInputView = nil
     }
 
     // 更新底部工具栏点赞按钮的 UI 样式
@@ -373,7 +428,6 @@ class ForumDetailViewController: UIViewController {
         detailView.CollectButton.configuration = config
     }
 
-    // MARK: - 实现 点击评论(回复,删除) 评论点赞
     // 切换某条评论的点赞状态
     func toggleCommentLike(at index: Int) {
         // 获取这条评论
@@ -421,7 +475,7 @@ class ForumDetailViewController: UIViewController {
                 title: "回复",
                 style: .default,
                 handler: { _ in
-                    self.presentReplyAlert(
+                    self.showReplyInput(
                         commentIndex: commentIndex,
                         replyingToName: nil
                     )
@@ -464,7 +518,7 @@ class ForumDetailViewController: UIViewController {
 
         alert.addAction(
             UIAlertAction(title: "回复", style: .default) { [weak self] _ in
-                self?.presentReplyAlert(
+                self?.showReplyInput(
                     commentIndex: commentIndex,
                     replyingToName: reply.author.name
                 )
@@ -488,63 +542,81 @@ class ForumDetailViewController: UIViewController {
         alert.addAction(UIAlertAction(title: "取消", style: .cancel))
         present(alert, animated: true)
     }
-
+    
     // 弹出回复框
-    func presentReplyAlert(
-        commentIndex: Int, //主评论 id
-        replyingToName: String?
-    ) {
-        let title: String = {
-            if let name = replyingToName {
-                return "回复 \(name)"
-            } else {
-                return "回复评论"
+    func showReplyInput( commentIndex: Int, replyingToName: String?) {
+        // 已经显示则不重复创建
+        if backgroundView != nil { return }
+        
+        // 全屏背景窗口 暗淡
+        let bgView = UIView()
+        bgView.backgroundColor = UIColor.black.withAlphaComponent(0.4)
+        bgView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(bgView)
+        NSLayoutConstraint.activate([
+            bgView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            bgView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            bgView.topAnchor.constraint(equalTo: view.topAnchor),
+            bgView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
+        
+        //评论窗口外嵌一层内容窗口
+        let container = UIView()
+        container.backgroundColor = .white
+        container.layer.cornerRadius = 12
+        container.clipsToBounds = true
+        container.translatesAutoresizingMaskIntoConstraints = false
+        bgView.addSubview(container)
+        
+        let inputView = CommentInputView()
+        inputView.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(inputView)
+        
+        NSLayoutConstraint.activate([
+            //居中
+            container.centerXAnchor.constraint(equalTo: bgView.centerXAnchor),
+            container.centerYAnchor.constraint(equalTo: bgView.centerYAnchor),
+            // 固定一个相对宽度，避免过宽或过窄
+            container.widthAnchor.constraint(equalTo: bgView.widthAnchor, multiplier: 0.82),
+            
+            inputView.topAnchor.constraint(equalTo: container.topAnchor, constant: 16),
+            inputView.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
+            inputView.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -16),
+            inputView.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -16),
+        ])
+        
+        // 绑定手势 点击空白区域关闭窗口
+        let tap = UITapGestureRecognizer(target: self, action: #selector(handleBackgroundTap(_:)))
+        tap.cancelsTouchesInView = false //保证手势识别不会静止其他事件
+        bgView.addGestureRecognizer(tap) //点击背景页面
+        
+        // 按钮绑定方法
+        inputView.onSend = { [weak self] text in
+            guard let self = self else { return }
+            let content = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !content.isEmpty else {
+                Toast.show("评论内容不能为空", style: .error)
+                return
             }
-        }()
+            //获取回复的评论和回复
+            let comment = maincomments[commentIndex]
+            
+            let response = ForumRequest().CreateComment(id: comment.postid, content: text, replyToCommentid: comment.id)
+            comments.append(response.comment)
 
-        let alert = UIAlertController(
-            title: title,
-            message: nil,
-            preferredStyle: .alert
-        )
-
-        alert.addTextField { textField in
-            textField.placeholder = "友善回复，传递温暖..."
-            textField.returnKeyType = .done
+            self.detailView.commentTableView.reloadData()  //刷新数据
+            self.updateTableViewHeight()  //更新高度
+            
+            self.hideCommentInput()
         }
-
-        let sendAction = UIAlertAction(
-            title: "发送",
-            style: .default,
-            handler: { [weak self] _ in
-                //校验数据
-                guard
-                    let self = self,
-                    commentIndex < maincomments.count,
-                    let text = alert.textFields?.first?.text?
-                        .trimmingCharacters(in: .whitespacesAndNewlines),
-                    !text.isEmpty
-                else {
-                    Toast.show("回复内容不能为空", style: .error)
-                    return
-                }
-
-                //获取回复的评论和回复
-                let comment = maincomments[commentIndex]
-                
-                let response = ForumRequest().CreateComment(id: comment.postid, content: text, replyToCommentid: comment.id)
-                comments.append(response.comment)
-
-                self.detailView.commentTableView.reloadData()  //刷新数据
-                self.updateTableViewHeight()  //更新高度
-            }
-        )
-
-        let cancelAction = UIAlertAction(title: "取消", style: .cancel)
-
-        alert.addAction(cancelAction)
-        alert.addAction(sendAction)
-
-        present(alert, animated: true)
+        
+        backgroundView = bgView
+        commentContainerView = container
+        commentInputView = inputView
+        
+        // 弹出键盘
+        inputView.beginEditing()
     }
+    
+
 }

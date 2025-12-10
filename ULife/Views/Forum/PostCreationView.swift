@@ -7,7 +7,7 @@
 
 import UIKit
 
-class PostCreationView: UIView {
+class PostCreationView: UIView{
     
     //标题输入框
     let titleTextField: UITextField = {
@@ -30,7 +30,7 @@ class PostCreationView: UIView {
     }()
     
     //帖子内容输入框
-    let contentTextView: UITextView = {
+    lazy var contentTextView: UITextView = {
         let textView = UITextView()
         textView.font = UIFont.systemFont(ofSize: 20)
         textView.textContainerInset = UIEdgeInsets(
@@ -40,6 +40,14 @@ class PostCreationView: UIView {
             right: 0
         )
         return textView
+    }()
+    
+    lazy var placeholderLabel: UILabel = {
+        let label = UILabel()
+        label.font = UIFont.systemFont(ofSize: 16)
+        label.textColor = .lightGray
+        label.text = "友善发帖，传递温暖..."
+        return label
     }()
 
     // 底部：帖子板块标签提示
@@ -126,7 +134,7 @@ class PostCreationView: UIView {
         addSubview(tagListLabel)
         addSubview(tagInputTextField)
         addSubview(tagAddButton)
-        
+        contentTextView.addSubview(placeholderLabel)
         
         titleTextField.translatesAutoresizingMaskIntoConstraints = false
         contentTextView.translatesAutoresizingMaskIntoConstraints = false
@@ -135,6 +143,8 @@ class PostCreationView: UIView {
         tagListLabel.translatesAutoresizingMaskIntoConstraints = false
         tagInputTextField.translatesAutoresizingMaskIntoConstraints = false
         tagAddButton.translatesAutoresizingMaskIntoConstraints = false
+        placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
+        
 
         //  标题输入框约束
         NSLayoutConstraint.activate([
@@ -237,6 +247,10 @@ class PostCreationView: UIView {
                 equalTo: CategoryCollectionView.topAnchor,
                 constant: -8
             ),
+            
+            placeholderLabel.leadingAnchor.constraint(equalTo: contentTextView.leadingAnchor),
+            placeholderLabel.topAnchor.constraint(equalTo: contentTextView.topAnchor, constant: 8),
+            placeholderLabel.trailingAnchor.constraint(lessThanOrEqualTo: contentTextView.trailingAnchor, constant: -4),
         ])
 
     }

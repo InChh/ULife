@@ -18,6 +18,7 @@ extension PostCreationViewController: UITextFieldDelegate, UITextViewDelegate {
     
     //内容输入框变化时
     func textViewDidChange(_ textView: UITextView) {
+        postCreationView.placeholderLabel.isHidden = !(textView.text?.isEmpty ?? true)
         updatePublishButtonState()
     }
 }
