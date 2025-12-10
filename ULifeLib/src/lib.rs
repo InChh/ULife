@@ -52,6 +52,14 @@ impl ApiClient {
 
 static PERSISTENCE_MANAGER: OnceCell<PersistenceManager> = OnceCell::new();
 
+#[uniffi::export]
+pub fn init_persistence_manager(base_folder: String) -> Result<()> {
+    let manager = PersistenceManager::new(base_folder)?;
+    PERSISTENCE_MANAGER
+        .set(manager);
+    Ok(())
+}
+
 impl ApiClient {
     /// 构建请求
     fn build_request(&self, method: reqwest::Method, path: &str) -> RequestBuilder {
