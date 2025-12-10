@@ -96,6 +96,8 @@ final class ActivityViewController: UIViewController {
     
     @objc private func segmentChanged() {
         currentPage = 1
+        hasMore = true
+        isLoading = false
         activities.removeAll()
         tableView.reloadData() // 立即刷新，避免显示旧数据
         loadActivities()
@@ -103,6 +105,8 @@ final class ActivityViewController: UIViewController {
     
     @objc private func refreshActivities() {
         currentPage = 1
+        hasMore = true
+        isLoading = false
         activities.removeAll()
         tableView.reloadData() // 立即刷新，避免显示旧数据
         loadActivities()

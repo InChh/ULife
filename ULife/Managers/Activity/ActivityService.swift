@@ -8,6 +8,7 @@
 import Foundation
 
 /// 活动服务层
+@MainActor
 final class ActivityService {
     static let shared = ActivityService()
     

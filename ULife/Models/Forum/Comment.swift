@@ -6,7 +6,7 @@
 //
 import Foundation
 
-struct Comment {
+struct Comment: Equatable {
     var id: String
     var authorName: String
     var authorAvatar: String

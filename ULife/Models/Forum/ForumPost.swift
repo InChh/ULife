@@ -27,7 +27,7 @@ struct ForumPost {
     var isPinned: Bool  //是否置顶
 }
 
-struct CreatePostRequest {
+struct PostCreationDraft {
     var title: String = ""
     var content: String = ""
     var category: String = ""
@@ -41,8 +41,8 @@ struct CreatePostRequest {
 
 }
 
-// 标签数据源
-let categorys = [
+// 标签数据源（字符串形式，供发布页使用）
+let categoryNames = [
     "全部",
     // --- 核心分区 (高频内容) ---
     "🔥 广场热点",         // 热门内容集中地

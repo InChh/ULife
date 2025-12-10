@@ -88,7 +88,6 @@ class ForumViewController: UIViewController {
     }
 
     private func setupViews() {
-
         // 设置 tableView 代理
         mainView.tableView.delegate = self
         mainView.tableView.dataSource = self
@@ -209,11 +208,16 @@ class ForumViewController: UIViewController {
     // 根据当前排序方式 / 标签 / 搜索关键字更新列表
     private func applyFilterAndSort() {
         var filtered = allPosts
-
+        
         // 1. 标签筛选（除“全部”外，按 category 匹配）
-        let selectedCategory = categorys[selectedCategoryIndex]
-        if selectedCategory != "全部" {
-            filtered = filtered.filter { $0.category == selectedCategory }
+        guard !categorys.isEmpty, categorys.indices.contains(selectedCategoryIndex) else {
+            posts = filtered
+            mainView.tableView.reloadData()
+            return
+        }
+        let selectedCategoryName = categorys[selectedCategoryIndex].name ?? ""
+        if selectedCategoryName != "全部" && !selectedCategoryName.isEmpty {
+            filtered = filtered.filter { $0.category == selectedCategoryName }
         }
 
         // 2. 搜索关键词筛选（标题 / 内容）
@@ -359,7 +363,7 @@ extension ForumViewController: UICollectionViewDelegate,
         }
 
         let isSelected = (indexPath.row == selectedCategoryIndex)  //是否选中
-        cell.configure(with: categorys[indexPath.row], isSelected: isSelected)
+        cell.configure(with: categorys[indexPath.row].name ?? "", isSelected: isSelected)
         return cell
     }
 
@@ -384,7 +388,7 @@ extension ForumViewController: UICollectionViewDelegate,
         // 1. 创建一个临时的 Label，计算文本实际需要的宽度
         let tempLabel = UILabel()
         tempLabel.font = .systemFont(ofSize: 14, weight: .medium)
-        tempLabel.text = categorys[indexPath.row]
+        tempLabel.text = categorys[indexPath.row].name ?? ""
         tempLabel.sizeToFit()
 
         // 2. 宽度 = 文本宽度 + 左右各 16pt 的边距 (总共 32pt 额外填充)

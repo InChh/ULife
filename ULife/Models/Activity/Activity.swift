@@ -99,8 +99,8 @@ struct ActivityListItem: Codable {
     }
 }
 
-/// 分页信息
-struct Pagination: Codable {
+/// 分页信息（全局复用）
+public struct Pagination: Codable, Equatable {
     let total: Int
     let page: Int
     let pageSize: Int

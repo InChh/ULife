@@ -13,7 +13,7 @@ class PostCreationViewController: UIViewController {
     // 发布按钮
     private var publishButton: UIBarButtonItem?
 
-    var createPostRequest = CreatePostRequest()
+    var createPostRequest = PostCreationDraft()
     
     private var selectedCategoryIndex: Int = 0
     
