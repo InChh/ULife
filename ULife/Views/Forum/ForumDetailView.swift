@@ -10,32 +10,33 @@ import UIKit
 
 class ForumDetailView: UIView {
 
+    // 页面的滚动页
     private lazy var scrollView: UIScrollView = {
         let sv = UIScrollView()
         sv.backgroundColor = .systemBackground
         return sv
     }()
-
+    // 滚动页中用来装所有容器的 view (添加内部 view 后就能自动推导出UIScrollView的高度)
     private lazy var contentViewContainer: UIView = {
         let view = UIView()
         view.backgroundColor = .systemBackground
         return view
     }()
 
-    // --- 帖子信息区 ---
-
+    /// --- 帖子信息区 ---
+    //标题
     lazy var titleLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 22, weight: .bold)
         label.numberOfLines = 0
         return label
     }()
-
+    //作者信息View(头像,名字,创建时间)
     lazy var authorInfoStack: UIStackView = {
         let stack = UIStackView()
-        stack.axis = .horizontal
+        stack.axis = .horizontal  // (水平,元素从左到右)
         stack.spacing = 8
-        stack.alignment = .center
+        stack.alignment = .center  // 因为是.horizontal 所以子视图会沿着 UIStackView 的垂直中心线居中对齐。
         return stack
     }()
 
@@ -59,11 +60,11 @@ class ForumDetailView: UIView {
         label.textColor = .secondaryLabel
         return label
     }()
-
+    //帖子内容
     lazy var contentBodyLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 16, weight: .regular)
-        label.numberOfLines = 0  // 显示全部内容
+        label.numberOfLines = 0  // 不限制行数
         return label
     }()
 
@@ -77,13 +78,12 @@ class ForumDetailView: UIView {
         return label
     }()
 
+    /// --- 评论区 ---
     lazy var line: UIView = {
         let line = UIView()
         line.backgroundColor = .systemGray5
         return line
     }()
-
-    // --- 评论区 ---
 
     lazy var commentHeaderLabel: UILabel = {
         let label = UILabel()
@@ -92,11 +92,11 @@ class ForumDetailView: UIView {
         return label
     }()
 
-    // 嵌套的 TableView 用于评论列表
+    // TableView 用于评论列表
     lazy var commentTableView: UITableView = {
         let tv = UITableView()
-        tv.isScrollEnabled = false  // 关键：让外层 UIScrollView 负责滚动
-        tv.separatorStyle = .singleLine
+        tv.isScrollEnabled = false  // TableView不滑动 让外层 UIScrollView 负责滚动
+        tv.separatorStyle = .singleLine  //设置表格视图中单元格（Cell）之间的分隔线样式为单行细线
         tv.register(
             CommentCell.self,
             forCellReuseIdentifier: CommentCell.identifier
@@ -104,11 +104,12 @@ class ForumDetailView: UIView {
         return tv
     }()
 
-    // --- 底部工具栏 ---
+    /// --- 底部工具栏 ---
     lazy var bottomToolbar: UIView = {
         let view = UIView()
         view.backgroundColor = .systemBackground
-        // 顶部加一根细线
+
+        // 工具栏顶部加一根细线
         let line = UIView()
         line.backgroundColor = .systemGray5
         view.addSubview(line)
@@ -122,19 +123,15 @@ class ForumDetailView: UIView {
         return view
     }()
 
-    // 左侧：点赞按钮
+    // 工具栏点赞按钮
     lazy var likeButton: UIButton = {
-        // 使用 plain 样式配置
+        // 使用 plain 样式配置 朴素风格
         var config = UIButton.Configuration.plain()
-
         config.image = UIImage(systemName: "hand.thumbsup")
-        // 关键设置：图片放置在顶部
         config.imagePlacement = .top
-        // 图片和文字之间的间距
         config.imagePadding = 4
 
-        // 初始文字 (模拟数据)
-        // 使用 AttributedString 来设置较小的字体，避免底部栏太拥挤
+        // 使用 AttributedString 来设置较小的字体, 普通设置 title 无法设置字体大小
         var titleContainer = AttributeContainer()
         titleContainer.font = UIFont.systemFont(ofSize: 10, weight: .regular)
         config.attributedTitle = AttributedString(
@@ -142,17 +139,14 @@ class ForumDetailView: UIView {
             attributes: titleContainer
         )
 
-        // 创建按钮
         let btn = UIButton(configuration: config)
         btn.tintColor = .label  // 图标颜色
         return btn
     }()
 
-    // 收藏按钮：在点赞按钮右侧，垂直布局
+    // 收藏按钮：在点赞按钮右侧
     lazy var CollectButton: UIButton = {
         var config = UIButton.Configuration.plain()
-
-        
         config.image = UIImage(systemName: "star")
         config.imagePlacement = .top
         config.imagePadding = 4
@@ -169,13 +163,12 @@ class ForumDetailView: UIView {
         return btn
     }()
 
-    // 2. 右侧：举报按钮 (修改后：垂直布局)
+    // 右侧 举报按钮
     lazy var reportButton: UIButton = {
         var config = UIButton.Configuration.plain()
-
         config.image = UIImage(systemName: "exclamationmark.triangle")
-        config.imagePlacement = .top  // 图片在上
-        config.imagePadding = 4  // 间距
+        config.imagePlacement = .top
+        config.imagePadding = 4
 
         var titleContainer = AttributeContainer()
         titleContainer.font = UIFont.systemFont(ofSize: 10, weight: .regular)
@@ -192,23 +185,24 @@ class ForumDetailView: UIView {
     // 中间：评论按钮 (伪装成输入框的样子)
     lazy var commentButton: UIButton = {
         let btn = UIButton(type: .system)
-        btn.backgroundColor = .systemGray6  // 浅灰背景
-        btn.layer.cornerRadius = 18  // 圆角 (高度36的一半)
+        btn.backgroundColor = .systemGray6
+        btn.layer.cornerRadius = 18
         btn.clipsToBounds = true
 
-        // 设置文字
         btn.setTitle(" 友善评论，传递温暖", for: .normal)
         btn.setTitleColor(.systemGray2, for: .normal)
         btn.titleLabel?.font = .systemFont(ofSize: 14)
         btn.contentHorizontalAlignment = .left  // 文字靠左
+
+        // 设置左边距
         btn.contentEdgeInsets = UIEdgeInsets(
             top: 0,
             left: 16,
             bottom: 0,
             right: 0
-        )  // 左边距
+        )
 
-        // 加个小铅笔图标在文字前面
+        // 加个小铅笔图标在文字前面(按钮默认图片在左,字体在右)
         let config = UIImage.SymbolConfiguration(
             pointSize: 14,
             weight: .regular
@@ -218,12 +212,10 @@ class ForumDetailView: UIView {
             for: .normal
         )
         btn.tintColor = .systemGray2
-
         return btn
     }()
 
-    // MARK: - Init & Setup
-
+    /// 初始化
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupUI()
@@ -233,14 +225,14 @@ class ForumDetailView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
+    /// 设置 UI
     private func setupUI() {
         backgroundColor = .systemBackground
 
-        // 1. 设置滚动视图和内容容器
+        // 滑动窗口(包含内视图,帮助自动计算滑动窗口的高度)
         addSubview(scrollView)
         scrollView.addSubview(contentViewContainer)
 
-        // 2. 将所有帖子和评论内容添加到 contentViewContainer
         authorInfoStack.addArrangedSubview(authorAvatar)
         authorInfoStack.addArrangedSubview(authorNameLabel)
         authorInfoStack.addArrangedSubview(createTimeLabel)
@@ -252,21 +244,23 @@ class ForumDetailView: UIView {
             contentViewContainer.addSubview(item)
             item.translatesAutoresizingMaskIntoConstraints = false
         }
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        contentViewContainer.translatesAutoresizingMaskIntoConstraints = false
 
-        // 3. 设置底部工具栏
+        // 设置底部工具栏
         addSubview(bottomToolbar)
         bottomToolbar.addSubview(likeButton)
         bottomToolbar.addSubview(CollectButton)
         bottomToolbar.addSubview(commentButton)
         bottomToolbar.addSubview(reportButton)
 
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        contentViewContainer.translatesAutoresizingMaskIntoConstraints = false
+        [bottomToolbar, likeButton, CollectButton, commentButton, reportButton]
+            .forEach { item in
+                item.translatesAutoresizingMaskIntoConstraints = false
+            }
 
-        [bottomToolbar, likeButton, CollectButton, commentButton, reportButton].forEach {
-            $0.translatesAutoresizingMaskIntoConstraints = false
-        }
-
+        
+        // 设置布局
         NSLayoutConstraint.activate([
             // ScrollView 填充屏幕，但避开底部工具栏
             scrollView.topAnchor.constraint(
@@ -278,7 +272,7 @@ class ForumDetailView: UIView {
                 equalTo: bottomToolbar.topAnchor
             ),
 
-            // contentViewContainer 约束 (内容容器)
+            // contentViewContainer 约束 (滑动的内容容器的标准设置)
             contentViewContainer.topAnchor.constraint(
                 equalTo: scrollView.topAnchor
             ),
@@ -291,13 +285,14 @@ class ForumDetailView: UIView {
             contentViewContainer.bottomAnchor.constraint(
                 equalTo: scrollView.bottomAnchor
             ),
-            // 关键：宽度必须等于 ScrollView 的宽度
+            // 宽度必须等于 ScrollView 的宽度
             contentViewContainer.widthAnchor.constraint(
                 equalTo: scrollView.widthAnchor
             ),
 
-            // MARK: 内容布局
-
+            
+            
+            // 容器中内容布局 要从上到下连贯
             // 标题
             titleLabel.topAnchor.constraint(
                 equalTo: contentViewContainer.topAnchor,
@@ -339,15 +334,24 @@ class ForumDetailView: UIView {
                 equalTo: contentBodyLabel.bottomAnchor,
                 constant: 12
             ),
-            tagsLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
+            tagsLabel.leadingAnchor.constraint(
+                equalTo: titleLabel.leadingAnchor
+            ),
             tagsLabel.trailingAnchor.constraint(
                 equalTo: titleLabel.trailingAnchor
             ),
 
-            line.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor),
-            line.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor),
+            line.leadingAnchor.constraint(
+                equalTo: safeAreaLayoutGuide.leadingAnchor
+            ),
+            line.trailingAnchor.constraint(
+                equalTo: safeAreaLayoutGuide.trailingAnchor
+            ),
             line.heightAnchor.constraint(equalToConstant: 1),
-            line.bottomAnchor.constraint(equalTo: commentHeaderLabel.topAnchor,constant: -5),
+            line.bottomAnchor.constraint(
+                equalTo: commentHeaderLabel.topAnchor,
+                constant: -5
+            ),
 
             // 评论区标题
             commentHeaderLabel.topAnchor.constraint(
@@ -372,23 +376,23 @@ class ForumDetailView: UIView {
             commentTableView.trailingAnchor.constraint(
                 equalTo: contentViewContainer.trailingAnchor
             ),
-            // 关键：底部必须连接到 contentViewContainer 的底部
+            // 底部必须连接到 contentViewContainer 的底部 从上到下连贯
             commentTableView.bottomAnchor.constraint(
                 equalTo: contentViewContainer.bottomAnchor,
                 constant: -10
             ),
         ])
-
+        
         NSLayoutConstraint.activate([
             // 工具栏固定在底部
             bottomToolbar.leadingAnchor.constraint(equalTo: leadingAnchor),
             bottomToolbar.trailingAnchor.constraint(equalTo: trailingAnchor),
             bottomToolbar.bottomAnchor.constraint(
                 equalTo: safeAreaLayoutGuide.bottomAnchor
-            ),  // 适配 iPhone X 底部
-            bottomToolbar.heightAnchor.constraint(equalToConstant: 56),  // 高度
+            ),
+            bottomToolbar.heightAnchor.constraint(equalToConstant: 56),
 
-            // 1. 左侧点赞按钮
+            // 左侧点赞按钮
             likeButton.leadingAnchor.constraint(
                 equalTo: bottomToolbar.leadingAnchor,
                 constant: 12
@@ -399,7 +403,7 @@ class ForumDetailView: UIView {
             likeButton.widthAnchor.constraint(equalToConstant: 44),
             likeButton.heightAnchor.constraint(equalToConstant: 44),
 
-            // 1.5 点踩按钮，在点赞按钮右侧
+            // 收藏按钮，在点赞按钮右侧
             CollectButton.leadingAnchor.constraint(
                 equalTo: likeButton.trailingAnchor,
                 constant: 8
@@ -410,7 +414,7 @@ class ForumDetailView: UIView {
             CollectButton.widthAnchor.constraint(equalToConstant: 44),
             CollectButton.heightAnchor.constraint(equalToConstant: 44),
 
-            // 2. 右侧举报按钮
+            // 右侧举报按钮
             reportButton.trailingAnchor.constraint(
                 equalTo: bottomToolbar.trailingAnchor,
                 constant: -12
@@ -421,7 +425,7 @@ class ForumDetailView: UIView {
             reportButton.widthAnchor.constraint(equalToConstant: 44),
             reportButton.heightAnchor.constraint(equalToConstant: 44),
 
-            // 3. 中间评论按钮 (撑满中间空间)
+            // 中间评论按钮 (撑满中间空间)
             commentButton.leadingAnchor.constraint(
                 equalTo: CollectButton.trailingAnchor,
                 constant: 8

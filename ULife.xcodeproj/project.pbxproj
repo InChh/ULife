@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		CD64AE392EDEDA09000D9154 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = CD64AE382EDEDA09000D9154 /* Alamofire */; };
+		CD69A3942EE732480027D8D4 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = CD69A3932EE732480027D8D4 /* Kingfisher */; };
 		DC8DA6142EDDA50A00A245AC /* Ulifelib in Frameworks */ = {isa = PBXBuildFile; productRef = DC8DA6132EDDA50A00A245AC /* Ulifelib */; };
 /* End PBXBuildFile section */
 
@@ -52,6 +53,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CD69A3942EE732480027D8D4 /* Kingfisher in Frameworks */,
 				DC8DA6142EDDA50A00A245AC /* Ulifelib in Frameworks */,
 				CD64AE392EDEDA09000D9154 /* Alamofire in Frameworks */,
 			);
@@ -98,6 +100,7 @@
 			packageProductDependencies = (
 				DC8DA6132EDDA50A00A245AC /* Ulifelib */,
 				CD64AE382EDEDA09000D9154 /* Alamofire */,
+				CD69A3932EE732480027D8D4 /* Kingfisher */,
 			);
 			productName = ULife;
 			productReference = DC5647252EDD20A700B23650 /* ULife.app */;
@@ -131,6 +134,7 @@
 			packageReferences = (
 				DC8DA6122EDDA50A00A245AC /* XCLocalSwiftPackageReference "ULifeLib/Ulifelib" */,
 				CD64AE372EDEDA09000D9154 /* XCRemoteSwiftPackageReference "Alamofire" */,
+				CD69A3922EE732480027D8D4 /* XCRemoteSwiftPackageReference "Kingfisher" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = DC5647262EDD20A700B23650 /* Products */;
@@ -393,6 +397,14 @@
 				minimumVersion = 5.9.0;
 			};
 		};
+		CD69A3922EE732480027D8D4 /* XCRemoteSwiftPackageReference "Kingfisher" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/onevcat/Kingfisher.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.6.2;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -400,6 +412,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = CD64AE372EDEDA09000D9154 /* XCRemoteSwiftPackageReference "Alamofire" */;
 			productName = Alamofire;
+		};
+		CD69A3932EE732480027D8D4 /* Kingfisher */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CD69A3922EE732480027D8D4 /* XCRemoteSwiftPackageReference "Kingfisher" */;
+			productName = Kingfisher;
 		};
 		DC8DA6132EDDA50A00A245AC /* Ulifelib */ = {
 			isa = XCSwiftPackageProductDependency;
