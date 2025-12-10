@@ -44,7 +44,7 @@ extension ForumDetailViewController: UITableViewDelegate, UITableViewDataSource
         } else {
             // 点击整条评论：回复该评论
             cell.onCommentTap = { [weak self] in
-                self?.presentReplyAlert(
+                self?.showReplyInput(
                     commentIndex: indexPath.row,
                     replyingToName: nil
                 )
@@ -64,7 +64,7 @@ extension ForumDetailViewController: UITableViewDelegate, UITableViewDataSource
         } else {
             // 点击某一条回复：回复这条回复的作者
             cell.onReplyTap = { [weak self] reply in
-                self?.presentReplyAlert(
+                self?.showReplyInput(
                     commentIndex: indexPath.row,
                     replyingToName: reply.author.name
                 )
