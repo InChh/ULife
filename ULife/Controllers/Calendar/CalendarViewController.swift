@@ -63,8 +63,8 @@ final class CalendarViewController: UIViewController, UITableViewDataSource, UIT
         view.backgroundColor = .systemGroupedBackground
 
         setupLayout()
-        //loadMockData()
         loadData()
+        //runNotificationTest()
     }
 
     private func setupLayout() {
@@ -105,6 +105,72 @@ final class CalendarViewController: UIViewController, UITableViewDataSource, UIT
         regroupWeekly()
         tableView.reloadData()
     }
+    
+    
+    /*
+    // MARK: - 🧪 临时测试代码
+        func runNotificationTest() {
+            print("开始测试推送...")
+            
+            // 获取当前时间 + 2分钟
+            let now = Date()
+            let calendar = Calendar.current
+            guard let targetDate = calendar.date(byAdding: .minute, value: 2, to: now) else { return }
+            
+            // 转换星期
+            let iosWeekday = calendar.component(.weekday, from: now)
+            let myModelDay = (iosWeekday == 1) ? 7 : (iosWeekday - 1)
+            
+            // 构造时间字符串 "HH:mm"
+            let hour = calendar.component(.hour, from: targetDate)
+            let minute = calendar.component(.minute, from: targetDate)
+            let timeString = String(format: "%02d:%02d", hour, minute)
+            
+            // 造一个假的时间表 (Mock Slots)
+            // 假设这是一个第 999 节课
+            let testSectionId = 999
+            let testSlots: [Int: SectionSlot] = [
+                testSectionId: SectionSlot(start: timeString, end: "23:59")
+            ]
+            
+            // 造一个假课程
+            let testCourse = Course(
+                courseId: 8888,
+                name: "测试课",
+                timeRange: "测试时间",
+                startSection: testSectionId, // 关联上面的时间表
+                endSection: testSectionId,
+                location: "测试地点",
+                teacher: "调试老师",
+                dayOfWeek: myModelDay,      // 必须是今天
+                typeDisplay: "测试",
+                credits: 0,
+                descriptionText: "1分钟后响铃",
+                color: .red
+            )
+            
+            // 调用Manager
+            print("正在设置闹钟：课程时间 \(timeString)，提前 1 分钟...")
+            
+            CourseReminderManager.shared.requestAuthorization { granted in
+                guard granted else {
+                    print("没有通知权限")
+                    return
+                }
+                
+                // 你的 Manager 逻辑是：课程时间 - leadMinutes = 响铃时间
+                // 所以：(当前+2分钟) - 1分钟 = 当前+1分钟
+                CourseReminderManager.shared.enableReminder(
+                    for: testCourse,
+                    sectionSlots: testSlots, // 传入刚才造的假时间表
+                    leadMinutes: 1
+                )
+                print("设置成功！请等待 1 分钟，留意顶部弹窗。")
+            }
+        }
+     */
+    
+    
     
     private func regroupWeekly(){
         let weekdayOrder = [1, 2, 3, 4, 5, 6, 7]
