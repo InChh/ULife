@@ -123,14 +123,12 @@ final class CalendarViewController: UIViewController, UITableViewDataSource, UIT
             return 1
         }
 
-
         func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
             if selectedSegementIndex == 1 {
                 return groupedCourses[section].count
             }
             return courses.count
         }
-
 
         func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
             guard let cell = tableView.dequeueReusableCell(withIdentifier: CourseCell.identifier, for: indexPath) as? CourseCell else {
@@ -143,7 +141,6 @@ final class CalendarViewController: UIViewController, UITableViewDataSource, UIT
             }
             return cell
         }
-
 
         // section 头部标题
         func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
@@ -178,7 +175,7 @@ final class CalendarViewController: UIViewController, UITableViewDataSource, UIT
             } else {
                 course = courses[indexPath.row]
             }
-            let detailVC = CourseDetailViewController(course: course)
+            let detailVC = CourseDetailViewController(course: course, sectionSlots: sectionSlots)
             navigationController?.pushViewController(detailVC, animated: true)
         }
     }
@@ -199,7 +196,20 @@ final class CourseDetailViewController: UIViewController {
 
 
     private let course: Course
-
+    private let sectionSlots: [Int: SectionSlot]
+    private let reminderSwitch: UISwitch = {
+        let sw = UISwitch()
+        sw.onTintColor = .systemBlue
+        return sw
+    }()
+    private let leadOptions = [10, 30, 60]
+    private lazy var leadSegment: UISegmentedControl = {
+        let control = UISegmentedControl(items: ["提前10分钟", "提前30分钟", "提前60分钟"])
+        control.selectedSegmentIndex = 0
+        control.selectedSegmentTintColor = .systemBlue
+        control.setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
+        return control
+    }()
 
     private let nameLabel: UILabel = {
         let label = UILabel()
@@ -218,7 +228,6 @@ final class CourseDetailViewController: UIViewController {
         return label
     }()
 
-
     private let teacherLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 16, weight: .regular)
@@ -227,7 +236,6 @@ final class CourseDetailViewController: UIViewController {
         return label
     }()
 
-
     private let timeLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 16, weight: .regular)
@@ -235,7 +243,6 @@ final class CourseDetailViewController: UIViewController {
         label.numberOfLines = 0
         return label
     }()
-
 
     private let locationLabel: UILabel = {
         let label = UILabel()
@@ -253,7 +260,6 @@ final class CourseDetailViewController: UIViewController {
         return label
     }()
 
-
     private let creditsLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 16, weight: .regular)
@@ -261,7 +267,6 @@ final class CourseDetailViewController: UIViewController {
         label.numberOfLines = 0
         return label
     }()
-
 
     private let descriptionLabel: UILabel = {
         let label = UILabel()
@@ -271,17 +276,15 @@ final class CourseDetailViewController: UIViewController {
         return label
     }()
 
-
-    init(course: Course) {
+    init(course: Course, sectionSlots: [Int: SectionSlot]) {
         self.course = course
+        self.sectionSlots = sectionSlots
         super.init(nibName: nil, bundle: nil)
     }
-
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -289,10 +292,32 @@ final class CourseDetailViewController: UIViewController {
         view.backgroundColor = .systemGroupedBackground
         setupUI()
         configure()
+        setupReminder()
     }
 
-
     private func setupUI() {
+        
+        let reminderRow = UIStackView(arrangedSubviews: [
+            {
+                let lbl = UILabel()
+                lbl.text = "课前提醒"
+                lbl.font = .systemFont(ofSize: 16, weight: .regular)
+                lbl.textColor = .label
+                return lbl
+            }(),
+            reminderSwitch
+        ])
+        reminderRow.axis = .horizontal
+        reminderRow.spacing = 8
+        reminderRow.alignment = .center
+        
+        let leadRow = UIStackView(arrangedSubviews: [
+            leadSegment
+        ])
+        leadRow.axis = .vertical
+        leadRow.spacing = 6
+        leadRow.alignment = .leading
+        
         let stack = UIStackView(arrangedSubviews: [
             nameLabel,
             courseIdLabel,
@@ -301,7 +326,9 @@ final class CourseDetailViewController: UIViewController {
             locationLabel,
             typeLabel,
             creditsLabel,
-            descriptionLabel
+            descriptionLabel,
+            reminderRow,
+            leadRow
         ])
         stack.axis = .vertical
         stack.spacing = 12
@@ -346,6 +373,47 @@ final class CourseDetailViewController: UIViewController {
         descriptionLabel.text = "课程描述：\(course.descriptionText)"
     }
 
+    private func setupReminder() {
+        reminderSwitch.isOn = CourseReminderManager.shared.isReminderEnabled(for: course)
+        reminderSwitch.addTarget(self, action: #selector(reminderSwitchChanged(_:)), for: .valueChanged)
+        let savedLead = CourseReminderManager.shared.leadMinutes(for: course)
+        if let idx = leadOptions.firstIndex(of: savedLead) {
+            leadSegment.selectedSegmentIndex = idx
+        } else {
+            leadSegment.selectedSegmentIndex = 0
+        }
+        leadSegment.addTarget(self, action: #selector(leadSegmentChanged(_:)), for: .valueChanged)
+    }
+
+    @objc private func reminderSwitchChanged(_ sender: UISwitch) {
+        CourseReminderManager.shared.requestAuthorization { granted in
+            DispatchQueue.main.async {
+                if !granted {
+                    sender.isOn = false
+                    return
+                }
+                if sender.isOn {
+                    CourseReminderManager.shared.enableReminder(for: self.course, sectionSlots: self.sectionSlots)
+                } else {
+                    CourseReminderManager.shared.disableReminder(for: self.course)
+                }
+            }
+        }
+    }
+
+    @objc private func leadSegmentChanged(_ sender: UISegmentedControl) {
+            guard reminderSwitch.isOn else { return }
+            CourseReminderManager.shared.enableReminder(for: course, sectionSlots: sectionSlots, leadMinutes: currentLeadMinutes())
+    }
+
+
+    private func currentLeadMinutes() -> Int {
+        let idx = leadSegment.selectedSegmentIndex
+        if idx >= 0 && idx < leadOptions.count {
+            return leadOptions[idx]
+        }
+        return leadOptions.first ?? 10
+    }
 
     private func weekdayText(_ day: Int) -> String {
         let names = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
