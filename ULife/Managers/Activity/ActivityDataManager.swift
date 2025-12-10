@@ -104,6 +104,7 @@ final class ActivityDataManager {
     
     // MARK: - Public API (mock)
     
+    // TODO(Network): 接入真实接口，替换本地 mock 列表数据
     func fetchActivities(keyword: String? = nil,
                          activityType: ActivityType? = nil,
                          page: Int = 1,
@@ -124,6 +125,7 @@ final class ActivityDataManager {
         return (items, result.pagination)
     }
     
+    // TODO(Network): 接入真实接口，按活动ID获取详情
     func getActivityDetail(activityId: String) -> Activity? {
         guard var activity = activities.first(where: { $0.id == activityId }) else { return nil }
         activity.isEnrolled = enrollmentMap[activityId] != nil
@@ -139,7 +141,7 @@ final class ActivityDataManager {
         case timeConflict
     }
     
-    // 学生报名
+    // 学生报名 —— TODO(Network): 接入真实接口
     func enroll(activityId: String,
                 userName: String,
                 studentId: String,
@@ -169,7 +171,7 @@ final class ActivityDataManager {
         activities[idx].currentEnrollments += 1
     }
     
-    // 取消报名
+    // 取消报名 —— TODO(Network): 接入真实接口
     func cancelEnroll(activityId: String) throws {
         guard let idx = activities.firstIndex(where: { $0.id == activityId }) else {
             throw ActivityActionError.notFound
@@ -184,7 +186,7 @@ final class ActivityDataManager {
         activities[idx].currentEnrollments = max(0, activities[idx].currentEnrollments - 1)
     }
     
-    // 收藏
+    // 收藏 —— TODO(Network): 接入真实接口
     func collect(activityId: String) throws {
         guard activities.contains(where: { $0.id == activityId }) else {
             throw ActivityActionError.notFound
@@ -192,6 +194,7 @@ final class ActivityDataManager {
         collectionSet.insert(activityId)
     }
     
+    // 取消收藏 —— TODO(Network): 接入真实接口
     func cancelCollect(activityId: String) throws {
         guard activities.contains(where: { $0.id == activityId }) else {
             throw ActivityActionError.notFound
@@ -199,7 +202,7 @@ final class ActivityDataManager {
         collectionSet.remove(activityId)
     }
     
-    // 我的活动
+    // 我的活动（报名/收藏）—— TODO(Network): 接入真实接口
     func fetchMyActivities(includeEnrollments: Bool,
                            includeCollections: Bool,
                            page: Int = 1,
