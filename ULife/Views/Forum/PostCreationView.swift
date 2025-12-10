@@ -7,7 +7,7 @@
 
 import UIKit
 
-class PostCreationView: UIView{
+class PostCreationView: UIView {
     
     //标题输入框
     let titleTextField: UITextField = {
@@ -41,7 +41,7 @@ class PostCreationView: UIView{
         )
         return textView
     }()
-    
+
     lazy var placeholderLabel: UILabel = {
         let label = UILabel()
         label.font = UIFont.systemFont(ofSize: 16)
@@ -135,7 +135,7 @@ class PostCreationView: UIView{
         addSubview(tagInputTextField)
         addSubview(tagAddButton)
         contentTextView.addSubview(placeholderLabel)
-        
+
         titleTextField.translatesAutoresizingMaskIntoConstraints = false
         contentTextView.translatesAutoresizingMaskIntoConstraints = false
         categoryTitleLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -144,7 +144,7 @@ class PostCreationView: UIView{
         tagInputTextField.translatesAutoresizingMaskIntoConstraints = false
         tagAddButton.translatesAutoresizingMaskIntoConstraints = false
         placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
-        
+
 
         //  标题输入框约束
         NSLayoutConstraint.activate([
@@ -247,7 +247,7 @@ class PostCreationView: UIView{
                 equalTo: CategoryCollectionView.topAnchor,
                 constant: -8
             ),
-            
+
             placeholderLabel.leadingAnchor.constraint(equalTo: contentTextView.leadingAnchor),
             placeholderLabel.topAnchor.constraint(equalTo: contentTextView.topAnchor, constant: 8),
             placeholderLabel.trailingAnchor.constraint(lessThanOrEqualTo: contentTextView.trailingAnchor, constant: -4),
