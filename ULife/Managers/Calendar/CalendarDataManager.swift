@@ -78,26 +78,6 @@ final class CalendarDataManager {
                          description: "选修课，体育锻炼")
         ]
     }
-    
-    func fetchScheduleMock() -> [ScheduleItem] {
-            return [
-                ScheduleItem(
-                    id: 1,
-                    sourceId: 1,
-                    courseName: "高等数学（上）",
-                    teacherName: "王教授",
-                    location: "教二-201",
-                    dayOfWeek: 1,
-                    startSection: 1,
-                    endSection: 2,
-                    weeks: Array(1...16),
-                    type: .compulsory,
-                    credits: 4,
-                    description: "必修课，微积分基础",
-                    colorHex: "#4A90E2",
-                    isCustom: false)
-            ]
-        }
 }
 
 
