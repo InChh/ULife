@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package common;
+
+// 分页信息
+message Pagination {
+  int64 total = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  int32 pages = 4;
+}

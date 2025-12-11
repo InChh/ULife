@@ -1,5 +1,5 @@
 [package]
-name = "ULifeLib"
+name = "ulife_lib"
 version = "0.1.0"
 edition = "2024"
 
@@ -7,9 +7,24 @@ edition = "2024"
 
 [lib]
 crate-type = ["staticlib", "lib"]
-name = "ULifeLib"
+name = "ulife_lib"
 
 [dependencies]
+bytes = "1.11.0"
+blake3 = "1.5.5"
+moka = { version = "0.12.11", features = ["future"] }
+once_cell = "1.21.3"
 prost = "0.14.1"
-reqwest = "0.12.24"
+prost-types = "0.14.1"
+reqwest = { version = "0.12.24", features = ["multipart"] }
+thiserror = "2.0.17"
+tokio = { version = "1.48.0", features = ["rt-multi-thread", "macros", "fs"] }
 uniffi = "0.30"
+dashmap = "6.1.0"
+serde = { version = "1.0.228", features = ["serde_derive"] }
+chrono = "0.4.42"
+async-trait = "0.1"
+
+[build-dependencies]
+prost-build = "0.14.1"
+walkdir = "2.5.0"

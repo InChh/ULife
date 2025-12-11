@@ -9,7 +9,7 @@
 /* Begin PBXBuildFile section */
 		CD64AE392EDEDA09000D9154 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = CD64AE382EDEDA09000D9154 /* Alamofire */; };
 		CD69A3942EE732480027D8D4 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = CD69A3932EE732480027D8D4 /* Kingfisher */; };
-		DC8DA6142EDDA50A00A245AC /* Ulifelib in Frameworks */ = {isa = PBXBuildFile; productRef = DC8DA6132EDDA50A00A245AC /* Ulifelib */; };
+		DC41828A2EE2F59A0056FBF4 /* UlifeLib in Frameworks */ = {isa = PBXBuildFile; productRef = DC4182892EE2F59A0056FBF4 /* UlifeLib */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -54,7 +54,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				CD69A3942EE732480027D8D4 /* Kingfisher in Frameworks */,
-				DC8DA6142EDDA50A00A245AC /* Ulifelib in Frameworks */,
+				DC41828A2EE2F59A0056FBF4 /* UlifeLib in Frameworks */,
 				CD64AE392EDEDA09000D9154 /* Alamofire in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -98,9 +98,7 @@
 			);
 			name = ULife;
 			packageProductDependencies = (
-				DC8DA6132EDDA50A00A245AC /* Ulifelib */,
-				CD64AE382EDEDA09000D9154 /* Alamofire */,
-				CD69A3932EE732480027D8D4 /* Kingfisher */,
+				DC4182892EE2F59A0056FBF4 /* UlifeLib */,
 			);
 			productName = ULife;
 			productReference = DC5647252EDD20A700B23650 /* ULife.app */;
@@ -132,9 +130,9 @@
 			mainGroup = DC56471C2EDD20A700B23650;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				DC8DA6122EDDA50A00A245AC /* XCLocalSwiftPackageReference "ULifeLib/Ulifelib" */,
 				CD64AE372EDEDA09000D9154 /* XCRemoteSwiftPackageReference "Alamofire" */,
 				CD69A3922EE732480027D8D4 /* XCRemoteSwiftPackageReference "Kingfisher" */,
+				DC4182882EE2F59A0056FBF4 /* XCLocalSwiftPackageReference "ULifeLib/UlifeLib" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = DC5647262EDD20A700B23650 /* Products */;
@@ -382,9 +380,9 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		DC8DA6122EDDA50A00A245AC /* XCLocalSwiftPackageReference "ULifeLib/Ulifelib" */ = {
+		DC4182882EE2F59A0056FBF4 /* XCLocalSwiftPackageReference "ULifeLib/UlifeLib" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = ULifeLib/Ulifelib;
+			relativePath = ULifeLib/UlifeLib;
 		};
 /* End XCLocalSwiftPackageReference section */
 
@@ -418,9 +416,9 @@
 			package = CD69A3922EE732480027D8D4 /* XCRemoteSwiftPackageReference "Kingfisher" */;
 			productName = Kingfisher;
 		};
-		DC8DA6132EDDA50A00A245AC /* Ulifelib */ = {
+		DC4182892EE2F59A0056FBF4 /* UlifeLib */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = Ulifelib;
+			productName = UlifeLib;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
