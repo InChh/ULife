@@ -1,0 +1,83 @@
+syntax = "proto3";
+
+package campus.user;
+
+// ========== 基础数据类型 ==========
+
+// 用户信息
+message UserInfo {
+    string id = 1;
+    string student_id = 2;
+    string name = 3;
+    string avatar_url = 4;
+    string role = 5;
+    string college = 6;
+    string major = 7;
+    string grade = 8;
+    string class_name = 9;
+    string bio = 10;
+    string phone = 11;
+    string email = 12;
+    string wechat_id = 13;
+    int32 weekly_course_count = 14;
+    int32 forum_activity_score = 15;
+    int32 collection_count = 16;
+    string setting_privacy_course = 17;
+    bool setting_notification_switch = 18;
+}
+
+// ========== 请求消息 ==========
+
+// 登录请求
+message LoginRequest {
+    string student_id = 1;
+    string password = 2;
+}
+
+// 注册请求
+message RegisterRequest {
+    string student_id = 1;
+    string password = 2;
+    string name = 3;
+    string college = 4;
+    string major = 5;
+    string phone = 6;
+}
+
+// 更新资料请求
+message UpdateProfileRequest {
+    optional string name = 1;
+    optional string avatar_url = 2;
+    optional string bio = 3;
+    optional string phone = 4;
+    optional string email = 5;
+    optional string wechat_id = 6;
+}
+
+// 修改密码请求
+message ChangePasswordRequest {
+    string old_password = 1;
+    string new_password = 2;
+}
+
+// ========== 响应消息 ==========
+
+// 登录响应
+message LoginResponse {
+    string token = 1;
+    UserInfo user = 2;
+}
+
+// 注册响应
+message RegisterResponse {
+    string user_id = 1;
+}
+
+// 获取用户信息响应
+message GetUserInfoResponse {
+    UserInfo user = 1;
+}
+
+// 简单成功响应（无数据）
+message EmptyResponse {}
+

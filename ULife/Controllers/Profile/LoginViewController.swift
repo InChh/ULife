@@ -2,132 +2,185 @@
 //  LoginViewController.swift
 //  ULife
 //
-//  Created by 赵文哲 on 6/12/2025.
-//
+//  登录页 - 参考活动模块重写
 
 import UIKit
 
 class LoginViewController: UIViewController {
     
     // MARK: - Properties
+    private let scrollView = UIScrollView()
+    private let contentStack = UIStackView()
     
-    private let loginView = LoginView()
+    private let logoImageView = UIImageView()
+    private let titleLabel = UILabel()
+    private let studentIdTextField = UITextField()
+    private let passwordTextField = UITextField()
+    private let loginButton = UIButton(type: .system)
+    private let registerButton = UIButton(type: .system)
     
     // MARK: - Lifecycle
-    
     override func viewDidLoad() {
         super.viewDidLoad()
+        view.backgroundColor = .systemBackground
         setupUI()
-        setupBindings()
-        
-        // 设置导航栏
-        navigationController?.navigationBar.isHidden = true
+        setupKeyboardHandling()
     }
     
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        loginView.clearInputs()
-    }
-    
-    // MARK: - Setup
-    
+    // MARK: - Setup UI
     private func setupUI() {
-        view.addSubview(loginView)
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        contentStack.axis = .vertical
+        contentStack.spacing = 20
+        contentStack.translatesAutoresizingMaskIntoConstraints = false
+        contentStack.alignment = .fill
         
-        loginView.translatesAutoresizingMaskIntoConstraints = false
+        // Logo
+        logoImageView.image = UIImage(systemName: "graduationcap.circle.fill")
+        logoImageView.tintColor = .systemBlue
+        logoImageView.contentMode = .scaleAspectFit
+        logoImageView.translatesAutoresizingMaskIntoConstraints = false
+        logoImageView.heightAnchor.constraint(equalToConstant: 100).isActive = true
+        
+        // Title
+        titleLabel.text = "ULife 校园生活"
+        titleLabel.font = .systemFont(ofSize: 28, weight: .bold)
+        titleLabel.textAlignment = .center
+        titleLabel.textColor = .label
+        
+        // 学号输入
+        studentIdTextField.placeholder = "请输入学号"
+        studentIdTextField.borderStyle = .roundedRect
+        studentIdTextField.keyboardType = .numberPad
+        studentIdTextField.autocapitalizationType = .none
+        studentIdTextField.heightAnchor.constraint(equalToConstant: 50).isActive = true
+        
+        // 密码输入
+        passwordTextField.placeholder = "请输入密码"
+        passwordTextField.borderStyle = .roundedRect
+        passwordTextField.isSecureTextEntry = true
+        passwordTextField.heightAnchor.constraint(equalToConstant: 50).isActive = true
+        
+        // 登录按钮
+        loginButton.setTitle("登录", for: .normal)
+        loginButton.titleLabel?.font = .systemFont(ofSize: 18, weight: .semibold)
+        loginButton.backgroundColor = .systemBlue
+        loginButton.setTitleColor(.white, for: .normal)
+        loginButton.layer.cornerRadius = 10
+        loginButton.heightAnchor.constraint(equalToConstant: 50).isActive = true
+        loginButton.addTarget(self, action: #selector(handleLogin), for: .touchUpInside)
+        
+        // 注册按钮
+        registerButton.setTitle("还没有账号？立即注册", for: .normal)
+        registerButton.titleLabel?.font = .systemFont(ofSize: 15)
+        registerButton.setTitleColor(.systemBlue, for: .normal)
+        registerButton.addTarget(self, action: #selector(handleRegister), for: .touchUpInside)
+        
+        // 添加间距
+        let spacer1 = UIView()
+        spacer1.heightAnchor.constraint(equalToConstant: 40).isActive = true
+        let spacer2 = UIView()
+        spacer2.heightAnchor.constraint(equalToConstant: 20).isActive = true
+        
+        [spacer1, logoImageView, titleLabel, spacer2, studentIdTextField, passwordTextField, loginButton, registerButton].forEach {
+            contentStack.addArrangedSubview($0)
+        }
+        
+        view.addSubview(scrollView)
+        scrollView.addSubview(contentStack)
         
         NSLayoutConstraint.activate([
-            loginView.topAnchor.constraint(equalTo: view.topAnchor),
-            loginView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            loginView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            loginView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            
+            contentStack.topAnchor.constraint(equalTo: scrollView.topAnchor, constant: 20),
+            contentStack.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: 30),
+            contentStack.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor, constant: -30),
+            contentStack.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: -20),
+            contentStack.widthAnchor.constraint(equalTo: scrollView.widthAnchor, constant: -60)
         ])
-        
-        // 设置输入框代理
-        loginView.studentIdTextField.delegate = self
-        loginView.passwordTextField.delegate = self
     }
     
-    private func setupBindings() {
-        // 登录按钮点击
-        loginView.loginButton.addAction(UIAction(handler: { [weak self] _ in
-            self?.handleLogin()
-        }), for: .touchUpInside)
+    private func setupKeyboardHandling() {
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        view.addGestureRecognizer(tapGesture)
         
-        // 注册按钮点击
-        loginView.registerButton.addAction(UIAction(handler: { [weak self] _ in
-            self?.navigateToRegister()
-        }), for: .touchUpInside)
-        
-        // 忘记密码按钮点击
-        loginView.forgotPasswordButton.addAction(UIAction(handler: { [weak self] _ in
-            self?.handleForgotPassword()
-        }), for: .touchUpInside)
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillShow),
+            name: UIResponder.keyboardWillShowNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillHide),
+            name: UIResponder.keyboardWillHideNotification,
+            object: nil
+        )
     }
     
     // MARK: - Actions
-    
-    private func handleLogin() {
-        // 获取输入凭据
-        guard let credentials = loginView.getLoginCredentials() else {
-            showAlert(title: "提示", message: "请输入学号和密码")
+    @objc private func handleLogin() {
+        guard let studentId = studentIdTextField.text, !studentId.isEmpty,
+              let password = passwordTextField.text, !password.isEmpty else {
+            showError(message: "请输入学号和密码")
             return
         }
         
-        // 模拟登录验证
-        if MockUserData.validateLogin(studentId: credentials.studentId, password: credentials.password) {
-            // 登录成功
-            print("登录成功，学号: \(credentials.studentId)")
-            
+        loginButton.isEnabled = false
+        loginButton.setTitle("登录中...", for: .normal)
+        
+        Task {
+            do {
+                let (token, user) = try await UserRequest().login(studentId: studentId, password: password)
+                
+                await MainActor.run {
             // 保存登录状态
             UserDefaults.standard.set(true, forKey: "isLoggedIn")
-            UserDefaults.standard.set(credentials.studentId, forKey: "currentStudentId")
+                    UserDefaults.standard.set(token, forKey: "authToken")
             
-            // 切换到主界面
-            navigateToMainApp()
-        } else {
-            // 登录失败
-            showAlert(title: "登录失败", message: "学号或密码错误")
+                    // 跳转到主页
+                    if let sceneDelegate = UIApplication.shared.connectedScenes.first?.delegate as? SceneDelegate {
+                        sceneDelegate.showMainInterface()
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    self.loginButton.isEnabled = true
+                    self.loginButton.setTitle("登录", for: .normal)
+                    self.showError(message: "登录失败: \(error.localizedDescription)")
+        }
+    }
         }
     }
     
-    private func navigateToRegister() {
+    @objc private func handleRegister() {
         let registerVC = RegisterViewController()
         navigationController?.pushViewController(registerVC, animated: true)
     }
     
-    private func handleForgotPassword() {
-        showAlert(title: "忘记密码", message: "请联系管理员或使用邮箱找回密码功能")
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
     }
     
-    private func navigateToMainApp() {
-        // 切换到主TabBarController
-        guard let sceneDelegate = UIApplication.shared.connectedScenes.first?.delegate as? SceneDelegate else {
-            return
-        }
-        
-        sceneDelegate.window?.rootViewController = UIHelper.createTabViewController()
-        sceneDelegate.window?.makeKeyAndVisible()
+    @objc private func keyboardWillShow(notification: NSNotification) {
+        guard let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
+        scrollView.contentInset.bottom = keyboardFrame.height
     }
     
-    // MARK: - Helper Methods
+    @objc private func keyboardWillHide(notification: NSNotification) {
+        scrollView.contentInset.bottom = 0
+    }
     
-    private func showAlert(title: String, message: String) {
-        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+    private func showError(message: String) {
+        let alert = UIAlertController(title: "提示", message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "确定", style: .default))
         present(alert, animated: true)
     }
-}
-
-// MARK: - UITextFieldDelegate
-extension LoginViewController: UITextFieldDelegate {
-    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        if textField == loginView.studentIdTextField {
-            loginView.passwordTextField.becomeFirstResponder()
-        } else if textField == loginView.passwordTextField {
-            textField.resignFirstResponder()
-            handleLogin()
-        }
-        return true
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 }

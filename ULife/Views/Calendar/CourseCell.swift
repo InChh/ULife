@@ -1,157 +1,145 @@
 //
 //  CourseCell.swift
-//  ULife_Local
+//  ULife
 //
-//  Created by 高煜尧 on 2025-12-03.
-//
+//  课程 Cell - 参考活动模块重写
 
 import UIKit
 
-final class CourseCell: UITableViewCell {
+class CourseCell: UITableViewCell {
+    
     static let identifier = "CourseCell"
 
-
-    // 白色卡片背景
-    private let containerView: UIView = {
-        let view = UIView()
-        view.layer.cornerRadius = 14
-        view.layer.masksToBounds = true
-        return view
-    }()
-
-
-    // 课程ID与星期
-    private let idLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 12, weight: .regular)
-        label.textColor = .gray
-        label.numberOfLines = 1
-        return label
-    }()
-
-
-    // 课程名
-    private let nameLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 16, weight: .semibold)
-        label.textColor = .black
-        label.numberOfLines = 1
-        return label
-    }()
-
-
-    // 时间
-    private let timeLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 13, weight: .regular)
-        label.textColor = .gray
-        label.numberOfLines = 1
-        return label
-    }()
-
-
-    // 教室
-    private let locationLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 13, weight: .regular)
-        label.textColor = .gray
-        label.numberOfLines = 1
-        return label
-    }()
-
-
-    // 任课老师
-    private let teacherLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 13, weight: .regular)
-        label.textColor = .gray
-        label.numberOfLines = 1
-        label.textAlignment = .right
-        return label
-    }()
-
-
+    // MARK: - UI Components
+    private let cardView = UIView()
+    private let courseNameLabel = UILabel()
+    private let teacherLabel = UILabel()
+    private let locationLabel = UILabel()
+    private let timeLabel = UILabel()
+    private let colorStripe = UIView()
+    
+    // MARK: - Init
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
-        selectionStyle = .none
-        backgroundColor = .clear
-        setupLayout()
+        setupUI()
     }
-
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-
-    func configure(with course: Course) {
-        if course.color == .white {
-            containerView.backgroundColor = course.color
-        }else{
-            containerView.backgroundColor = course.color.withAlphaComponent(0.15)
-        }
-        idLabel.text = "课程ID：\(course.courseId)"
-        nameLabel.text = course.name
-        timeLabel.text = "\(weekdayText(course.dayOfWeek)): \(course.timeRange)"
-        locationLabel.text = course.location
-        teacherLabel.text = course.teacher
-    }
-
-
-    private func setupLayout() {
-        contentView.addSubview(containerView)
-        [idLabel, nameLabel, timeLabel, locationLabel, teacherLabel].forEach {
-            containerView.addSubview($0)
-            $0.translatesAutoresizingMaskIntoConstraints = false
-        }
-        containerView.translatesAutoresizingMaskIntoConstraints = false
-
+    // MARK: - Setup
+    private func setupUI() {
+        backgroundColor = .clear
+        selectionStyle = .none
+        
+        // Card 容器
+        cardView.backgroundColor = .systemBackground
+        cardView.layer.cornerRadius = 10
+        cardView.layer.shadowColor = UIColor.black.cgColor
+        cardView.layer.shadowOffset = CGSize(width: 0, height: 1)
+        cardView.layer.shadowOpacity = 0.1
+        cardView.layer.shadowRadius = 2
+        cardView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(cardView)
+        
+        // 颜色条
+        colorStripe.layer.cornerRadius = 3
+        colorStripe.translatesAutoresizingMaskIntoConstraints = false
+        cardView.addSubview(colorStripe)
+        
+        // 课程名
+        courseNameLabel.font = .systemFont(ofSize: 16, weight: .semibold)
+        courseNameLabel.textColor = .label
+        courseNameLabel.numberOfLines = 1
+        courseNameLabel.translatesAutoresizingMaskIntoConstraints = false
+        cardView.addSubview(courseNameLabel)
+        
+        // 教师
+        teacherLabel.font = .systemFont(ofSize: 14)
+        teacherLabel.textColor = .secondaryLabel
+        teacherLabel.translatesAutoresizingMaskIntoConstraints = false
+        cardView.addSubview(teacherLabel)
+        
+        // 地点
+        locationLabel.font = .systemFont(ofSize: 13)
+        locationLabel.textColor = .tertiaryLabel
+        locationLabel.translatesAutoresizingMaskIntoConstraints = false
+        cardView.addSubview(locationLabel)
+        
+        // 时间
+        timeLabel.font = .systemFont(ofSize: 13)
+        timeLabel.textColor = .tertiaryLabel
+        timeLabel.translatesAutoresizingMaskIntoConstraints = false
+        cardView.addSubview(timeLabel)
 
         NSLayoutConstraint.activate([
-            containerView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
-            containerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8),
-            containerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            containerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            cardView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 6),
+            cardView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 12),
+            cardView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -12),
+            cardView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -6),
 
+            colorStripe.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
+            colorStripe.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 12),
+            colorStripe.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -12),
+            colorStripe.widthAnchor.constraint(equalToConstant: 4),
+            
+            courseNameLabel.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 12),
+            courseNameLabel.leadingAnchor.constraint(equalTo: colorStripe.trailingAnchor, constant: 12),
+            courseNameLabel.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -12),
 
-            idLabel.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 10),
-            idLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
-            idLabel.trailingAnchor.constraint(lessThanOrEqualTo: containerView.trailingAnchor, constant: -12),
+            teacherLabel.topAnchor.constraint(equalTo: courseNameLabel.bottomAnchor, constant: 6),
+            teacherLabel.leadingAnchor.constraint(equalTo: courseNameLabel.leadingAnchor),
+            teacherLabel.trailingAnchor.constraint(equalTo: courseNameLabel.trailingAnchor),
 
-
-            nameLabel.topAnchor.constraint(equalTo: idLabel.bottomAnchor, constant: 4),
-            nameLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
-            nameLabel.trailingAnchor.constraint(lessThanOrEqualTo: containerView.trailingAnchor, constant: -12),
-
-
-            timeLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 6),
-            timeLabel.leadingAnchor.constraint(equalTo: nameLabel.leadingAnchor),
-            timeLabel.trailingAnchor.constraint(lessThanOrEqualTo: containerView.trailingAnchor, constant: -12),
-
-
-            locationLabel.topAnchor.constraint(equalTo: timeLabel.bottomAnchor, constant: 8),
-            locationLabel.leadingAnchor.constraint(equalTo: nameLabel.leadingAnchor),
-            locationLabel.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -12),
-
-
-            teacherLabel.centerYAnchor.constraint(equalTo: locationLabel.centerYAnchor),
-            teacherLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
-            teacherLabel.leadingAnchor.constraint(greaterThanOrEqualTo: locationLabel.trailingAnchor, constant: 8)
+            locationLabel.topAnchor.constraint(equalTo: teacherLabel.bottomAnchor, constant: 4),
+            locationLabel.leadingAnchor.constraint(equalTo: courseNameLabel.leadingAnchor),
+            
+            timeLabel.centerYAnchor.constraint(equalTo: locationLabel.centerYAnchor),
+            timeLabel.leadingAnchor.constraint(equalTo: locationLabel.trailingAnchor, constant: 12),
+            timeLabel.trailingAnchor.constraint(lessThanOrEqualTo: cardView.trailingAnchor, constant: -12),
+            timeLabel.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -12)
         ])
     }
 
-
-    private func weekdayText(_ day: Int) -> String {
-        let names = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
-        let idx = day - 1
-        if idx >= 0 && idx < names.count {
-            return names[idx]
-        }
-        return "周\(day)"
+    // MARK: - Configure
+    func configure(with item: ScheduleItem, sectionSlots: [Int: (start: String, end: String)]) {
+        courseNameLabel.text = item.courseName
+        teacherLabel.text = "👨‍🏫 \(item.teacherName ?? "未知教师")"
+        locationLabel.text = "📍 \(item.location ?? "未知地点")"
+        
+        let start = sectionSlots[item.startSection]?.start ?? "\(item.startSection)"
+        let end = sectionSlots[item.endSection]?.end ?? "\(item.endSection)"
+        timeLabel.text = "⏰ \(start)-\(end)"
+        
+        // 设置颜色条
+        colorStripe.backgroundColor = UIColor(hex: item.colorHex) ?? .systemBlue
     }
 }
 
-
-
-
-
+// MARK: - UIColor Extension
+extension UIColor {
+    convenience init?(hex: String) {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+        let a, r, g, b: UInt64
+        switch hex.count {
+        case 3: // RGB (12-bit)
+            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
+        case 6: // RGB (24-bit)
+            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
+        case 8: // ARGB (32-bit)
+            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+        default:
+            return nil
+        }
+        
+        self.init(
+            red: Double(r) / 255,
+            green: Double(g) / 255,
+            blue: Double(b) / 255,
+            alpha: Double(a) / 255
+        )
+    }
+}

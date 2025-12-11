@@ -3,7 +3,7 @@
 //  ULife
 //
 //  Created by 骑鱼的猫 on 2025/12/2.
-//  扩展 Date 类 把 创建时间（Date）转为“xx分钟前 / xx小时前 / xx天前”等字符串。
+//  扩展 Date 类 把 创建时间（Date）转为"xx分钟前 / xx小时前 / xx天前"等字符串。
 
 import Foundation
 
@@ -43,5 +43,29 @@ extension Date {
 
         let years = days / 365
         return "\(years) 年前"
+    }
+}
+
+// 扩展 String，支持 ISO8601 日期字符串
+extension String {
+    /// 将 ISO8601 日期字符串转换为相对时间描述
+    func timeAgoString() -> String {
+        // 尝试解析 ISO8601 格式的日期字符串
+        let formatter = ISO8601DateFormatter()
+        
+        // 尝试带毫秒的格式
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = formatter.date(from: self) {
+            return date.timeAgoString()
+        }
+        
+        // 尝试不带毫秒的格式
+        formatter.formatOptions = [.withInternetDateTime]
+        if let date = formatter.date(from: self) {
+            return date.timeAgoString()
+        }
+        
+        // 如果解析失败，返回原字符串
+        return self
     }
 }

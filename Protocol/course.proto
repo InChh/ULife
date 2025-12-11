@@ -1,0 +1,166 @@
+syntax = "proto3";
+
+package campus.course;
+
+// ========== 基础数据类型 ==========
+
+// 分页信息
+message Pagination {
+    int64 total = 1;
+    int32 page = 2;
+    int32 page_size = 3;
+    int32 pages = 4;
+}
+
+// 学期信息
+message Semester {
+    int32 id = 1;
+    string name = 2;
+    string start_date = 3;
+    string end_date = 4;
+    bool is_current = 5;
+}
+
+// 课程类型枚举
+enum CourseType {
+    COURSE_TYPE_UNSPECIFIED = 0;
+    COMPULSORY = 1;  // 必修
+    ELECTIVE = 2;    // 选修
+}
+
+// ========== 课程数据模型 ==========
+
+// 公共课程
+message PublicCourse {
+    int64 id = 1;
+    string course_name = 2;
+    string teacher_name = 3;
+    int64 teacher_id = 4;
+    string location = 5;
+    int32 day_of_week = 6;     // 1-7: 周一到周日
+    int32 start_section = 7;   // 开始节次
+    int32 end_section = 8;     // 结束节次
+    repeated int32 weeks_range = 9;  // 上课周次列表
+    string type = 10;          // compulsory or elective
+    int32 credits = 11;
+    string description = 12;
+    int32 semester_id = 13;
+}
+
+// 用户课表项
+message ScheduleItem {
+    int64 id = 1;
+    int64 source_id = 2;
+    string user_id = 3;
+    int32 semester_id = 4;
+    string course_name = 5;
+    string teacher_name = 6;
+    string location = 7;
+    int32 day_of_week = 8;
+    int32 start_section = 9;
+    int32 end_section = 10;
+    repeated int32 weeks_range = 11;
+    string type = 12;
+    int32 credits = 13;
+    string description = 14;
+    string color_hex = 15;
+    bool is_custom = 16;
+    string created_at = 17;
+}
+
+// ========== 请求消息 ==========
+
+// 获取学期列表请求
+message GetSemestersRequest {}
+
+// 获取公共课程请求
+message GetPublicCoursesRequest {
+    optional int32 semester_id = 1;
+    optional string name = 2;
+    optional string teacher = 3;
+    int32 page = 4;
+    int32 page_size = 5;
+}
+
+// 获取用户课表请求
+message GetScheduleRequest {
+    int32 semester_id = 1;
+    optional int32 week = 2;
+}
+
+// 添加课表项请求（单个）
+message AddScheduleItemRequest {
+    optional int64 source_id = 1;
+    int32 semester_id = 2;
+    string course_name = 3;
+    string teacher_name = 4;
+    string location = 5;
+    int32 day_of_week = 6;
+    int32 start_section = 7;
+    int32 end_section = 8;
+    repeated int32 weeks = 9;
+    string type = 10;
+    int32 credits = 11;
+    string description = 12;
+    string color_hex = 13;
+    bool is_custom = 14;
+}
+
+// 批量添加课表项请求
+message AddScheduleItemsRequest {
+    repeated AddScheduleItemRequest items = 1;
+}
+
+// 更新课表项请求
+message UpdateScheduleItemRequest {
+    int64 item_id = 1;
+    optional string course_name = 2;
+    optional string teacher_name = 3;
+    optional string location = 4;
+    optional string color_hex = 5;
+    optional string description = 6;
+}
+
+// 删除课表项请求
+message DeleteScheduleItemRequest {
+    int64 item_id = 1;
+}
+
+// ========== 响应消息 ==========
+
+// 学期列表响应
+message GetSemestersResponse {
+    repeated Semester semesters = 1;
+}
+
+// 公共课程列表响应
+message GetPublicCoursesResponse {
+    repeated PublicCourse list = 1;
+    Pagination pagination = 2;
+}
+
+// 用户课表响应
+message GetScheduleResponse {
+    repeated ScheduleItem items = 1;
+}
+
+// 失败的项
+message FailedItem {
+    string course_name = 1;
+    string error_message = 2;
+}
+
+// 批量添加课表项响应
+message AddScheduleItemsResponse {
+    repeated ScheduleItem successful_items = 1;
+    repeated FailedItem failed_items = 2;
+}
+
+// 更新课表项响应
+message UpdateScheduleItemResponse {
+    ScheduleItem item = 1;
+}
+
+// 简单成功响应
+message EmptyResponse {}
+

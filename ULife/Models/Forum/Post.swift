@@ -9,7 +9,7 @@ import Foundation
 
 /// Post
 // MARK: - Post
-public struct Post: Equatable {
+public struct Post: Codable, Equatable {
     public var author: UserLite
     /// 板块id
     public var boardid: String
@@ -35,6 +35,23 @@ public struct Post: Equatable {
     public var title: String
     public var userInteraction: UserInteraction
 
+    enum CodingKeys: String, CodingKey {
+        case author
+        case boardid = "board_id"
+        case boardName = "board_name"
+        case content
+        case createdAt = "created_at"
+        case id
+        case lastRepliedAt = "last_replied_at"
+        case media
+        case reportCount = "report_count"
+        case stats
+        case status
+        case tags
+        case title
+        case userInteraction = "user_interaction"
+    }
+
     public init(author: UserLite, boardid: String, boardName: String, content: String, createdAt: String, id: String, lastRepliedAt: String, media: [MediaItem], reportCount: Int, stats: Stats, status: Status, tags: [String], title: String, userInteraction: UserInteraction) {
         self.author = author
         self.boardid = boardid
@@ -56,7 +73,7 @@ public struct Post: Equatable {
 
 /// PostLite
 // MARK: - PostLite
-public struct PostLite: Equatable {
+public struct PostLite: Codable, Equatable {
     public var author: UserLite
     /// 所属板块ID
     public var boardid: String
@@ -64,8 +81,8 @@ public struct PostLite: Equatable {
     public var boardName: String?
     /// 第一张图片URL（如果存在），用于列表预览
     public var coverImageurl: String?
-    /// 发布时间
-    public var createdAt: Date
+    /// 发布时间（改为String，从后端接收ISO8601格式）
+    public var createdAt: String
     /// 帖子唯一ID
     public var id: String
     /// 统计数据
@@ -79,7 +96,7 @@ public struct PostLite: Equatable {
     /// 当前用户互动状态
     public var userInteraction: UserInteraction
 
-    public init(author: UserLite, boardid: String, boardName: String?, coverImageurl: String?, createdAt: Date, id: String, stats: Stats, summary: String?, tags: [String]?, title: String, userInteraction: UserInteraction) {
+    public init(author: UserLite, boardid: String, boardName: String?, coverImageurl: String?, createdAt: String, id: String, stats: Stats, summary: String?, tags: [String]?, title: String, userInteraction: UserInteraction) {
         self.author = author
         self.boardid = boardid
         self.boardName = boardName
@@ -92,11 +109,25 @@ public struct PostLite: Equatable {
         self.title = title
         self.userInteraction = userInteraction
     }
+    
+    enum CodingKeys: String, CodingKey {
+        case author
+        case boardid = "board_id"
+        case boardName = "board_name"
+        case coverImageurl = "cover_image_url"
+        case createdAt = "created_at"
+        case id
+        case stats
+        case summary
+        case tags
+        case title
+        case userInteraction = "user_interaction"
+    }
 }
 
 /// UserLite
 // MARK: - UserLite
-public struct UserLite: Equatable {
+public struct UserLite: Codable, Equatable {
     /// 图像链接
     public var avatarurl: String
     /// 学院
@@ -112,11 +143,19 @@ public struct UserLite: Equatable {
         self.name = name
         self.studentid = studentid
     }
+    
+    enum CodingKeys: String, CodingKey {
+        case avatarurl = "avatar_url"
+        case college
+        case id
+        case name
+        case studentid = "student_id"
+    }
 }
 
 /// MediaItem
 // MARK: - MediaItem
-public struct MediaItem: Equatable {
+public struct MediaItem: Codable, Equatable {
     public var meta: Meta
     public var thumbnailurl: String
     public var type: String
@@ -131,7 +170,7 @@ public struct MediaItem: Equatable {
 }
 
 // MARK: - Meta
-public struct Meta: Equatable {
+public struct Meta: Codable, Equatable {
     public var filename: String
     /// 图片高度，如果图片提供
     public var height: String?
@@ -149,7 +188,7 @@ public struct Meta: Equatable {
 
 /// 统计信息
 // MARK: - Stats
-public struct Stats: Equatable {
+public struct Stats: Codable, Equatable {
     public var commentCount: Int
     public var likeCount: Int
     public var viewCount: Int
@@ -159,10 +198,16 @@ public struct Stats: Equatable {
         self.likeCount = likeCount
         self.viewCount = viewCount
     }
+    
+    enum CodingKeys: String, CodingKey {
+        case commentCount = "comment_count"
+        case likeCount = "like_count"
+        case viewCount = "view_count"
+    }
 }
 
 /// 状态，管理员/系统写
-public enum Status: String, Equatable {
+public enum Status: String, Codable, Equatable {
     case approved
     case hidden
     case pending
@@ -170,13 +215,18 @@ public enum Status: String, Equatable {
 }
 
 // MARK: - UserInteraction
-public struct UserInteraction: Equatable {
+public struct UserInteraction: Codable, Equatable {
     public var isCollected: Bool
     public var isLiked: Bool
 
     public init(isCollected: Bool, isLiked: Bool) {
         self.isCollected = isCollected
         self.isLiked = isLiked
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case isCollected = "is_collected"
+        case isLiked = "is_liked"
     }
 }
 

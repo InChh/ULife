@@ -131,55 +131,75 @@ final class ActivityDetailViewController: UIViewController {
     }
     
     @objc private func handleEnroll() {
-        if activity.isEnrolled {
+        Task {
             do {
-                try ActivityDataManager.shared.cancelEnroll(activityId: activity.id)
-                activity.isEnrolled = false
-                showToast("已取消报名")
+                let user = UserManager.shared.getCurrentUser()
+                let userName = user?.name ?? "测试用户"
+                let studentId = user?.studentId ?? "2025123456"
+                let major = user?.major ?? "软件工程"
+                let phone = user?.phone
+                
+                if activity.isEnrolled {
+                    try await ActivityDataManager.shared.cancelEnrollment(activityId: activity.id)
+                    await MainActor.run {
+                        activity.isEnrolled = false
+                        updateButtons()
+                        showToast("已取消报名")
+                    }
+                } else {
+                    try await ActivityDataManager.shared.enrollActivity(
+                        activityId: activity.id,
+                        userName: userName,
+                        studentId: studentId,
+                        major: major,
+                        phoneNumber: phone
+                    )
+                    await MainActor.run {
+                        activity.isEnrolled = true
+                        updateButtons()
+                        showToast("报名成功")
+                    }
+                }
+            } catch NetworkError.serverError(let code, let message) {
+                await MainActor.run {
+                    if code == 409 {
+                        showToast("操作失败：\(message)")
+                    } else {
+                        showToast("操作失败：\(message)")
+                    }
+                }
             } catch {
-                showToast("取消失败")
-            }
-        } else {
-            do {
-                try ActivityDataManager.shared.enroll(
-                    activityId: activity.id,
-                    userName: "测试用户",
-                    studentId: "2025123456",
-                    major: "软件工程",
-                    phoneNumber: "13800000000"
-                )
-                activity.isEnrolled = true
-                showToast("报名成功")
-            } catch ActivityDataManager.ActivityActionError.quotaFull {
-                showToast("名额已满")
-            } catch ActivityDataManager.ActivityActionError.alreadyEnrolled {
-                showToast("已报名过")
-            } catch {
-                showToast("报名失败")
+                await MainActor.run {
+                    showToast("网络错误：\(error.localizedDescription)")
+                }
             }
         }
-        updateButtons()
     }
     
     @objc private func handleCollect() {
-        if activity.isCollected {
+        Task {
             do {
-                try ActivityDataManager.shared.cancelCollect(activityId: activity.id)
-                activity.isCollected = false
-                showToast("已取消收藏")
+                if activity.isCollected {
+                    try await ActivityDataManager.shared.uncollectActivity(activityId: activity.id)
+                    await MainActor.run {
+                        activity.isCollected = false
+                        updateButtons()
+                        showToast("已取消收藏")
+                    }
+                } else {
+                    try await ActivityDataManager.shared.collectActivity(activityId: activity.id)
+                    await MainActor.run {
+                        activity.isCollected = true
+                        updateButtons()
+                        showToast("已收藏")
+                    }
+                }
             } catch {
-                showToast("操作失败")
-            }
-        } else {
-            do {
-                try ActivityDataManager.shared.collect(activityId: activity.id)
-                activity.isCollected = true
-                showToast("已收藏")
-            } catch {
-                showToast("操作失败")
+                await MainActor.run {
+                    showToast("操作失败：\(error.localizedDescription)")
+                }
             }
         }
-        updateButtons()
     }
     
     private func showToast(_ text: String) {

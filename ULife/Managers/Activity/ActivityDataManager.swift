@@ -2,266 +2,409 @@
 //  ActivityDataManager.swift
 //  ULife
 //
-//  Mock implementation for Activity APIs (no backend request)
+//  Real implementation for Activity APIs with backend integration
 //
 
 import Foundation
 
-final class ActivityDataManager {
-    static let shared = ActivityDataManager()
+// MARK: - Response Models (Activity Module)
+struct ActivityListResponse: Codable {
+    let list: [ActivityListItemDTO]
+    let pagination: ActivityPaginationDTO
+}
+
+struct ActivityListItemDTO: Codable {
+    let id: String
+    let title: String
+    let coverURL: String?
+    let location: String
+    let startTime: String
+    let quota: Int
+    let currentEnrollments: Int
     
-    private var activities: [Activity] = []
-    private var enrollmentMap: [String: EnrollmentRecord] = [:] // key: activityId
-    private var collectionSet: Set<String> = []
-    
-    private init() {
-        seedMockData()
-    }
-    
-    // MARK: - Mock seed
-    private func seedMockData() {
-        let now = Date()
-        let day: TimeInterval = 24 * 60 * 60
-        
-        let samples: [Activity] = [
-            Activity(
-                id: "A10001",
-                title: "AI 前沿讲座：大模型与校园应用",
-                content: "邀请校友分享大模型在学习、科研、生活中的落地案例，并现场 Q&A。",
-                coverURL: "",
-                activityType: .lecture,
-                location: "科技楼报告厅 301",
-                organizer: "计算机学院 / 校友会",
-                startTime: now.addingTimeInterval(day),
-                endTime: now.addingTimeInterval(day + 2 * 60 * 60),
-                quota: 80,
-                currentEnrollments: 36,
-                needSignIn: true,
-                status: .ongoing,
-                createdAt: now.addingTimeInterval(-day * 2)
-            ),
-            Activity(
-                id: "A20002",
-                title: "校园马拉松志愿者招募",
-                content: "协助赛道秩序维护、物资发放、急救引导，提供志愿者时长证明。",
-                coverURL: "",
-                activityType: .club,
-                location: "田径场北门集合",
-                organizer: "体育部 / 志愿者协会",
-                startTime: now.addingTimeInterval(day * 3),
-                endTime: now.addingTimeInterval(day * 3 + 3 * 60 * 60),
-                quota: 120,
-                currentEnrollments: 95,
-                needSignIn: false,
-                status: .ongoing,
-                createdAt: now.addingTimeInterval(-day)
-            ),
-            Activity(
-                id: "A30003",
-                title: "编程竞赛训练营选拔赛",
-                content: "笔试 + 上机赛，选拔校赛代表队，欢迎 22/23/24 级同学报名。",
-                coverURL: "",
-                activityType: .competition,
-                location: "实验楼机房 502",
-                organizer: "信息竞赛中心",
-                startTime: now.addingTimeInterval(day * 5),
-                endTime: now.addingTimeInterval(day * 5 + 4 * 60 * 60),
-                quota: 60,
-                currentEnrollments: 58,
-                needSignIn: true,
-                status: .ongoing,
-                createdAt: now.addingTimeInterval(-day * 3)
-            )
-        ]
-        activities = samples
-    }
-    
-    // MARK: - Helpers
-    private func filter(keyword: String?, activityType: ActivityType?) -> [Activity] {
-        return activities.filter { activity in
-            let matchType = activityType == nil || activity.activityType == activityType
-            let matchKeyword: Bool
-            if let key = keyword?.lowercased(), !key.isEmpty {
-                matchKeyword = activity.title.lowercased().contains(key) ||
-                               activity.content.lowercased().contains(key) ||
-                               activity.location.lowercased().contains(key)
-            } else {
-                matchKeyword = true
-            }
-            return matchType && matchKeyword
-        }
-    }
-    
-    private func paginate(list: [Activity], page: Int, pageSize: Int) -> (items: [Activity], pagination: ActivityPagination) {
-        let safePage = max(page, 1)
-        let safePageSize = max(pageSize, 1)
-        let start = (safePage - 1) * safePageSize
-        let end = min(start + safePageSize, list.count)
-        let sliced = start < end ? Array(list[start..<end]) : []
-        let pagination = ActivityPagination(total: list.count, page: safePage, pageSize: safePageSize)
-        return (sliced, pagination)
-    }
-    
-    // MARK: - Public API (mock)
-    
-    // TODO(Network): 接入真实接口，替换本地 mock 列表数据
-    func fetchActivities(keyword: String? = nil,
-                         activityType: ActivityType? = nil,
-                         page: Int = 1,
-                         pageSize: Int = 10) -> (list: [ActivityListItem], pagination: ActivityPagination) {
-        let filtered = filter(keyword: keyword, activityType: activityType)
-        let result = paginate(list: filtered, page: page, pageSize: pageSize)
-        let items = result.items.map { activity in
-            ActivityListItem(
-                id: activity.id,
-                title: activity.title,
-                coverURL: activity.coverURL,
-                location: activity.location,
-                startTime: activity.startTime,
-                quota: activity.quota,
-                currentEnrollments: activity.currentEnrollments
-            )
-        }
-        return (items, result.pagination)
-    }
-    
-    // TODO(Network): 接入真实接口，按活动ID获取详情
-    func getActivityDetail(activityId: String) -> Activity? {
-        guard var activity = activities.first(where: { $0.id == activityId }) else { return nil }
-        activity.isEnrolled = enrollmentMap[activityId] != nil
-        activity.isCollected = collectionSet.contains(activityId)
-        return activity
-    }
-    
-    enum ActivityActionError: Error {
-        case notFound
-        case quotaFull
-        case alreadyEnrolled
-        case alreadyCancelled
-        case timeConflict
-    }
-    
-    // 学生报名 —— TODO(Network): 接入真实接口
-    func enroll(activityId: String,
-                userName: String,
-                studentId: String,
-                major: String,
-                phoneNumber: String?) throws {
-        guard let idx = activities.firstIndex(where: { $0.id == activityId }) else {
-            throw ActivityActionError.notFound
-        }
-        guard enrollmentMap[activityId] == nil else {
-            throw ActivityActionError.alreadyEnrolled
-        }
-        guard activities[idx].currentEnrollments < activities[idx].quota else {
-            throw ActivityActionError.quotaFull
-        }
-        
-        let record = EnrollmentRecord(
-            userId: studentId,
-            userName: userName,
-            studentId: studentId,
-            major: major,
-            phoneNumber: phoneNumber,
-            activityId: activityId,
-            enrollTime: Date(),
-            attendanceStatus: 1
-        )
-        enrollmentMap[activityId] = record
-        activities[idx].currentEnrollments += 1
-    }
-    
-    // 取消报名 —— TODO(Network): 接入真实接口
-    func cancelEnroll(activityId: String) throws {
-        guard let idx = activities.firstIndex(where: { $0.id == activityId }) else {
-            throw ActivityActionError.notFound
-        }
-        guard let record = enrollmentMap[activityId] else {
-            throw ActivityActionError.notFound
-        }
-        guard record.attendanceStatus == 1 else {
-            throw ActivityActionError.alreadyCancelled
-        }
-        enrollmentMap.removeValue(forKey: activityId)
-        activities[idx].currentEnrollments = max(0, activities[idx].currentEnrollments - 1)
-    }
-    
-    // 收藏 —— TODO(Network): 接入真实接口
-    func collect(activityId: String) throws {
-        guard activities.contains(where: { $0.id == activityId }) else {
-            throw ActivityActionError.notFound
-        }
-        collectionSet.insert(activityId)
-    }
-    
-    // 取消收藏 —— TODO(Network): 接入真实接口
-    func cancelCollect(activityId: String) throws {
-        guard activities.contains(where: { $0.id == activityId }) else {
-            throw ActivityActionError.notFound
-        }
-        collectionSet.remove(activityId)
-    }
-    
-    // 我的活动（报名/收藏）—— TODO(Network): 接入真实接口
-    func fetchMyActivities(includeEnrollments: Bool,
-                           includeCollections: Bool,
-                           page: Int = 1,
-                           pageSize: Int = 10) -> (enrolled: ([MyEnrollmentItem], ActivityPagination)?, collected: ([MyCollectionItem], ActivityPagination)?) {
-        var enrolledResult: ([MyEnrollmentItem], ActivityPagination)? = nil
-        if includeEnrollments {
-            let enrolledActivities: [MyEnrollmentItem] = enrollmentMap.values.compactMap { record in
-                guard let activity = activities.first(where: { $0.id == record.activityId }) else { return nil }
-                return MyEnrollmentItem(
-                    activityId: activity.id,
-                    title: activity.title,
-                    coverURL: activity.coverURL,
-                    startTime: activity.startTime,
-                    endTime: activity.endTime,
-                    myStatus: 1
-                )
-            }
-            let result = paginateMy(list: enrolledActivities, page: page, pageSize: pageSize)
-            enrolledResult = result
-        }
-        
-        var collectedResult: ([MyCollectionItem], ActivityPagination)? = nil
-        if includeCollections {
-            let collectedActivities: [MyCollectionItem] = activities
-                .filter { collectionSet.contains($0.id) }
-                .map { activity in
-                    MyCollectionItem(
-                        activityId: activity.id,
-                        title: activity.title,
-                        coverURL: activity.coverURL,
-                        startTime: activity.startTime,
-                        endTime: activity.endTime
-                    )
-                }
-            let result = paginateMyCollection(list: collectedActivities, page: page, pageSize: pageSize)
-            collectedResult = result
-        }
-        
-        return (enrolledResult, collectedResult)
-    }
-    
-    private func paginateMy<T>(list: [T], page: Int, pageSize: Int) -> ([T], ActivityPagination) {
-        let safePage = max(page, 1)
-        let safePageSize = max(pageSize, 1)
-        let start = (safePage - 1) * safePageSize
-        let end = min(start + safePageSize, list.count)
-        let sliced = start < end ? Array(list[start..<end]) : []
-        let pagination = ActivityPagination(total: list.count, page: safePage, pageSize: safePageSize)
-        return (sliced, pagination)
-    }
-    
-    private func paginateMyCollection(list: [MyCollectionItem], page: Int, pageSize: Int) -> ([MyCollectionItem], ActivityPagination) {
-        let safePage = max(page, 1)
-        let safePageSize = max(pageSize, 1)
-        let start = (safePage - 1) * safePageSize
-        let end = min(start + safePageSize, list.count)
-        let sliced = start < end ? Array(list[start..<end]) : []
-        let pagination = ActivityPagination(total: list.count, page: safePage, pageSize: safePageSize)
-        return (sliced, pagination)
+    enum CodingKeys: String, CodingKey {
+        case id, title, location, quota
+        case coverURL = "cover_url"
+        case startTime = "start_time"
+        case currentEnrollments = "current_enrollments"
     }
 }
 
+struct ActivityDetailDTO: Codable {
+    let id: String
+    let title: String
+    let content: String
+    let coverURL: String?
+    let activityType: Int
+    let location: String
+    let organizer: String
+    let startTime: String
+    let endTime: String
+    let quota: Int
+    let currentEnrollments: Int
+    let needSignIn: Bool
+    let status: Int
+    let createdAt: String
+    let isEnrolled: Bool
+    let isCollected: Bool
+    
+    enum CodingKeys: String, CodingKey {
+        case id, title, content, location, organizer, quota, status
+        case coverURL = "cover_url"
+        case activityType = "activity_type"
+        case startTime = "start_time"
+        case endTime = "end_time"
+        case currentEnrollments = "current_enrollments"
+        case needSignIn = "need_sign_in"
+        case createdAt = "created_at"
+        case isEnrolled = "is_enrolled"
+        case isCollected = "is_collected"
+    }
+}
+
+struct ActivityPaginationDTO: Codable {
+    let total: Int
+    let page: Int
+    let pageSize: Int
+    let pages: Int
+    
+    enum CodingKeys: String, CodingKey {
+        case total, page, pages
+        case pageSize = "page_size"
+    }
+}
+
+struct EnrollActivityRequestDTO: Codable {
+    let userName: String
+    let studentId: String
+    let major: String
+    let phoneNumber: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case userName = "user_name"
+        case studentId = "student_id"
+        case major
+        case phoneNumber = "phone_number"
+    }
+}
+
+struct MyActivitiesResponse: Codable {
+    let enrolledData: EnrolledDataDTO?
+    let collectedData: CollectedDataDTO?
+    
+    enum CodingKeys: String, CodingKey {
+        case enrolledData = "enrolled_data"
+        case collectedData = "collected_data"
+    }
+}
+
+struct EnrolledDataDTO: Codable {
+    let list: [MyEnrollmentItemDTO]
+    let pagination: ActivityPaginationDTO
+}
+
+struct MyEnrollmentItemDTO: Codable {
+    let activityId: String
+    let title: String
+    let coverURL: String?
+    let startTime: String
+    let endTime: String
+    let myStatus: Int
+    
+    enum CodingKeys: String, CodingKey {
+        case title
+        case activityId = "activity_id"
+        case coverURL = "cover_url"
+        case startTime = "start_time"
+        case endTime = "end_time"
+        case myStatus = "my_status"
+    }
+}
+
+struct CollectedDataDTO: Codable {
+    let list: [MyCollectionItemDTO]
+    let pagination: ActivityPaginationDTO
+}
+
+struct MyCollectionItemDTO: Codable {
+    let activityId: String
+    let title: String
+    let coverURL: String?
+    let startTime: String
+    let endTime: String
+    
+    enum CodingKeys: String, CodingKey {
+        case title
+        case activityId = "activity_id"
+        case coverURL = "cover_url"
+        case startTime = "start_time"
+        case endTime = "end_time"
+    }
+}
+
+// MARK: - Activity Data Manager
+final class ActivityDataManager {
+    static let shared = ActivityDataManager()
+    private let networkManager = NetworkManager.shared
+    
+    private init() {}
+    
+    // MARK: - Date Formatter
+    private lazy var iso8601Formatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+    
+    // 备用的日期格式化器（不含毫秒）
+    private lazy var iso8601FormatterNoFractional: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter
+    }()
+    
+    // 辅助方法：解析日期字符串
+    private func parseDate(_ dateString: String) -> Date? {
+        // 尝试带毫秒的格式
+        if let date = iso8601Formatter.date(from: dateString) {
+            return date
+        }
+        // 尝试不带毫秒的格式
+        if let date = iso8601FormatterNoFractional.date(from: dateString) {
+            return date
+        }
+        // 如果都失败，打印错误
+        print("⚠️ Failed to parse date: \(dateString)")
+        return nil
+    }
+    
+    // MARK: - Fetch Activities List
+    func fetchActivitiesList(
+        keyword: String? = nil,
+        activityType: ActivityType? = nil,
+        page: Int = 1,
+        pageSize: Int = 10
+    ) async throws -> (items: [ActivityListItem], pagination: ActivityPagination) {
+        var parameters: [String: Any] = [
+            "page": page,
+            "pageSize": pageSize
+        ]
+        
+        if let keyword = keyword, !keyword.isEmpty {
+            parameters["keyword"] = keyword
+        }
+        
+        if let activityType = activityType {
+            parameters["activity_type"] = activityType.rawValue
+        }
+        
+        let response: ActivityListResponse = try await networkManager.request(
+            endpoint: APIEndpoints.activities,
+            method: .get,
+            parameters: parameters
+        )
+        
+        print("📥 Received \(response.list.count) activities from server")
+        print("📄 Pagination: page \(response.pagination.page) of \(response.pagination.pages)")
+        
+        // Convert DTO to domain models
+        print("🔄 Converting \(response.list.count) DTOs to domain models...")
+        let items = response.list.compactMap { dto -> ActivityListItem? in
+            print("   Processing: \(dto.title) - start_time: \(dto.startTime)")
+            
+            guard let startTime = parseDate(dto.startTime) else {
+                print("   ❌ Failed to parse date for: \(dto.title)")
+                return nil
+            }
+            
+            print("   ✅ Parsed successfully: \(dto.title)")
+            
+            return ActivityListItem(
+                id: dto.id,
+                title: dto.title,
+                coverURL: dto.coverURL ?? "",
+                location: dto.location,
+                startTime: startTime,
+                quota: dto.quota,
+                currentEnrollments: dto.currentEnrollments
+            )
+        }
+        
+        let pagination = ActivityPagination(
+            total: response.pagination.total,
+            page: response.pagination.page,
+            pageSize: response.pagination.pageSize
+        )
+        
+        return (items, pagination)
+    }
+    
+    // MARK: - Fetch Activity Detail
+    func fetchActivityDetail(activityId: String) async throws -> Activity {
+        let dto: ActivityDetailDTO = try await networkManager.request(
+            endpoint: APIEndpoints.activityDetail(activityId),
+            method: .get
+        )
+        
+        guard let startTime = parseDate(dto.startTime),
+              let endTime = parseDate(dto.endTime),
+              let createdAt = parseDate(dto.createdAt),
+              let activityType = ActivityType(rawValue: dto.activityType),
+              let status = ActivityStatus(rawValue: dto.status) else {
+            throw NetworkError.decodingError(NSError(domain: "DateParsing", code: -1))
+        }
+        
+        var activity = Activity(
+            id: dto.id,
+            title: dto.title,
+            content: dto.content,
+            coverURL: dto.coverURL ?? "",
+            activityType: activityType,
+            location: dto.location,
+            organizer: dto.organizer,
+            startTime: startTime,
+            endTime: endTime,
+            quota: dto.quota,
+            currentEnrollments: dto.currentEnrollments,
+            needSignIn: dto.needSignIn,
+            status: status,
+            createdAt: createdAt
+        )
+        
+        activity.isEnrolled = dto.isEnrolled
+        activity.isCollected = dto.isCollected
+        
+        return activity
+    }
+    
+    // MARK: - Enroll Activity
+    func enrollActivity(
+        activityId: String,
+        userName: String,
+        studentId: String,
+        major: String,
+        phoneNumber: String?
+    ) async throws {
+        let request = EnrollActivityRequestDTO(
+            userName: userName,
+            studentId: studentId,
+            major: major,
+            phoneNumber: phoneNumber
+        )
+        
+        try await networkManager.requestWithoutData(
+            endpoint: APIEndpoints.enrollActivity(activityId),
+            method: .post,
+            body: request
+        )
+    }
+    
+    // MARK: - Cancel Enrollment
+    func cancelEnrollment(activityId: String) async throws {
+        try await networkManager.requestWithoutData(
+            endpoint: APIEndpoints.enrollActivity(activityId),
+            method: .delete
+        )
+    }
+    
+    // MARK: - Collect Activity
+    func collectActivity(activityId: String) async throws {
+        try await networkManager.requestWithoutData(
+            endpoint: APIEndpoints.collectActivity(activityId),
+            method: .post
+        )
+    }
+    
+    // MARK: - Uncollect Activity
+    func uncollectActivity(activityId: String) async throws {
+        try await networkManager.requestWithoutData(
+            endpoint: APIEndpoints.collectActivity(activityId),
+            method: .delete
+        )
+    }
+    
+    // MARK: - Fetch My Activities
+    func fetchMyActivities(
+        includeEnrollments: Bool = true,
+        includeCollections: Bool = true,
+        page: Int = 1,
+        pageSize: Int = 10
+    ) async throws -> (enrollments: ([MyEnrollmentItem], ActivityPagination)?, collections: ([MyCollectionItem], ActivityPagination)?) {
+        var parameters: [String: Any] = [
+            "page": page,
+            "pageSize": pageSize
+        ]
+        
+        if includeEnrollments {
+            parameters["include_enrollments"] = true
+        }
+        
+        if includeCollections {
+            parameters["include_collections"] = true
+        }
+        
+        let response: MyActivitiesResponse = try await networkManager.request(
+            endpoint: APIEndpoints.myActivities,
+            method: .get,
+            parameters: parameters
+        )
+        
+        var enrollmentsResult: ([MyEnrollmentItem], ActivityPagination)? = nil
+        var collectionsResult: ([MyCollectionItem], ActivityPagination)? = nil
+        
+        // Parse enrollments
+        if let enrolledData = response.enrolledData {
+            let items = enrolledData.list.compactMap { dto -> MyEnrollmentItem? in
+                guard let startTime = parseDate(dto.startTime),
+                      let endTime = parseDate(dto.endTime) else {
+                    return nil
+                }
+                
+                return MyEnrollmentItem(
+                    activityId: dto.activityId,
+                    title: dto.title,
+                    coverURL: dto.coverURL ?? "",
+                    startTime: startTime,
+                    endTime: endTime,
+                    myStatus: dto.myStatus
+                )
+            }
+            
+            let pagination = ActivityPagination(
+                total: enrolledData.pagination.total,
+                page: enrolledData.pagination.page,
+                pageSize: enrolledData.pagination.pageSize
+            )
+            
+            enrollmentsResult = (items, pagination)
+        }
+        
+        // Parse collections
+        if let collectedData = response.collectedData {
+            let items = collectedData.list.compactMap { dto -> MyCollectionItem? in
+                guard let startTime = parseDate(dto.startTime),
+                      let endTime = parseDate(dto.endTime) else {
+                    return nil
+                }
+                
+                return MyCollectionItem(
+                    activityId: dto.activityId,
+                    title: dto.title,
+                    coverURL: dto.coverURL ?? "",
+                    startTime: startTime,
+                    endTime: endTime
+                )
+            }
+            
+            let pagination = ActivityPagination(
+                total: collectedData.pagination.total,
+                page: collectedData.pagination.page,
+                pageSize: collectedData.pagination.pageSize
+            )
+            
+            collectionsResult = (items, pagination)
+        }
+        
+        return (enrollmentsResult, collectionsResult)
+    }
+}

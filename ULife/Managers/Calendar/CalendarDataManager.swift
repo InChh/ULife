@@ -3,102 +3,84 @@
 //  ULife_Local
 //
 //  Created by 高煜尧 on 2025-12-06.
-//
+//  Updated on 2025-12-11: 改用真实网络请求
 
 import Foundation
 
-/// 日历数据管理器（当前提供 mock，后续可替换为 Protobuf/网络）
+/// 日历数据管理器
 final class CalendarDataManager {
     static let shared = CalendarDataManager()
+    private let calendarRequest = CalendarRequest()
+    
     private init() {}
 
+    /// 获取学期列表
+    func fetchSemesters() async throws -> [Semester] {
+        return try await calendarRequest.getSemesters()
+    }
 
-    /// 获取全校课程（mock）
-    func fetchPublicCoursesMock() -> [PublicCourse] {
-        return [
-            PublicCourse(courseId: 1, 
-                         courseName: "高等数学（上）",
-                         teacherName: "王教授",
-                         teacherId: 1001,
-                         location: "教二-201",
-                         dayOfWeek: 1,
-                         startSection: 1,
-                         endSection: 2,
-                         weeksRange: Array(1...16),
-                         type: .compulsory,
-                         credits: 4,
-                         description: "必修课，微积分基础"),
-            PublicCourse(courseId: 2, 
-                         courseName: "大学英语 II",
-                         teacherName: "李老师",
-                         teacherId: 1002,
-                         location: "外语楼-105",
-                         dayOfWeek: 1,
-                         startSection: 3,
-                         endSection: 4,
-                         weeksRange: Array(1...16),
-                         type: .compulsory,
-                         credits: 3,
-                         description: "必修课，英语综合训练"),
-            PublicCourse(courseId: 3, 
-                         courseName: "计算机网络",
-                         teacherName: "赵老师",
-                         teacherId: 1003,
-                         location: "综教-302",
-                         dayOfWeek: 3,
-                         startSection: 5,
-                         endSection: 6,
-                         weeksRange: Array(1...16),
-                         type: .elective,
-                         credits: 3,
-                         description: "选修课，网络基础与协议"),
-            PublicCourse(courseId: 4, 
-                         courseName: "线性代数",
-                         teacherName: "张老师",
-                         teacherId: 1004,
-                         location: "教三-101",
-                         dayOfWeek: 4,
-                         startSection: 1,
-                         endSection: 2,
-                         weeksRange: Array(1...16),
-                         type: .compulsory,
-                         credits: 3,
-                         description: "必修课，矩阵与向量空间"),
-            PublicCourse(courseId: 5, 
-                         courseName: "体育（羽毛球）",
-                         teacherName: "李教练",
-                         teacherId: 1005,
-                         location: "体育馆-2",
-                         dayOfWeek: 5,
-                         startSection: 3,
-                         endSection: 4,
-                         weeksRange: Array(1...16),
-                         type: .elective,
-                         credits: 1,
-                         description: "选修课，体育锻炼")
-        ]
+    /// 获取全校公共课程
+    func fetchPublicCourses(
+        semesterId: Int? = nil,
+        name: String? = nil,
+        teacher: String? = nil,
+        page: Int = 1,
+        pageSize: Int = 20
+    ) async throws -> ([PublicCourse], Pagination) {
+        return try await calendarRequest.getPublicCourses(
+            semesterId: semesterId,
+            name: name,
+            teacher: teacher,
+            page: page,
+            pageSize: pageSize
+        )
     }
     
+    /// 获取用户课表
+    func fetchSchedule(semesterId: Int, week: Int? = nil) async throws -> [ScheduleItem] {
+        return try await calendarRequest.getUserSchedule(
+            semesterId: semesterId,
+            week: week
+        )
+    }
+    
+    /// 添加课表项
+    func addScheduleItems(items: [AddScheduleItemRequest]) async throws -> AddScheduleItemsResponse {
+        return try await calendarRequest.addScheduleItems(items: items)
+    }
+    
+    /// 删除课表项
+    func deleteScheduleItem(itemId: Int64) async throws {
+        try await calendarRequest.deleteScheduleItem(itemId: itemId)
+    }
+    
+    /// 更新课表项
+    func updateScheduleItem(
+        itemId: Int64,
+        courseName: String? = nil,
+        teacherName: String? = nil,
+        location: String? = nil,
+        colorHex: String? = nil,
+        description: String? = nil
+    ) async throws -> ScheduleItem {
+        return try await calendarRequest.updateScheduleItem(
+            itemId: itemId,
+            courseName: courseName,
+            teacherName: teacherName,
+            location: location,
+            colorHex: colorHex,
+            description: description
+        )
+    }
+    
+    // MARK: - Mock方法（已废弃，仅供调试）
+    @available(*, deprecated, message: "请使用 fetchPublicCourses 方法")
+    func fetchPublicCoursesMock() -> [PublicCourse] {
+        return []
+    }
+    
+    @available(*, deprecated, message: "请使用 fetchSchedule 方法")
     func fetchScheduleMock() -> [ScheduleItem] {
-            return [
-                ScheduleItem(
-                    id: 1,
-                    sourceId: 1,
-                    courseName: "高等数学（上）",
-                    teacherName: "王教授",
-                    location: "教二-201",
-                    dayOfWeek: 1,
-                    startSection: 1,
-                    endSection: 2,
-                    weeks: Array(1...16),
-                    type: .compulsory,
-                    credits: 4,
-                    description: "必修课，微积分基础",
-                    colorHex: "#4A90E2",
-                    isCustom: false)
-            ]
+        return []
         }
 }
-
-
-

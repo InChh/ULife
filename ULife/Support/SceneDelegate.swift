@@ -30,6 +30,19 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             window?.makeKeyAndVisible()
         }
 
+    /// 切换到主界面（供登录成功后调用）
+    func showMainInterface() {
+        let main = UIHelper.createTabViewController()
+        // 使用淡入切换，避免闪烁
+        if let window = window {
+            UIView.transition(with: window, duration: 0.3, options: .transitionCrossDissolve) {
+                window.rootViewController = main
+            }
+        } else {
+            window?.rootViewController = main
+        }
+    }
+
     func sceneDidDisconnect(_ scene: UIScene) {
         // Called as the scene is being released by the system.
         // This occurs shortly after the scene enters the background, or when its session is discarded.

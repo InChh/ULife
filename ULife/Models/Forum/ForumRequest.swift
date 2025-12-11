@@ -7,8 +7,8 @@
 import Foundation
 import UIKit
 
-// MARK: - Request
-public struct GetPostListRequest: Equatable {
+// MARK: - Request Models
+public struct GetPostListRequest: Codable {
     public var boardId: String?
     public var filter: Filter?
     public var keyword: String?
@@ -33,25 +33,21 @@ public struct GetPostListRequest: Equatable {
     }
 }
 
-// MARK: - Request
-public struct CreatePostRequest: Equatable {
-    /// 板块id
-    public var boardid: String
+public struct CreatePostRequest: Codable {
+    public var board_id: String
     public var content: String
-    /// 上传附件 可为空或缺省
     public var media: [MediaItem]?
-    /// 帖子标签，例如 二手 数码
     public var tags: [String]
     public var title: String
 
     public init(
-        boardid: String,
+        boardId: String,
         content: String,
         media: [MediaItem]?,
         tags: [String],
         title: String
     ) {
-        self.boardid = boardid
+        self.board_id = boardId
         self.content = content
         self.media = media
         self.tags = tags
@@ -59,223 +55,281 @@ public struct CreatePostRequest: Equatable {
     }
 }
 
-public struct PostListResponse {
-    public let posts: [PostLite]
+// MARK: - Response Models
+public struct BoardsResponse: Codable {
+    public let list: [Board]
+}
+
+public struct PostListResponseData: Codable {
+    public let list: [PostLite]
     public let pagination: Pagination
-}
-
-public enum Filter: String, Equatable {
-    case all
-    case myCollege
-}
-
-public enum Sort: String, Equatable {
-    case hot
-    case latest
-    case new
-}
-
-// MARK: - Request
-public struct LikeOrDisListRequest: Equatable {
-    public var id: String
-    /// 操作：点赞/取消点赞
-    public var actions: Actions
-
-    public init(id: String, actions: Actions) {
-        self.id = id
-        self.actions = actions
+    
+    public init(list: [PostLite], pagination: Pagination) {
+        self.list = list
+        self.pagination = pagination
     }
 }
 
-// MARK: - Request
-public struct ColectOrDisColectRequest: Equatable {
-    public var id: String
-    /// 执行的操作
-    public var action: Action
+// 类型别名，保持与旧代码兼容
+public typealias PostListResponse = PostListResponseData
 
-    public init(id: String, action: Action) {
-        self.id = id
+public struct PostDetailResponse: Codable {
+    public let post: Post
+}
+
+public struct LikeOrDisListRequest: Codable {
+    public var action: Actions
+
+    public init(action: Actions) {
         self.action = action
     }
 }
 
-/// 执行的操作
-public enum Action: String, Equatable {
+public struct ColectOrDisColectRequest: Codable {
+    public var action: Action
+
+    public init(action: Action) {
+        self.action = action
+    }
+}
+
+public enum Action: String, Codable {
     case collect
     case uncollect
 }
 
-/// 操作：点赞/取消点赞
-public enum Actions: String, Equatable {
+public enum Actions: String, Codable {
     case like
     case unlike
 }
 
-public struct LikeOrDisListResponse: Equatable {
-    /// 帖子最新的总点赞数
-    public var currentLikeCount: Int
-    /// 当前用户是否已点赞
-    public var isLiked: Bool
+public struct LikeOrDisListResponse: Codable {
+    public var current_like_count: Int
+    public var is_liked: Bool
 
-    public init(currentLikeCount: Int, isLiked: Bool) {
-        self.currentLikeCount = currentLikeCount
-        self.isLiked = isLiked
+    var currentLikeCount: Int { current_like_count }
+    var isLiked: Bool { is_liked }
+}
+
+public struct ColectOrDisColectResponse: Codable {
+    public var is_collected: Bool
+    
+    var isCollected: Bool { is_collected }
+}
+
+public struct CreateCommentRequest: Codable {
+    public var content: String
+    public var reply_to_comment_id: String?
+    
+    public init(content: String, replyToCommentId: String?) {
+        self.content = content
+        self.reply_to_comment_id = replyToCommentId
     }
 }
 
-// MARK: - DataClass
-public struct ColectOrDisColectResponse: Equatable {
-
-    public var currentCollectCount: Int
-    /// 当前用户是否已收藏
-    public var isCollected: Bool
-
-    public init(currentCollectCount: Int, isCollected: Bool) {
-        self.currentCollectCount = currentCollectCount
-        self.isCollected = isCollected
-    }
-}
-
-// MARK: - DataClass
-public struct CreateCommentResponse: Equatable {
+public struct CreateCommentResponseData: Codable {
+    public var comment_id: String
     public var comment: Comment
-    /// 新创建评论id
-    public var commentid: String
+    
+    var commentId: String { comment_id }
+}
 
-    public init(comment: Comment, commentid: String) {
-        self.comment = comment
-        self.commentid = commentid
+public struct CommentsListResponse: Codable {
+    public let list: [Comment]
+    public let pagination: Pagination
+    
+    public init(list: [Comment], pagination: Pagination) {
+        self.list = list
+        self.pagination = pagination
     }
 }
 
-// MARK: - Request
-public struct ReportRequest: Equatable {
-    /// 详细描述，详细描述（可选）
+public struct ReportRequest: Codable {
     public var description: String?
-    /// 举报类型，举报类型：枚举值，例如 ad (广告), politics (政治敏感), abuse (人身攻击), other (其他)
     public var reason: Reason
-    /// 被举报的帖子或评论的唯一 ID
-    public var targetid: String
-    /// 举报目标类型：post 或 comment
-    public var targetType: TargetType
+    public var target_id: String
+    public var target_type: TargetType
 
     public init(
         description: String?,
         reason: Reason,
-        targetid: String,
+        targetId: String,
         targetType: TargetType
     ) {
         self.description = description
         self.reason = reason
-        self.targetid = targetid
-        self.targetType = targetType
+        self.target_id = targetId
+        self.target_type = targetType
     }
 }
 
-/// 举报类型，举报类型：枚举值，例如 ad (广告), politics (政治敏感), abuse (人身攻击), other (其他)
-public enum Reason: String, Equatable {
+public struct ReportResponse: Codable {
+    public var report_id: String
+}
+
+public enum Reason: String, Codable {
     case abuse
     case ad
     case other
     case politics
 }
 
-/// 举报目标类型：post 或 comment
-public enum TargetType: String, Equatable {
+public enum TargetType: String, Codable {
     case comment
     case post
 }
 
+public enum Filter: String, Codable {
+    case all
+    case myCollege = "my_college"
+}
+
+public enum Sort: String, Codable {
+    case hot
+    case latest
+    case new
+}
+
+// MARK: - Forum Request Class
 class ForumRequest {
-
-    //获取可用板块列表/api/v1/forum/boards
-    public func getBoard() -> [Board] {
-        return Board.mockBoards
+    private let networkManager = NetworkManager.shared
+    private struct CreatePostResponseDTO: Codable { let post: Post }
+    
+    // MARK: - Get Boards
+    public func getBoard() async throws -> [Board] {
+        let response: BoardsResponse = try await networkManager.request(
+            endpoint: APIEndpoints.forumBoards,
+            method: .get
+        )
+        return response.list
     }
 
-    //发布新帖子
-    public func CreatePost(request: CreatePostRequest) -> Post {
-        return Post.mockDetail(for: "1")
+    // MARK: - Create Post
+    public func CreatePost(request: CreatePostRequest) async throws -> Post {
+        let response: CreatePostResponseDTO = try await networkManager.request(
+            endpoint: APIEndpoints.forumPosts,
+            method: .post,
+            body: request
+        )
+        return response.post
     }
 
-    //获取帖子列表
-    public func GetPostList(request: GetPostListRequest) -> PostListResponse {
-        return PostLite.getMockPostList(page: request.page)
+    // MARK: - Get Post List
+    public func GetPostList(request: GetPostListRequest) async throws -> PostListResponseData {
+        var params: [String: Any] = [
+            "page": request.page,
+            "pageSize": request.pageSize
+        ]
+        
+        if let boardId = request.boardId {
+            params["boardId"] = boardId
+        }
+        if let filter = request.filter {
+            params["filter"] = filter.rawValue
+        }
+        if let sort = request.sort {
+            params["sort"] = sort.rawValue
+        }
+        if let keyword = request.keyword {
+            params["keyword"] = keyword
+        }
+        
+        let response: PostListResponseData = try await networkManager.request(
+            endpoint: APIEndpoints.forumPosts,
+            method: .get,
+            parameters: params
+        )
+        return response
     }
 
-    //获取帖子详情
-    public func GetPostDetail(id: String) -> Post {
-        return Post.mockDetail(for: id)
+    // MARK: - Get Post Detail
+    public func GetPostDetail(id: String) async throws -> Post {
+        let response: Post = try await networkManager.request(
+            endpoint: APIEndpoints.forumPostDetail(id),
+            method: .get
+        )
+        return response
     }
 
-    //帖子点赞/取消点赞
-    public func LikeOrDisList(Requst: LikeOrDisListRequest)
-        -> LikeOrDisListResponse
-    {
-        return LikeOrDisListResponse(
-            currentLikeCount: 100,
-            isLiked: Requst.actions == Actions.like
+    // MARK: - Like/Unlike Post
+    public func LikeOrDisList(Request: LikeOrDisListRequest, postId: String) async throws -> LikeOrDisListResponse {
+        let response: LikeOrDisListResponse = try await networkManager.request(
+            endpoint: APIEndpoints.forumPostLike(postId),
+            method: .post,
+            body: Request
+        )
+        return response
+    }
+
+    // MARK: - Collect/Uncollect Post
+    public func ColectOrDisColect(Request: ColectOrDisColectRequest, postId: String) async throws -> ColectOrDisColectResponse {
+        let response: ColectOrDisColectResponse = try await networkManager.request(
+            endpoint: APIEndpoints.forumPostCollect(postId),
+            method: .post,
+            body: Request
+        )
+        return response
+    }
+
+    // MARK: - Create Comment
+    public func CreateComment(postId: String, request: CreateCommentRequest) async throws -> CreateCommentResponseData {
+        let response: CreateCommentResponseData = try await networkManager.request(
+            endpoint: APIEndpoints.forumPostComments(postId),
+            method: .post,
+            body: request
+        )
+        return response
+    }
+    
+    // MARK: - Get Comment List
+    public func GetCommentList(postId: String, page: Int = 1, pageSize: Int = 100) async throws -> [Comment] {
+        let params: [String: Any] = [
+            "page": page,
+            "pageSize": pageSize
+        ]
+        
+        let response: CommentsListResponse = try await networkManager.request(
+            endpoint: APIEndpoints.forumPostComments(postId),
+            method: .get,
+            parameters: params
+        )
+        return response.list
+    }
+
+    // MARK: - Report Post/Comment
+    public func Report(request: ReportRequest) async throws -> String {
+        let response: ReportResponse = try await networkManager.request(
+            endpoint: APIEndpoints.forumReports,
+            method: .post,
+            body: request
+        )
+        return response.report_id
+    }
+
+    // MARK: - Delete Comment
+    public func deleteComment(id: String) async throws {
+        try await networkManager.requestWithoutData(
+            endpoint: APIEndpoints.forumCommentDetail(id),
+            method: .delete
         )
     }
 
-    //帖子收藏/取消收藏
-    public func ColectOrDisColect(Requst: ColectOrDisColectRequest)
-        -> ColectOrDisColectResponse
-    {
-        return ColectOrDisColectResponse(
-            currentCollectCount: 100,
-            isCollected: Requst.action == Action.collect
+    // MARK: - Like/Unlike Comment
+    public func LikeOrDisListComment(Request: LikeOrDisListRequest, commentId: String) async throws -> LikeOrDisListResponse {
+        let response: LikeOrDisListResponse = try await networkManager.request(
+            endpoint: APIEndpoints.forumCommentLike(commentId),
+            method: .post,
+            body: Request
         )
+        return response
     }
-
-    //发表评论
-    public func CreateComment(
-        id: String, //帖子 id
-        content: String,
-        replyToCommentid: String? //回复的评论 id, 为 null 的话代表回复的帖子
-    ) -> CreateCommentResponse {
-        return CreateCommentResponse(
-            comment: Comment(
-                author: UserLite.mockAuthor1,
-                content: content,
-                createdAt: Calendar.current.date(
-                    byAdding: .minute,
-                    value: -10,
-                    to: Date()
-                )!,
-                id: "xxx-C05",
-                isLiked: true,
-                likeCount: 1,
-                parentid: replyToCommentid,
-                postid: id,
-                replyTo: UserLite.mockAuthor2
-            ),
-            commentid: "xxx"
-        )
-    }
-
-    //获取评论列表(不分页)
-    public func GetCommentList(id: String) -> [Comment] {
-        return mockComments(for: id)
-    }
-
-    //举报帖子/评论
-    public func Report(request: ReportRequest) -> String {
-        return "1"
-    }
-
-    //删除评论
-    public func deleteComment(id: String) {
-
-    }
-
-    //评论点赞/取消点赞
-    public func LikeOrDisListComment(Requst: LikeOrDisListRequest)
-        -> LikeOrDisListResponse
-    {
-        return LikeOrDisListResponse(
-            currentLikeCount: 100,
-            isLiked: Requst.actions == Actions.like
+    
+    // MARK: - Delete Post
+    public func deletePost(id: String) async throws {
+        try await networkManager.requestWithoutData(
+            endpoint: APIEndpoints.forumPostDetail(id),
+            method: .delete
         )
     }
 }
+

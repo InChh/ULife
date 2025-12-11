@@ -1,0 +1,285 @@
+warning: unused import: `http::StatusCode`
+ --> src/modules/user/controller.rs:3:5
+  |
+3 |     http::StatusCode,
+  |     ^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `post`
+ --> src/modules/course/controller.rs:4:20
+  |
+4 |     routing::{get, post},
+  |                    ^^^^
+
+warning: unused import: `post`
+ --> src/modules/bbs/controller.rs:4:20
+  |
+4 |     routing::{get, post},
+  |                    ^^^^
+
+warning: unused import: `chrono::Utc`
+ --> src/modules/activity/service.rs:5:5
+  |
+5 | use chrono::Utc;
+  |     ^^^^^^^^^^^
+
+warning: unused imports: `delete` and `patch`
+ --> src/modules/activity/controller.rs:4:15
+  |
+4 |     routing::{delete, get, patch, post},
+  |               ^^^^^^       ^^^^^
+
+warning: unused import: `campus::activity::*`
+  --> src/proto/mod.rs:10:9
+   |
+10 | pub use campus::activity::*;
+   |         ^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `sqlx::MySqlPool`
+ --> src/main.rs:7:5
+  |
+7 | use sqlx::MySqlPool;
+  |     ^^^^^^^^^^^^^^^
+
+warning: variants `Validation` and `Unauthorized` are never constructed
+  --> src/common/error.rs:16:5
+   |
+10 | pub enum AppError {
+   |          -------- variants in this enum
+...
+16 |     Validation(String),
+   |     ^^^^^^^^^^
+17 |     /// 未授权
+18 |     Unauthorized(String),
+   |     ^^^^^^^^^^^^
+   |
+   = note: `AppError` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: multiple fields are never read
+  --> src/modules/user/entity.rs:21:9
+   |
+20 | pub struct CreateUserRequest {
+   |            ----------------- fields in this struct
+21 |     pub student_id: String,
+   |         ^^^^^^^^^^
+22 |     pub username: String,
+   |         ^^^^^^^^
+23 |     pub password: String,
+   |         ^^^^^^^^
+24 |     pub name: String,
+   |         ^^^^
+25 |     pub college: String,
+   |         ^^^^^^^
+26 |     pub major: String,
+   |         ^^^^^
+27 |     pub grade: String,
+   |         ^^^^^
+28 |     pub class_name: String,
+   |         ^^^^^^^^^^
+29 |     pub email: String,
+   |         ^^^^^
+30 |     pub phone: String,
+   |         ^^^^^
+   |
+   = note: `CreateUserRequest` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: fields `student_id` and `password` are never read
+  --> src/modules/user/entity.rs:36:9
+   |
+35 | pub struct LoginRequest {
+   |            ------------ fields in this struct
+36 |     pub student_id: String,
+   |         ^^^^^^^^^^
+37 |     pub password: String,
+   |         ^^^^^^^^
+   |
+   = note: `LoginRequest` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: multiple fields are never read
+  --> src/modules/course/entity.rs:23:9
+   |
+22 | pub struct CreateCourseRequest {
+   |            ------------------- fields in this struct
+23 |     pub course_name: String,
+   |         ^^^^^^^^^^^
+24 |     pub teacher_name: String,
+   |         ^^^^^^^^^^^^
+25 |     pub teacher_id: i64,
+   |         ^^^^^^^^^^
+26 |     pub location: String,
+   |         ^^^^^^^^
+27 |     pub day_of_week: i32,
+   |         ^^^^^^^^^^^
+28 |     pub start_section: i32,
+   |         ^^^^^^^^^^^^^
+29 |     pub end_section: i32,
+   |         ^^^^^^^^^^^
+30 |     pub weeks_range: Vec<i32>,
+   |         ^^^^^^^^^^^
+31 |     pub course_type: String,
+   |         ^^^^^^^^^^^
+32 |     pub credits: i32,
+   |         ^^^^^^^
+33 |     pub description: Option<String>,
+   |         ^^^^^^^^^^^
+   |
+   = note: `CreateCourseRequest` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: fields `title`, `content`, `category`, `tags`, and `author_id` are never read
+  --> src/modules/bbs/entity.rs:23:9
+   |
+22 | pub struct CreatePostRequest {
+   |            ----------------- fields in this struct
+23 |     pub title: String,
+   |         ^^^^^
+24 |     pub content: String,
+   |         ^^^^^^^
+25 |     pub category: String,
+   |         ^^^^^^^^
+26 |     pub tags: Vec<String>,
+   |         ^^^^
+27 |     pub author_id: i64,
+   |         ^^^^^^^^^
+   |
+   = note: `CreatePostRequest` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: field `post_id` is never read
+  --> src/modules/bbs/entity.rs:45:9
+   |
+44 | pub struct CreateCommentRequest {
+   |            -------------------- field in this struct
+45 |     pub post_id: i64,
+   |         ^^^^^^^
+   |
+   = note: `CreateCommentRequest` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: fields `activity_type`, `quota`, `need_sign_in`, and `status` are never read
+  --> src/modules/activity/entity.rs:84:9
+   |
+80 | pub struct PatchActivityRequest {
+   |            -------------------- fields in this struct
+...
+84 |     pub activity_type: Option<i8>,
+   |         ^^^^^^^^^^^^^
+...
+89 |     pub quota: Option<i32>,
+   |         ^^^^^
+90 |     pub need_sign_in: Option<bool>,
+   |         ^^^^^^^^^^^^
+91 |     pub status: Option<i8>,
+   |         ^^^^^^
+   |
+   = note: `PatchActivityRequest` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: struct `Pagination` is never constructed
+ --> src/proto/campus.activity.rs:5:12
+  |
+5 | pub struct Pagination {
+  |            ^^^^^^^^^^
+
+warning: struct `ActivityListItem` is never constructed
+  --> src/proto/campus.activity.rs:18:12
+   |
+18 | pub struct ActivityListItem {
+   |            ^^^^^^^^^^^^^^^^
+
+warning: struct `ActivityDetail` is never constructed
+  --> src/proto/campus.activity.rs:74:12
+   |
+74 | pub struct ActivityDetail {
+   |            ^^^^^^^^^^^^^^
+
+warning: struct `EnrollmentRecord` is never constructed
+  --> src/proto/campus.activity.rs:85:12
+   |
+85 | pub struct EnrollmentRecord {
+   |            ^^^^^^^^^^^^^^^^
+
+warning: struct `MyEnrollmentItem` is never constructed
+   --> src/proto/campus.activity.rs:108:12
+    |
+108 | pub struct MyEnrollmentItem {
+    |            ^^^^^^^^^^^^^^^^
+
+warning: struct `MyCollectionItem` is never constructed
+   --> src/proto/campus.activity.rs:126:12
+    |
+126 | pub struct MyCollectionItem {
+    |            ^^^^^^^^^^^^^^^^
+
+warning: struct `CreateActivityRequest` is never constructed
+   --> src/proto/campus.activity.rs:154:12
+    |
+154 | pub struct CreateActivityRequest {
+    |            ^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `GetMyActivitiesRequest` is never constructed
+   --> src/proto/campus.activity.rs:211:12
+    |
+211 | pub struct GetMyActivitiesRequest {
+    |            ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `ApiResponse` is never constructed
+   --> src/proto/campus.activity.rs:224:12
+    |
+224 | pub struct ApiResponse {
+    |            ^^^^^^^^^^^
+
+warning: struct `GetActivitiesResponse` is never constructed
+   --> src/proto/campus.activity.rs:236:12
+    |
+236 | pub struct GetActivitiesResponse {
+    |            ^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `GetActivityDetailResponse` is never constructed
+   --> src/proto/campus.activity.rs:245:12
+    |
+245 | pub struct GetActivityDetailResponse {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `CreateActivityResponse` is never constructed
+   --> src/proto/campus.activity.rs:252:12
+    |
+252 | pub struct CreateActivityResponse {
+    |            ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `GetEnrollmentsResponse` is never constructed
+   --> src/proto/campus.activity.rs:259:12
+    |
+259 | pub struct GetEnrollmentsResponse {
+    |            ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `EnrolledData` is never constructed
+   --> src/proto/campus.activity.rs:268:12
+    |
+268 | pub struct EnrolledData {
+    |            ^^^^^^^^^^^^
+
+warning: struct `CollectedData` is never constructed
+   --> src/proto/campus.activity.rs:277:12
+    |
+277 | pub struct CollectedData {
+    |            ^^^^^^^^^^^^^
+
+warning: struct `GetMyActivitiesResponse` is never constructed
+   --> src/proto/campus.activity.rs:286:12
+    |
+286 | pub struct GetMyActivitiesResponse {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `EmptyResponse` is never constructed
+   --> src/proto/campus.activity.rs:295:12
+    |
+295 | pub struct EmptyResponse {}
+    |            ^^^^^^^^^^^^^
+
+warning: `campus_backend` (bin "campus_backend") generated 31 warnings (run `cargo fix --bin "campus_backend"` to apply 7 suggestions)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.24s
+     Running `target/debug/campus_backend`
+🚀 Campus Backend is starting...
+📝 Loading configuration from .env file...
+🔗 Connecting to database...
+✅ Database connected successfully!
+Server running on http://0.0.0.0:3000

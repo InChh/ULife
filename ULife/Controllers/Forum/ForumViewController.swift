@@ -2,265 +2,264 @@
 //  ForumViewController.swift
 //  ULife
 //
-//  Created by 刘宏伟 on 2025/12/1.
-//  论坛主页 UI
+//  论坛主页 - 参考活动模块重写
 
 import UIKit
 
 class ForumViewController: UIViewController {
     
-    private let mainView = ForumMainView()
+    // MARK: - Properties
+    private let tableView = UITableView(frame: .zero, style: .plain)
+    private let searchController = UISearchController(searchResultsController: nil)
+    private let categorySegmentedControl: UISegmentedControl = {
+        let control = UISegmentedControl(items: ["全部", "热议", "学习", "生活", "求助"])
+        control.selectedSegmentIndex = 0
+        return control
+    }()
     
-    // 导航栏中的排序按钮 + 搜索框 + 搜索按钮
-    private lazy var sortButton: UIButton = {
-        let btn = UIButton(type: .system)
-        btn.setTitle("最新", for: .normal)
-        btn.titleLabel?.font = .systemFont(ofSize: 14, weight: .medium)
-        btn.setImage(UIImage(systemName: "arrow.up.arrow.down"), for: .normal)
-        btn.tintColor = .label
-        btn.backgroundColor = .clear
-        btn.contentEdgeInsets = UIEdgeInsets(
-            top: 4,
-            left: 8,
-            bottom: 4,
-            right: 8
-        )
-        btn.semanticContentAttribute = .forceLeftToRight
-        return btn
-    }()
-    private lazy var searchTextField: UITextField = {
-        let tf = UITextField()
-        tf.placeholder = "搜索帖子"
-        tf.font = .systemFont(ofSize: 15)
-        tf.borderStyle = .none
-        tf.backgroundColor = .systemGray5
-        tf.layer.cornerRadius = 20
-        tf.clipsToBounds = true
-        tf.clearButtonMode = .whileEditing
-        tf.returnKeyType = .search
-        // 左侧留一点内边距
-        let paddingView = UIView(frame: CGRect(x: 0, y: 0, width: 10, height: 0))
-        tf.leftView = paddingView
-        tf.leftViewMode = .always
-        return tf
-    }()
-    private lazy var searchButton: UIButton = {
-        let btn = UIButton(type: .system)
-        btn.setTitle("| 搜索", for: .normal)
-        btn.titleLabel?.font = .systemFont(ofSize: 15)
-        btn.tintColor = .systemBlue
-        btn.backgroundColor = .systemGray5
-        btn.layer.cornerRadius = 14
-        // 内边距：左一点空隙，右边稍微大一点
-        btn.contentEdgeInsets = UIEdgeInsets(top: 0, left: 6, bottom: 0, right: 10)
-        return btn
-    }()
-
+    private var posts: [PostLite] = []
+    private var boards: [Board] = []
+    private var currentPage = 1
+    private var isLoading = false
+    private var hasMore = true
+    private var currentSort: Sort = .latest
+    
+    // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupViews()
-        setupLayout()
-        setupBindings()
-
-        loadData()
-    }
-
-    private func setupViews() {
-        // 设置 tableView 代理
-        mainView.tableView.delegate = self
-        mainView.tableView.dataSource = self
-
-        // 设置 CollectionView 代理
-        mainView.CategoryCollectionView.delegate = self
-        mainView.CategoryCollectionView.dataSource = self
-        
-        setupNavigationBar()
-        view.addSubview(mainView)
-    }
-
-    // 设置导航栏上的排序 + 搜索 UI
-    private func setupNavigationBar() {
-        navigationItem.leftBarButtonItem =  UIBarButtonItem(customView: sortButton)
-        
-        searchTextField.translatesAutoresizingMaskIntoConstraints = false
-        searchTextField.rightView = searchButton
-        searchTextField.rightViewMode = .always
-        
-        // 动态宽度
-        let screenWidth = UIScreen.main.bounds.width
-        let horizontalMargin: CGFloat = 16 //空隙
-        let approximateSortButtonWidth: CGFloat = 60 //估算的排序按钮
-        let maxWidth = max(
-            0,
-            screenWidth - approximateSortButtonWidth - horizontalMargin * 2
-        )
-        
-        NSLayoutConstraint.activate([
-            searchTextField.heightAnchor.constraint(equalToConstant: 40),
-            searchTextField.widthAnchor.constraint(equalToConstant: maxWidth)
-        ])
-
-        navigationItem.titleView = searchTextField
-    }
-
-    //设置布局
-    private func setupLayout() {
-        mainView.translatesAutoresizingMaskIntoConstraints = false
-
-        NSLayoutConstraint.activate([
-            mainView.topAnchor.constraint(equalTo: view.topAnchor),
-            mainView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            mainView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            mainView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-        ])
+        title = "论坛"
+        view.backgroundColor = .systemGroupedBackground
+        setupUI()
+        loadBoards()
+        loadPosts()
     }
     
-    // 装载原始数据
-    private func loadData() {
-        // 获取板块数组
-        categorys = ForumRequest().getBoard()
-       
-        refresh()
-    }
-
-
-    //绑定事件
-    private func setupBindings() {
-        //发帖按钮
-        mainView.createPostButton.addAction(
-            UIAction(handler: { _ in
-                self.ComeTocreatePost()
-            }),
-            for: .touchUpInside
-        )
-
+    // MARK: - Setup UI
+    private func setupUI() {
         // 排序按钮
-        sortButton.addTarget(
-            self,
-            action: #selector(handleSortButtonTap),
-            for: .touchUpInside
-        )
-
-        // 搜索按钮
-        searchButton.addTarget(
-            self,
-            action: #selector(handleSearchButtonTap),
-            for: .touchUpInside
-        )
-
-        // 键盘回车也触发搜索
-        searchTextField.addTarget(
-            self,
-            action: #selector(handleSearchReturn),
-            for: .editingDidEndOnExit
-        )
-    }
-
-    private func ComeTocreatePost() {
-        let postCreationViewController = PostCreationViewController()
-        navigationController?.pushViewController(
-            postCreationViewController,
-            animated: true
-        )
+        let sortButton = UIBarButtonItem(title: "最新", style: .plain, target: self, action: #selector(handleSortTap))
+        navigationItem.rightBarButtonItem = sortButton
+        
+        // 搜索
+        searchController.searchBar.placeholder = "搜索帖子"
+        searchController.obscuresBackgroundDuringPresentation = false
+        searchController.searchBar.delegate = self
+        navigationItem.searchController = searchController
+        navigationItem.hidesSearchBarWhenScrolling = false
+        
+        // 分类
+        categorySegmentedControl.addTarget(self, action: #selector(categoryChanged), for: .valueChanged)
+        categorySegmentedControl.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(categorySegmentedControl)
+        
+        // 表格
+        tableView.delegate = self
+        tableView.dataSource = self
+        tableView.register(ForumPostCell.self, forCellReuseIdentifier: ForumPostCell.identifier)
+        tableView.separatorStyle = .none
+        tableView.backgroundColor = .systemGroupedBackground
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(tableView)
+        
+        // 发帖按钮
+        let createButton = UIButton(type: .system)
+        createButton.setImage(UIImage(systemName: "square.and.pencil"), for: .normal)
+        createButton.backgroundColor = .systemBlue
+        createButton.tintColor = .white
+        createButton.layer.cornerRadius = 28
+        createButton.layer.shadowColor = UIColor.black.cgColor
+        createButton.layer.shadowOffset = CGSize(width: 0, height: 2)
+        createButton.layer.shadowOpacity = 0.3
+        createButton.layer.shadowRadius = 4
+        createButton.addTarget(self, action: #selector(handleCreatePost), for: .touchUpInside)
+        createButton.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(createButton)
+        
+        NSLayoutConstraint.activate([
+            categorySegmentedControl.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 12),
+            categorySegmentedControl.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            categorySegmentedControl.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            
+            tableView.topAnchor.constraint(equalTo: categorySegmentedControl.bottomAnchor, constant: 12),
+            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            
+            createButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            createButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20),
+            createButton.widthAnchor.constraint(equalToConstant: 56),
+            createButton.heightAnchor.constraint(equalToConstant: 56)
+        ])
     }
     
-    @objc private func handleSortButtonTap() {
+    // MARK: - Data Loading
+    private func loadBoards() {
+        Task {
+            do {
+                boards = try await ForumRequestProto().getBoard()
+            } catch {
+                print("加载板块失败: \(error)")
+            }
+        }
+    }
+    
+    private func loadPosts(refresh: Bool = true) {
+        guard !isLoading else { return }
+        isLoading = true
+        
+        if refresh {
+            currentPage = 1
+            hasMore = true
+        }
+        
+        let keyword = searchController.searchBar.text?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let boardId = selectedBoardId()
+        
+        let request = GetPostListRequest(
+            boardId: boardId,
+            filter: .all,
+            keyword: keyword?.isEmpty == false ? keyword : nil,
+            page: currentPage,
+            pageSize: 20,
+            sort: currentSort
+        )
+        
+        Task {
+            do {
+                let response = try await ForumRequestProto().GetPostList(request: request)
+                
+                await MainActor.run {
+                    if refresh {
+                        self.posts = response.list
+                    } else {
+                        self.posts.append(contentsOf: response.list)
+                    }
+                    
+                    self.hasMore = response.list.count >= 20
+                    if !refresh {
+                        self.currentPage += 1
+                    }
+                    self.isLoading = false
+                    self.tableView.reloadData()
+                }
+            } catch {
+                print("加载帖子失败: \(error)")
+                await MainActor.run {
+                    self.isLoading = false
+                    self.showError(error)
+                }
+            }
+        }
+    }
+    
+    private func selectedBoardId() -> String? {
+        let index = categorySegmentedControl.selectedSegmentIndex
+        guard index > 0, boards.count >= index else { return nil }
+        return boards[index - 1].id
+    }
+    
+    private func showError(_ error: Error) {
         let alert = UIAlertController(
-            title: "选择排序方式",
-            message: nil,
-            preferredStyle: .actionSheet
+            title: "加载失败",
+            message: error.localizedDescription,
+            preferredStyle: .alert
         )
-
-        alert.addAction(
-            UIAlertAction(
-                title: "最新",
-                style: .default,
-                handler: { [weak self] _ in
-                    sortMode = .latest
-                    self?.sortButton.setTitle("最新", for: .normal)
-                    self?.refresh()
-                }
-            )
-        )
-
-        alert.addAction(
-            UIAlertAction(
-                title: "热度",
-                style: .default,
-                handler: { [weak self] _ in
-                    sortMode = .hot
-                    self?.sortButton.setTitle("热度", for: .normal)
-                    self?.refresh()
-                }
-            )
-        )
-
+        alert.addAction(UIAlertAction(title: "确定", style: .default))
         present(alert, animated: true)
     }
     
-    
-    @objc private func handleSearchButtonTap() {
-        view.endEditing(true)
-        refresh()
+    // MARK: - Actions
+    @objc private func categoryChanged() {
+        loadPosts(refresh: true)
     }
+    
+    @objc private func handleSortTap() {
+        let alert = UIAlertController(title: "排序方式", message: nil, preferredStyle: .actionSheet)
+        
+        alert.addAction(UIAlertAction(title: "最新回复", style: .default) { [weak self] _ in
+            self?.currentSort = .latest
+            self?.navigationItem.rightBarButtonItem?.title = "最新"
+            self?.loadPosts(refresh: true)
+        })
+        
+        alert.addAction(UIAlertAction(title: "最新发布", style: .default) { [weak self] _ in
+            self?.currentSort = .new
+            self?.navigationItem.rightBarButtonItem?.title = "最新"
+            self?.loadPosts(refresh: true)
+        })
+        
+        alert.addAction(UIAlertAction(title: "最热", style: .default) { [weak self] _ in
+            self?.currentSort = .hot
+            self?.navigationItem.rightBarButtonItem?.title = "最热"
+            self?.loadPosts(refresh: true)
+        })
+        
+        alert.addAction(UIAlertAction(title: "取消", style: .cancel))
+        present(alert, animated: true)
+    }
+    
+    @objc private func handleCreatePost() {
+        let createVC = PostCreationViewController()
+        createVC.boards = boards
+        createVC.onPostCreated = { [weak self] in
+            self?.loadPosts(refresh: true)
+        }
+        let nav = UINavigationController(rootViewController: createVC)
+        present(nav, animated: true)
+    }
+}
 
-    @objc private func handleSearchReturn() {
-        refresh()
+// MARK: - TableView DataSource & Delegate
+extension ForumViewController: UITableViewDataSource, UITableViewDelegate {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return posts.count
     }
     
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: ForumPostCell.identifier, for: indexPath) as? ForumPostCell else {
+            return UITableViewCell()
+        }
+        cell.configure(with: posts[indexPath.row])
+        return cell
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        let post = posts[indexPath.row]
 
-    
-    func refresh(){
-        pageState.page = 1
-        pageState.hasMore = true
-        pageState.isLoading = false
-        applyFilterAndSort(isFresh: true)
+        Task {
+            do {
+                let detail = try await ForumRequest().GetPostDetail(id: post.id)
+                await MainActor.run {
+                    let vc = ForumDetailViewController(post: detail)
+                    self.navigationController?.pushViewController(vc, animated: true)
+                }
+            } catch {
+                await MainActor.run {
+                    let alert = UIAlertController(title: "加载失败", message: error.localizedDescription, preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "确定", style: .default))
+                    self.present(alert, animated: true)
+                }
+            }
+        }
     }
     
-    ///搜索 并更新 tableView
-    // 根据当前排序方式 / 标签 / 搜索关键字更新列表
-    func applyFilterAndSort(isFresh: Bool){
-        guard !pageState.isLoading else { return }
-        pageState.isLoading = true
-        
-        
-        // 标签
-        var selectedCategoryID: String? = nil
-        if MainselectedCategoryIndex != -1 {
-            selectedCategoryID = categorys[MainselectedCategoryIndex].id
+    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+        if indexPath.row == posts.count - 1 && hasMore && !isLoading {
+            loadPosts(refresh: false)
         }
-        
-        var key: String? = nil
-        // 关键词
-        if let keyword = searchTextField.text?
-            .trimmingCharacters(in: .whitespacesAndNewlines),
-           !keyword.isEmpty
-        {
-            key = keyword
-        }
-        
-        
-        let request = GetPostListRequest(boardId: selectedCategoryID, filter: Filter.all, keyword: key, page: pageState.page,pageSize: pageState.pageSize, sort: sortMode)
-        
-        //print("\(categorys[MainselectedCategoryIndex].name ?? "") \(key ?? "")  \(sortMode)")
-        
-        
-        let newPosts = ForumRequest().GetPostList(request: request).posts
-        if isFresh {
-            posts = newPosts
-        }else{
-            posts.append(contentsOf: newPosts)
-        }
-        
-        // 判断是否还有更多数据
-        if newPosts.count < pageState.pageSize {
-            pageState.hasMore = false
-        } else {
-            pageState.page += 1
-        }
-        
-        pageState.isLoading = false
-        mainView.tableView.reloadData()
     }
+}
 
+// MARK: - SearchBar Delegate
+extension ForumViewController: UISearchBarDelegate {
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        searchBar.resignFirstResponder()
+        loadPosts(refresh: true)
+    }
+    
+    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+        searchBar.text = ""
+        loadPosts(refresh: true)
+    }
 }

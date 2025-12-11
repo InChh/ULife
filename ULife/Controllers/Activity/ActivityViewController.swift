@@ -63,10 +63,37 @@ class ActivityViewController: UIViewController {
     private func loadData() {
         let keyword = searchController.searchBar.text?.trimmingCharacters(in: .whitespacesAndNewlines)
         let type = selectedType()
-        let result = ActivityDataManager.shared.fetchActivities(keyword: keyword, activityType: type, page: 1, pageSize: 20)
-        listItems = result.list
-        pagination = result.pagination
-        tableView.reloadData()
+        
+        Task {
+            do {
+                let result = try await ActivityDataManager.shared.fetchActivitiesList(
+                    keyword: keyword,
+                    activityType: type,
+                    page: 1,
+                    pageSize: 20
+                )
+                
+                await MainActor.run {
+                    self.listItems = result.items
+                    self.pagination = result.pagination
+                    self.tableView.reloadData()
+                }
+            } catch {
+                await MainActor.run {
+                    self.showError(error)
+                }
+            }
+        }
+    }
+    
+    private func showError(_ error: Error) {
+        let alert = UIAlertController(
+            title: "加载失败",
+            message: error.localizedDescription,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "确定", style: .default))
+        present(alert, animated: true)
     }
     
     private func selectedType() -> ActivityType? {
@@ -101,9 +128,20 @@ extension ActivityViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         let item = listItems[indexPath.row]
-        guard let detail = ActivityDataManager.shared.getActivityDetail(activityId: item.id) else { return }
-        let detailVC = ActivityDetailViewController(activity: detail)
-        navigationController?.pushViewController(detailVC, animated: true)
+        
+        Task {
+            do {
+                let detail = try await ActivityDataManager.shared.fetchActivityDetail(activityId: item.id)
+                await MainActor.run {
+                    let detailVC = ActivityDetailViewController(activity: detail)
+                    self.navigationController?.pushViewController(detailVC, animated: true)
+                }
+            } catch {
+                await MainActor.run {
+                    self.showError(error)
+                }
+            }
+        }
     }
 }
 

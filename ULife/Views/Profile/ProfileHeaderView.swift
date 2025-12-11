@@ -92,9 +92,9 @@ class ProfileHeaderView: UIView {
         label.font = .systemFont(ofSize: 14, weight: .regular)
         label.textColor = .secondaryLabel
         label.textAlignment = .center
-        label.numberOfLines = 3  // 增加到3行，确保内容显示完整
-        label.setContentCompressionResistancePriority(.required, for: .vertical)
-        label.setContentHuggingPriority(.required, for: .vertical)
+        label.numberOfLines = 2  // 限制为2行，避免高度过高
+        label.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
+        label.setContentHuggingPriority(.defaultHigh, for: .vertical)
         return label
     }()
     
@@ -190,6 +190,19 @@ class ProfileHeaderView: UIView {
             stackView.bottomAnchor.constraint(equalTo: statsContainer.bottomAnchor, constant: -16)
         ])
     }
+
+    // MARK: - Configure
+    func configure(with user: User, avatar: UIImage?) {
+        nameLabel.text = user.displayName
+        studentIdLabel.text = user.studentId
+        academicLabel.text = user.academicInfo
+        bioLabel.text = user.bio ?? "这个人很神秘，什么都没写~"
+        if let avatar = avatar {
+            avatarImageView.image = avatar
+        } else if let urlString = user.avatar, let url = URL(string: urlString), let data = try? Data(contentsOf: url), let image = UIImage(data: data) {
+            avatarImageView.image = image
+        }
+    }
     
     private func createStatView(title: String, value: String) -> UIView {
         let container = UIView()
@@ -256,43 +269,40 @@ class ProfileHeaderView: UIView {
             editAvatarButton.trailingAnchor.constraint(equalTo: avatarImageView.trailingAnchor, constant: 0),
             editAvatarButton.bottomAnchor.constraint(equalTo: avatarImageView.bottomAnchor, constant: 0),
             
-            // 姓名标签 - 确保有最小高度
-            nameLabel.topAnchor.constraint(equalTo: avatarImageView.bottomAnchor, constant: 16),
+            // 姓名标签
+            nameLabel.topAnchor.constraint(equalTo: avatarImageView.bottomAnchor, constant: 12),
             nameLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 20),
             nameLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -20),
-            nameLabel.heightAnchor.constraint(greaterThanOrEqualToConstant: 30),
             
             // 学号标签
             studentIdLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 4),
             studentIdLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 20),
             studentIdLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -20),
-            studentIdLabel.heightAnchor.constraint(greaterThanOrEqualToConstant: 20),
             
             // 学院信息标签
             academicLabel.topAnchor.constraint(equalTo: studentIdLabel.bottomAnchor, constant: 4),
             academicLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 20),
             academicLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -20),
-            academicLabel.heightAnchor.constraint(greaterThanOrEqualToConstant: 20),
             
-            // 个人简介标签 - 移除固定高度约束，使用动态高度
-            bioLabel.topAnchor.constraint(equalTo: academicLabel.bottomAnchor, constant: 12),
+            // 个人简介标签 - 使用更小的间距
+            bioLabel.topAnchor.constraint(equalTo: academicLabel.bottomAnchor, constant: 8),
             bioLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 40),
             bioLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -40),
             
-            // 统计容器
-            statsContainer.topAnchor.constraint(equalTo: bioLabel.bottomAnchor, constant: 20),
+            // 统计容器 - 减小上边距
+            statsContainer.topAnchor.constraint(equalTo: bioLabel.bottomAnchor, constant: 12),
             statsContainer.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 20),
             statsContainer.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -20),
             statsContainer.heightAnchor.constraint(equalToConstant: 80),
             
-            // 编辑资料按钮
-            editProfileButton.topAnchor.constraint(equalTo: statsContainer.bottomAnchor, constant: 20),
+            // 编辑资料按钮 - 减小上下边距
+            editProfileButton.topAnchor.constraint(equalTo: statsContainer.bottomAnchor, constant: 12),
             editProfileButton.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
             editProfileButton.widthAnchor.constraint(equalToConstant: 120),
-            editProfileButton.heightAnchor.constraint(equalToConstant: 40),
+            editProfileButton.heightAnchor.constraint(equalToConstant: 36),
             
-            // 容器底部约束（重要！确保视图能正确计算高度）
-            editProfileButton.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -20)
+            // 容器底部约束 - 减小底部边距
+            editProfileButton.bottomAnchor.constraint(lessThanOrEqualTo: containerView.bottomAnchor, constant: -12)
         ])
     }
     

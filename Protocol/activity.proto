@@ -1,0 +1,203 @@
+syntax = "proto3";
+
+package campus.activity;
+
+// ========== 基础数据类型 ==========
+
+// 分页信息
+message Pagination {
+    int64 total = 1;
+    int32 page = 2;
+    int32 page_size = 3;
+    int32 pages = 4;
+}
+
+// 活动状态枚举
+enum ActivityStatus {
+    ACTIVITY_STATUS_UNSPECIFIED = 0;
+    ONGOING = 1;      // 进行中
+    ENDED = 2;        // 已结束
+    CANCELLED = 3;    // 已撤销
+}
+
+// 活动类型枚举
+enum ActivityType {
+    ACTIVITY_TYPE_UNSPECIFIED = 0;
+    LECTURE = 1;      // 讲座
+    CLUB = 2;         // 社团
+    COMPETITION = 3;  // 竞赛
+}
+
+// ========== 活动数据模型 ==========
+
+// 活动列表项（精简信息）
+message ActivityListItem {
+    string id = 1;
+    string title = 2;
+    string cover_url = 3;
+    string location = 4;
+    string start_time = 5;  // ISO8601 格式
+    int32 quota = 6;
+    int32 current_enrollments = 7;
+}
+
+// 完整活动信息
+message Activity {
+    string id = 1;
+    string title = 2;
+    string content = 3;
+    string cover_url = 4;
+    ActivityType activity_type = 5;
+    string location = 6;
+    string organizer = 7;
+    string start_time = 8;   // ISO8601 格式
+    string end_time = 9;     // ISO8601 格式
+    int32 quota = 10;
+    int32 current_enrollments = 11;
+    bool need_sign_in = 12;
+    ActivityStatus status = 13;
+    string created_at = 14;  // ISO8601 格式
+}
+
+// 活动详情（包含用户交互状态）
+message ActivityDetail {
+    Activity activity = 1;
+    bool is_enrolled = 2;
+    bool is_collected = 3;
+}
+
+// 报名记录
+message EnrollmentRecord {
+    string user_id = 1;
+    string user_name = 2;
+    string student_id = 3;
+    string major = 4;
+    string phone_number = 5;
+    string activity_id = 6;
+    string enroll_time = 7;  // ISO8601 格式
+    int32 attendance_status = 8;  // 1:已报名, 2:已取消
+}
+
+// 我的报名活动
+message MyEnrollmentItem {
+    string activity_id = 1;
+    string title = 2;
+    string cover_url = 3;
+    string start_time = 4;
+    string end_time = 5;
+    int32 my_status = 6;  // 1:已报名, 2:已取消
+}
+
+// 我的收藏活动
+message MyCollectionItem {
+    string activity_id = 1;
+    string title = 2;
+    string cover_url = 3;
+    string start_time = 4;
+    string end_time = 5;
+}
+
+// ========== 请求消息 ==========
+
+// 获取活动列表请求
+message GetActivitiesRequest {
+    optional string keyword = 1;
+    optional ActivityType activity_type = 2;
+    int32 page = 3;
+    int32 page_size = 4;
+}
+
+// 创建活动请求
+message CreateActivityRequest {
+    string title = 1;
+    string content = 2;
+    string location = 3;
+    string organizer = 4;
+    string start_time = 5;
+    string end_time = 6;
+}
+
+// 更新活动请求
+message UpdateActivityRequest {
+    optional string title = 1;
+    optional string content = 2;
+    optional string cover_url = 3;
+    optional ActivityType activity_type = 4;
+    optional string location = 5;
+    optional string organizer = 6;
+    optional string start_time = 7;
+    optional string end_time = 8;
+    optional int32 quota = 9;
+    optional bool need_sign_in = 10;
+    optional ActivityStatus status = 11;
+}
+
+// 报名活动请求
+message EnrollActivityRequest {
+    string user_name = 1;
+    string student_id = 2;
+    string major = 3;
+    optional string phone_number = 4;
+}
+
+// 我的活动请求
+message GetMyActivitiesRequest {
+    bool include_enrollments = 1;
+    bool include_collections = 2;
+    int32 page = 3;
+    int32 page_size = 4;
+}
+
+// ========== 响应消息 ==========
+
+// 通用响应包装
+message ApiResponse {
+    int32 code = 1;
+    string message = 2;
+    bytes data = 3;  // 实际数据的序列化内容
+}
+
+// 活动列表响应
+message GetActivitiesResponse {
+    repeated ActivityListItem list = 1;
+    Pagination pagination = 2;
+}
+
+// 活动详情响应
+message GetActivityDetailResponse {
+    ActivityDetail detail = 1;
+}
+
+// 创建活动响应
+message CreateActivityResponse {
+    repeated Activity activities = 1;
+}
+
+// 报名列表响应
+message GetEnrollmentsResponse {
+    int32 total_enrolled = 1;
+    repeated EnrollmentRecord enrollment_list = 2;
+}
+
+// 我的活动响应 - 报名数据
+message EnrolledData {
+    repeated MyEnrollmentItem list = 1;
+    Pagination pagination = 2;
+}
+
+// 我的活动响应 - 收藏数据
+message CollectedData {
+    repeated MyCollectionItem list = 1;
+    Pagination pagination = 2;
+}
+
+// 我的活动响应
+message GetMyActivitiesResponse {
+    optional EnrolledData enrolled_data = 1;
+    optional CollectedData collected_data = 2;
+}
+
+// 简单成功响应（无数据）
+message EmptyResponse {
+}
+

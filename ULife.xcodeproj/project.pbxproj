@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4BC68ADD2EEAA00D00892B58 /* SwiftProtobuf in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC68ADC2EEAA00D00892B58 /* SwiftProtobuf */; };
 		CD64AE392EDEDA09000D9154 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = CD64AE382EDEDA09000D9154 /* Alamofire */; };
 		CD69A3942EE732480027D8D4 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = CD69A3932EE732480027D8D4 /* Kingfisher */; };
 		DC8DA6142EDDA50A00A245AC /* Ulifelib in Frameworks */ = {isa = PBXBuildFile; productRef = DC8DA6132EDDA50A00A245AC /* Ulifelib */; };
@@ -56,6 +57,7 @@
 				CD69A3942EE732480027D8D4 /* Kingfisher in Frameworks */,
 				DC8DA6142EDDA50A00A245AC /* Ulifelib in Frameworks */,
 				CD64AE392EDEDA09000D9154 /* Alamofire in Frameworks */,
+				4BC68ADD2EEAA00D00892B58 /* SwiftProtobuf in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -101,6 +103,7 @@
 				DC8DA6132EDDA50A00A245AC /* Ulifelib */,
 				CD64AE382EDEDA09000D9154 /* Alamofire */,
 				CD69A3932EE732480027D8D4 /* Kingfisher */,
+				4BC68ADC2EEAA00D00892B58 /* SwiftProtobuf */,
 			);
 			productName = ULife;
 			productReference = DC5647252EDD20A700B23650 /* ULife.app */;
@@ -135,6 +138,7 @@
 				DC8DA6122EDDA50A00A245AC /* XCLocalSwiftPackageReference "ULifeLib/Ulifelib" */,
 				CD64AE372EDEDA09000D9154 /* XCRemoteSwiftPackageReference "Alamofire" */,
 				CD69A3922EE732480027D8D4 /* XCRemoteSwiftPackageReference "Kingfisher" */,
+				4BC68ADB2EEAA00D00892B58 /* XCRemoteSwiftPackageReference "swift-protobuf" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = DC5647262EDD20A700B23650 /* Products */;
@@ -194,8 +198,9 @@
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = Unspecified;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = minimal;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -229,8 +234,9 @@
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = Unspecified;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = minimal;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -389,6 +395,14 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		4BC68ADB2EEAA00D00892B58 /* XCRemoteSwiftPackageReference "swift-protobuf" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-protobuf.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.33.3;
+			};
+		};
 		CD64AE372EDEDA09000D9154 /* XCRemoteSwiftPackageReference "Alamofire" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/Alamofire/Alamofire.git";
@@ -408,6 +422,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		4BC68ADC2EEAA00D00892B58 /* SwiftProtobuf */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4BC68ADB2EEAA00D00892B58 /* XCRemoteSwiftPackageReference "swift-protobuf" */;
+			productName = SwiftProtobuf;
+		};
 		CD64AE382EDEDA09000D9154 /* Alamofire */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = CD64AE372EDEDA09000D9154 /* XCRemoteSwiftPackageReference "Alamofire" */;

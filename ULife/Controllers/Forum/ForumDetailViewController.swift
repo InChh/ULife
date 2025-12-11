@@ -2,24 +2,34 @@
 //  ForumDetailViewController.swift
 //  ULife
 //
-//  Created by 骑鱼的猫 on 2025/12/3.
-//  帖子详情页
+//  帖子详情页 - 参考活动模块重写
 
-// Controller/ForumDetailViewController.swift
 import UIKit
 import Kingfisher
 
 class ForumDetailViewController: UIViewController {
 
-    let detailView = ForumDetailView()
-    
-    // 记录评论表的高度约束，方便重复更新
-    private var commentTableHeightConstraint: NSLayoutConstraint?
-
-    // 接收从上一个 Controller 传入的帖子数据（初始化传入）
+    // MARK: - Properties
     private var post: Post
+    private var comments: [Comment] = []
+    
+    private let scrollView = UIScrollView()
+    private let contentStack = UIStackView()
+    private let commentsTableView = UITableView(frame: .zero, style: .plain)
+    private var commentsHeightConstraint: NSLayoutConstraint?
+    
+    private let titleLabel = UILabel()
+    private let authorLabel = UILabel()
+    private let timeLabel = UILabel()
+    private let contentLabel = UILabel()
+    private let tagsLabel = UILabel()
+    private let statsLabel = UILabel()
+    
+    private let likeButton = UIButton(type: .system)
+    private let collectButton = UIButton(type: .system)
+    private let commentButton = UIButton(type: .system)
 
-    // 初始化
+    // MARK: - Init
     init(post: Post) {
         self.post = post
         super.init(nibName: nil, bundle: nil)
@@ -29,522 +39,305 @@ class ForumDetailViewController: UIViewController {
         fatalError("init(coder:) has not been implemented")
     }
 
+    // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        // 初始数据绑定
-        configurePostDetails()
-        setupBindings()
-
-        setupViews()
-
-        // 更新点赞按钮状态
-        updateLikeButtonState()
-        updatecollectedButtonState()
+        title = "帖子详情"
+        view.backgroundColor = .systemBackground
+        setupUI()
+        render()
+        loadPostDetail()
+        loadComments()
     }
     
-    // 确保在宽度确定后再重新计算一次高度!
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        updateTableViewHeight()
-    }
-
-    private func setupViews() {
-        detailView.commentTableView.delegate = self
-        detailView.commentTableView.dataSource = self
-
-        self.view = detailView
-    }
-
-    //绑定事件
-    private func setupBindings() {
-        detailView.likeButton.addTarget(
-            self,
-            action: #selector(handleLikeTap),
-            for: .touchUpInside
-        )
-        detailView.CollectButton.addTarget(
-            self,
-            action: #selector(handleCollectionTap),
-            for: .touchUpInside
-        )
-        detailView.commentButton.addTarget(
-            self,
-            action: #selector(handleCommentTap),
-            for: .touchUpInside
-        )
-        detailView.reportButton.addTarget(
-            self,
-            action: #selector(handleReportTap),
-            for: .touchUpInside
-        )
-    }
-
-    // 初始数据绑定
-    private func configurePostDetails() {
-        detailView.titleLabel.text = post.title
-        detailView.authorNameLabel.text = post.author.name
-        detailView.contentBodyLabel.text = post.content
-
-        // 标签展示：将 tags 数组渲染为 #tag 样式
-        if post.tags.isEmpty {
-            detailView.tagsLabel.text = nil
-        } else {
-            let displayTags = post.tags.map { tag in
-                tag.hasPrefix("#") ? tag : "#\(tag)"
-            }.joined(separator: "  ")
-            detailView.tagsLabel.text = "\(displayTags)"
-        }
-
-        // 格式化日期
-//        let formatter = DateFormatter()
-//        formatter.dateStyle = .short
-//        formatter.timeStyle = .short
-//        detailView.createTimeLabel.text = formatter.string(
-//            from: post.createdAt
-//        )
+    // MARK: - Setup UI
+    private func setupUI() {
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        contentStack.axis = .vertical
+        contentStack.spacing = 12
+        contentStack.translatesAutoresizingMaskIntoConstraints = false
         
-        detailView.createTimeLabel.text = post.createdAt
+        // 标题
+        titleLabel.font = .systemFont(ofSize: 20, weight: .bold)
+        titleLabel.numberOfLines = 0
         
-        //设置头像
-        let avatarImageView = detailView.authorAvatar
-        // 加载提示器,加载完成前转圈动画
-        avatarImageView.kf.indicatorType = .activity
-        avatarImageView.kf.setImage(
-            with: URL(string: post.author.avatarurl),
-            placeholder: UIImage(named: "avatar_placeholder"),
-            options: [
-                .scaleFactor(UIScreen.main.scale), //告诉 Kingfisher 当前屏幕的缩放因子
-                .transition(.fade(0.25)), // 渐变动画
-            ],
-            progressBlock: nil
-        ) { result in
-            switch result {
-            case .success(let value):
-                print("Loaded: \(value.source.url?.absoluteString ?? "")")
-                break
-            case .failure(let error):
-                print("KF load failed: \(error.localizedDescription)")
-            }
-        }
-
-        // 获取评论列表
-        comments = ForumRequest().GetCommentList(id: post.id)
+        // 作者信息
+        authorLabel.font = .systemFont(ofSize: 14)
+        authorLabel.textColor = .secondaryLabel
         
-        maincomments = comments.filter { item in
-            // 检查 parentid 是否存在 (非 nil)
-            // 如果存在，检查其值是否等于目标 ID
-            return item.parentid == nil
-        }
-
-        // 更新评论区标题和 TableView
-        self.detailView.commentHeaderLabel.text =
-            "评论 (\(comments.count))"
-
-        self.detailView.commentTableView.reloadData()  // tabelview
-        // 通知 ScrollView 更新内容高度
-        self.updateTableViewHeight()
+        // 时间
+        timeLabel.font = .systemFont(ofSize: 13)
+        timeLabel.textColor = .tertiaryLabel
         
-    }
-
-    // 动态调整 TableView 高度，解决 ScrollView 嵌套 TableView 的问题
-    private func updateTableViewHeight() {
-        // 使用 DispatchQueue.main.async 确保在 TableView 渲染完成后计算高度
-        DispatchQueue.main.async {
-            // 先强制 tableView 根据最新数据完成布局
-            self.detailView.commentTableView.layoutIfNeeded()
-
-            let height = self.detailView.commentTableView.contentSize.height
-
-            if let heightConstraint = self.commentTableHeightConstraint {
-                heightConstraint.constant = height
-            } else {
-                let constraint = self.detailView.commentTableView
-                    .heightAnchor.constraint(equalToConstant: height)
-                constraint.isActive = true
-                self.commentTableHeightConstraint = constraint
-            }
-
-            self.view.layoutIfNeeded()
-        }
-    }
-
-    //点赞
-    @objc private func handleLikeTap() {
-        post.userInteraction.isLiked.toggle()
+        // 内容
+        contentLabel.font = .systemFont(ofSize: 15)
+        contentLabel.numberOfLines = 0
         
-        updateLikeButtonState()
+        // 标签
+        tagsLabel.font = .systemFont(ofSize: 13)
+        tagsLabel.textColor = .systemBlue
+        tagsLabel.numberOfLines = 0
+        
+        // 统计
+        statsLabel.font = .systemFont(ofSize: 13)
+        statsLabel.textColor = .secondaryLabel
+        
+        // 评论列表
+        commentsTableView.delegate = self
+        commentsTableView.dataSource = self
+        commentsTableView.register(CommentCell.self, forCellReuseIdentifier: CommentCell.identifier)
+        commentsTableView.isScrollEnabled = false
+        commentsTableView.separatorStyle = .none
+        
+        // 底部工具栏
+        setupBottomToolbar()
+        
+        [titleLabel, authorLabel, timeLabel, contentLabel, tagsLabel, statsLabel, createSeparator(), commentsTableView].forEach {
+            contentStack.addArrangedSubview($0)
+        }
+        
+        view.addSubview(scrollView)
+        scrollView.addSubview(contentStack)
+        
+        let toolbar = createToolbar()
+        view.addSubview(toolbar)
+        
+        NSLayoutConstraint.activate([
+            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: toolbar.topAnchor),
+            
+            contentStack.topAnchor.constraint(equalTo: scrollView.topAnchor, constant: 16),
+            contentStack.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: 16),
+            contentStack.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor, constant: -16),
+            contentStack.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: -20),
+            contentStack.widthAnchor.constraint(equalTo: scrollView.widthAnchor, constant: -32),
+            
+            toolbar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            toolbar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            toolbar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            toolbar.heightAnchor.constraint(equalToConstant: 60)
+        ])
+    }
+    
+    private func setupBottomToolbar() {
+        likeButton.setImage(UIImage(systemName: "hand.thumbsup"), for: .normal)
+        likeButton.setTitle("点赞", for: .normal)
+        likeButton.addTarget(self, action: #selector(handleLike), for: .touchUpInside)
+        
+        collectButton.setImage(UIImage(systemName: "star"), for: .normal)
+        collectButton.setTitle("收藏", for: .normal)
+        collectButton.addTarget(self, action: #selector(handleCollect), for: .touchUpInside)
+        
+        commentButton.setImage(UIImage(systemName: "bubble.right"), for: .normal)
+        commentButton.setTitle("评论", for: .normal)
+        commentButton.addTarget(self, action: #selector(handleComment), for: .touchUpInside)
     }
 
-    //收藏
-    @objc private func handleCollectionTap() {
-        post.userInteraction.isCollected.toggle()
-
-        updatecollectedButtonState()
-
+    private func createToolbar() -> UIView {
+        let toolbar = UIView()
+        toolbar.backgroundColor = .systemBackground
+        toolbar.layer.shadowColor = UIColor.black.cgColor
+        toolbar.layer.shadowOffset = CGSize(width: 0, height: -1)
+        toolbar.layer.shadowOpacity = 0.1
+        toolbar.layer.shadowRadius = 2
+        toolbar.translatesAutoresizingMaskIntoConstraints = false
+        
+        let stack = UIStackView(arrangedSubviews: [likeButton, collectButton, commentButton])
+        stack.axis = .horizontal
+        stack.distribution = .fillEqually
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        toolbar.addSubview(stack)
+        
+        NSLayoutConstraint.activate([
+            stack.topAnchor.constraint(equalTo: toolbar.topAnchor, constant: 8),
+            stack.leadingAnchor.constraint(equalTo: toolbar.leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: toolbar.trailingAnchor),
+            stack.bottomAnchor.constraint(equalTo: toolbar.bottomAnchor, constant: -8)
+        ])
+        
+        [likeButton, collectButton, commentButton].forEach { button in
+            button.titleLabel?.font = .systemFont(ofSize: 12)
+            button.setTitleColor(.label, for: .normal)
+            button.tintColor = .label
+            var config = UIButton.Configuration.plain()
+            config.imagePadding = 4
+            config.imagePlacement = .top
+            button.configuration = config
+        }
+        
+        return toolbar
     }
-
-    //举报
-    @objc private func handleReportTap() {
-        let alert = UIAlertController(
-            title: "举报内容",
-            message: "请选择举报理由",
-            preferredStyle: .actionSheet
-        )
-
-        let reasons = ["垃圾广告", "政治敏感", "人身攻击"]
-        for reason in reasons {
-            alert.addAction(
-                UIAlertAction(
-                    title: reason,
-                    style: .default,
-                    handler: { _ in
-                        let rea  = if(reason == "垃圾广告"){
-                            Reason.ad
-                        }else if(reason == "政治敏感"){
-                            Reason.politics
-                        }else{
-                            Reason.abuse
-                        }
-                        // 发送举报请求到服务器
-                        let request = ReportRequest(description: nil, reason: rea, targetid: self.post.id, targetType: TargetType.post)
-                        _ = ForumRequest().Report(request: request)
-                        
-                        print("举报理由: \(reason)")
-                        Toast.show("举报成功", style: .normal)
-                    }
-                )
-            )
-        }
-        alert.addAction(
-            UIAlertAction(
-                title: "其他",
-                style: .default,
-                handler: { _ in
-                    self.showOtherReportInput()
-                }
-            )
-        )
-
-        alert.addAction(UIAlertAction(title: "取消", style: .cancel))
-        present(alert, animated: true)
-    }
-
-    // 举报其他内容时弹出举报内容框
-    private func showOtherReportInput() {
-        let inputAlert = UIAlertController(
-            title: "举报详情",
-            message: "请填写具体的举报原因",
-            preferredStyle: .alert
-        )
-
-        inputAlert.addTextField { textField in
-            textField.placeholder = "请输入详细理由..."
-            textField.returnKeyType = .done
-        }
-
-        let submitAction = UIAlertAction(title: "提交", style: .default) { _ in
-            // 获取输入框的内容
-            guard let text = inputAlert.textFields?.first?.text, !text.isEmpty
-            else {
-                // 如果用户没填，可以提示或者直接当作"其他"处理
-                // 发送举报请求到服务器
-                let request = ReportRequest(description: nil, reason: Reason.other, targetid: self.post.id, targetType: TargetType.post)
-                _ = ForumRequest().Report(request: request)
-                
-                print("举报理由: 其他,用户未填写详情")
-                Toast.show("举报成功", style: .normal)
-                return
-            }
-            // 提交带详情的举报
-            // 发送举报请求到服务器
-            let request = ReportRequest(description: text, reason: Reason.other, targetid: self.post.id, targetType: TargetType.post)
-            _ = ForumRequest().Report(request: request)
-            print("举报理由: 其他\(text)")
-            Toast.show("举报成功", style: .normal)
-        }
-
-        inputAlert.addAction(UIAlertAction(title: "取消", style: .cancel))
-        inputAlert.addAction(submitAction)
-
-        present(inputAlert, animated: true)
-    }
-
-    // 评论帖子
-    @objc private func handleCommentTap() {
-        // 弹出评论输入框
-        let alert = UIAlertController(
-            title: "发表评论",
-            message: nil,
-            preferredStyle: .alert
-        )
-
-        alert.addTextField { textField in
-            textField.placeholder = "友善评论，传递温暖..."
-            textField.returnKeyType = .done  //将键盘右下角的“换行键”（Return Key）的样式和功能设置为 Done（完成）
-        }
-
-        let sendAction = UIAlertAction(
-            title: "发送",
-            style: .default,
-            handler: { [weak self] _ in
-                guard
-                    let self = self,
-                    let text = alert.textFields?.first?.text?
-                        .trimmingCharacters(in: .whitespacesAndNewlines),
-                    !text.isEmpty
-                else {
-                    Toast.show("评论内容不能为空", style: .error)
-                    return
+    
+    private func createSeparator() -> UIView {
+        let separator = UIView()
+        separator.backgroundColor = .separator
+        separator.heightAnchor.constraint(equalToConstant: 1).isActive = true
+        return separator
                 }
 
-                // 调用后端接口发表评论
-                let newComment = ForumRequest().CreateComment(id: post.id, content: text, replyToCommentid: nil).comment
-
-                self.insertNewComment(newComment)
-            }
-        )
-        let cancelAction = UIAlertAction(title: "取消", style: .cancel)
-        alert.addAction(cancelAction)
-        alert.addAction(sendAction)
-
-        present(alert, animated: true)
+    // MARK: - Render
+    private func render() {
+        titleLabel.text = post.title
+        authorLabel.text = "\(post.author.name) · \(post.author.college)"
+        timeLabel.text = post.createdAt.timeAgoString()
+        contentLabel.text = post.content
+        tagsLabel.text = post.tags.map { "#\($0)" }.joined(separator: " ")
+        updateStatsLabel()
+        
+        updateLikeButton()
+        updateCollectButton()
     }
 
-    // 将一条新的一级评论插入到列表顶部，并刷新 UI
-    private func insertNewComment(_ comment: Comment) {
-        comments.insert(comment, at: 0)
-        maincomments.insert(comment, at: 0)
-        detailView.commentHeaderLabel.text = "评论 (\(comments.count))"
-        detailView.commentTableView.reloadData()
-        updateTableViewHeight()  //更新 tabelview 的高度
+    private func updateStatsLabel() {
+        statsLabel.text = "👁 \(post.stats.viewCount)  👍 \(post.stats.likeCount)  💬 \(post.stats.commentCount)"
     }
-
-    // 更新底部工具栏点赞按钮的 UI 样式
-    private func updateLikeButtonState() {
+    
+    private func updateLikeButton() {
         let isLiked = post.userInteraction.isLiked
-        
-        // 发送帖子点赞请求
-        let request = LikeOrDisListRequest(id: post.id, actions: isLiked ? Actions.like : Actions.unlike)
-        let response = ForumRequest().LikeOrDisList(Requst: request)
-        
-        let systemName = isLiked ? "hand.thumbsup.fill" : "hand.thumbsup"
-        let color: UIColor = isLiked ? .systemRed : .label
-        let text = isLiked ? "\(response.currentLikeCount)" : "点赞"
-
-        // 获取当前的配置进行修改
-        var config = detailView.likeButton.configuration
-        config?.image = UIImage(systemName: systemName)
-        config?.baseForegroundColor = color
-
-        // 更新文字
-        var titleContainer = AttributeContainer()
-        titleContainer.font = UIFont.systemFont(ofSize: 10, weight: .regular)
-        config?.attributedTitle = AttributedString(
-            text,
-            attributes: titleContainer
-        )
-
-        detailView.likeButton.configuration = config
+        likeButton.setImage(UIImage(systemName: isLiked ? "hand.thumbsup.fill" : "hand.thumbsup"), for: .normal)
+        likeButton.tintColor = isLiked ? .systemRed : .label
     }
-
-    // 更新底部工具栏收藏按钮的 UI 样式
-    private func updatecollectedButtonState() {
+    
+    private func updateCollectButton() {
         let isCollected = post.userInteraction.isCollected
-        
-        let request = ColectOrDisColectRequest(id: post.id, action: isCollected ? Action.collect : Action.uncollect)
-        let response = ForumRequest().ColectOrDisColect(Requst: request)
-        
-        let systemName = isCollected ? "star.fill" : "star"
-        let color: UIColor = isCollected ? .systemRed : .label
-        let text = isCollected ? "\(response.currentCollectCount)" : "收藏"
-
-        var config = detailView.CollectButton.configuration
-        config?.image = UIImage(systemName: systemName)
-        config?.baseForegroundColor = color
-
-        var titleContainer = AttributeContainer()
-        titleContainer.font = UIFont.systemFont(ofSize: 10, weight: .regular)
-        config?.attributedTitle = AttributedString(
-            text,
-            attributes: titleContainer
-        )
-
-        detailView.CollectButton.configuration = config
+        collectButton.setImage(UIImage(systemName: isCollected ? "star.fill" : "star"), for: .normal)
+        collectButton.tintColor = isCollected ? .systemYellow : .label
     }
-
-    // MARK: - 实现 点击评论(回复,删除) 评论点赞
-    // 切换某条评论的点赞状态
-    func toggleCommentLike(at index: Int) {
-        // 获取这条评论
-        guard maincomments.indices.contains(index) else { return }
-        
-        maincomments[index].isLiked.toggle()
-        let request = LikeOrDisListRequest(id: maincomments[index].id, actions: maincomments[index].isLiked ? Actions.like : Actions.unlike)
-        let response = ForumRequest().LikeOrDisListComment(Requst: request)
-        maincomments[index].likeCount = response.currentLikeCount
-
-        // 重新加载该条评论
-        let indexPath = IndexPath(row: index, section: 0)
-        detailView.commentTableView.reloadRows(at: [indexPath], with: .none)
-        updateTableViewHeight()
-    }
-
-    // 切换某条回复的点赞状态
-    func toggleReplyLike(_ reply: Comment, inCommentAt index: Int) {
-        guard maincomments.indices.contains(index) else { return }
-        
-        
-        let replyindex = comments.firstIndex(where: { $0.id == reply.id })
-        
-        //修改数据
-        comments[replyindex!].isLiked.toggle()
-        let request = LikeOrDisListRequest(id: comments[replyindex!].id, actions: comments[replyindex!].isLiked ? Actions.like : Actions.unlike)
-        let response = ForumRequest().LikeOrDisListComment(Requst: request)
-        comments[replyindex!].likeCount = response.currentLikeCount
-        
-        let indexPath = IndexPath(row: index, section: 0)
-        detailView.commentTableView.reloadRows(at: [indexPath], with: .none)
-        updateTableViewHeight()
-    }
-
-    // 本人的评论点击主评论 选择进行删除还是回复
-    func CommentReplyOrDelete(_ commentIndex: Int) {
-        let alert = UIAlertController(
-            title: nil,
-            message: nil,
-            preferredStyle: .alert
-        )
-
-        alert.addAction(
-            UIAlertAction(
-                title: "回复",
-                style: .default,
-                handler: { _ in
-                    self.presentReplyAlert(
-                        commentIndex: commentIndex,
-                        replyingToName: nil
-                    )
+    
+    // MARK: - Data Loading
+    private func loadPostDetail() {
+        Task {
+            do {
+                let detail = try await ForumRequest().GetPostDetail(id: post.id)
+                await MainActor.run {
+                    self.post = detail
+                    self.render()
                 }
-            )
-        )
-        alert.addAction(
-            UIAlertAction(
-                title: "删除",
-                style: .destructive,
-                handler: { _ in
-                    let id = maincomments[commentIndex].id
-                    maincomments.remove(at: commentIndex)
-                    
-                    comments.removeAll { comment in
-                        return comment.parentid == id || comment.id == id
-                    }
-                    ForumRequest().deleteComment(id: id)
-                    
-                    self.detailView.commentHeaderLabel.text =
-                        "评论 (\(comments.count))"
-                    self.detailView.commentTableView.reloadData()
-                    self.updateTableViewHeight()
-                    Toast.show("删除成功", style: .normal)
-                }
-            )
-        )
-
-        alert.addAction(UIAlertAction(title: "取消", style: .cancel))
-        present(alert, animated: true)
+            } catch {
+                print("加载帖子详情失败: \(error)")
+            }
+        }
     }
-
-    // 本人的回复点击回复 选择进行删除还是回复
-    func ReplyReplyOrDelete(_ commentIndex: Int, _ reply: Comment) {
-        let alert = UIAlertController(
-            title: nil,
-            message: nil,
-            preferredStyle: .alert
-        )
-
-        alert.addAction(
-            UIAlertAction(title: "回复", style: .default) { [weak self] _ in
-                self?.presentReplyAlert(
-                    commentIndex: commentIndex,
-                    replyingToName: reply.author.name
-                )
-            }
-        )
-
-        alert.addAction(
-            UIAlertAction(title: "删除", style: .destructive) { _ in
-                comments.removeAll { comment in
-                    return comment.id == reply.id
+    
+    private func loadComments() {
+        Task {
+            do {
+                let list = try await ForumRequest().GetCommentList(postId: self.post.id)
+                await MainActor.run {
+                    self.comments = list
+                    self.commentsTableView.reloadData()
+                    self.updateCommentsHeight()
                 }
-                ForumRequest().deleteComment(id: reply.id)
-
-                // 刷新列表和高度
-                self.detailView.commentTableView.reloadData()
-                self.updateTableViewHeight()
-                Toast.show("删除成功", style: .normal)
+            } catch {
+                print("加载评论失败: \(error)")
             }
-        )
-
-        alert.addAction(UIAlertAction(title: "取消", style: .cancel))
-        present(alert, animated: true)
+        }
     }
-
-    // 弹出回复框
-    func presentReplyAlert(
-        commentIndex: Int, //主评论 id
-        replyingToName: String?
-    ) {
-        let title: String = {
-            if let name = replyingToName {
-                return "回复 \(name)"
-            } else {
-                return "回复评论"
+    
+    private func updateCommentsHeight() {
+        commentsTableView.layoutIfNeeded()
+        let height = commentsTableView.contentSize.height
+        
+        if let constraint = commentsHeightConstraint {
+            constraint.constant = height
+        } else {
+            let constraint = commentsTableView.heightAnchor.constraint(equalToConstant: height)
+            constraint.isActive = true
+            commentsHeightConstraint = constraint
+        }
+    }
+    
+    // MARK: - Actions
+    @objc private func handleLike() {
+        post.userInteraction.isLiked.toggle()
+        updateLikeButton()
+        
+        Task {
+            do {
+                let request = LikeOrDisListRequest(action: post.userInteraction.isLiked ? .like : .unlike)
+                _ = try await ForumRequest().LikeOrDisList(Request: request, postId: post.id)
+            } catch {
+                print("点赞失败: \(error)")
+                await MainActor.run {
+                    self.post.userInteraction.isLiked.toggle()
+                    self.updateLikeButton()
+    }
             }
-        }()
-
-        let alert = UIAlertController(
-            title: title,
-            message: nil,
-            preferredStyle: .alert
-        )
-
+        }
+    }
+    
+    @objc private func handleCollect() {
+        post.userInteraction.isCollected.toggle()
+        updateCollectButton()
+        
+        Task {
+            do {
+                let request = ColectOrDisColectRequest(action: post.userInteraction.isCollected ? .collect : .uncollect)
+                _ = try await ForumRequest().ColectOrDisColect(Request: request, postId: post.id)
+            } catch {
+                print("收藏失败: \(error)")
+                await MainActor.run {
+                    self.post.userInteraction.isCollected.toggle()
+                    self.updateCollectButton()
+    }
+            }
+        }
+    }
+    
+    @objc private func handleComment() {
+        let alert = UIAlertController(title: "发表评论", message: nil, preferredStyle: .alert)
         alert.addTextField { textField in
-            textField.placeholder = "友善回复，传递温暖..."
-            textField.returnKeyType = .done
+            textField.placeholder = "说点什么..."
         }
 
-        let sendAction = UIAlertAction(
-            title: "发送",
-            style: .default,
-            handler: { [weak self] _ in
-                //校验数据
-                guard
-                    let self = self,
-                    commentIndex < maincomments.count,
-                    let text = alert.textFields?.first?.text?
-                        .trimmingCharacters(in: .whitespacesAndNewlines),
-                    !text.isEmpty
-                else {
-                    Toast.show("回复内容不能为空", style: .error)
-                    return
-                }
-
-                //获取回复的评论和回复
-                let comment = maincomments[commentIndex]
-                
-                let response = ForumRequest().CreateComment(id: comment.postid, content: text, replyToCommentid: comment.id)
-                comments.append(response.comment)
-
-                self.detailView.commentTableView.reloadData()  //刷新数据
-                self.updateTableViewHeight()  //更新高度
-            }
-        )
-
-        let cancelAction = UIAlertAction(title: "取消", style: .cancel)
-
-        alert.addAction(cancelAction)
-        alert.addAction(sendAction)
-
+        alert.addAction(UIAlertAction(title: "取消", style: .cancel))
+        alert.addAction(UIAlertAction(title: "发送", style: .default) { [weak self] _ in
+            guard let text = alert.textFields?.first?.text, !text.isEmpty else { return }
+            self?.sendComment(text)
+        })
+        
         present(alert, animated: true)
+    }
+
+    private func sendComment(_ content: String) {
+        Task {
+            do {
+                let request = CreateCommentRequest(content: content, replyToCommentId: nil)
+                let resp = try await ForumRequest().CreateComment(postId: post.id, request: request)
+                await MainActor.run {
+                    // 直接插入新评论到顶部，提升体验
+                    self.comments.insert(resp.comment, at: 0)
+                    self.post.stats.commentCount += 1
+                    self.updateStatsLabel()
+                    self.commentsTableView.reloadData()
+                    self.updateCommentsHeight()
+                    // 再次从服务端同步，确保与后台状态一致
+                    self.loadComments()
+                }
+            } catch {
+                await MainActor.run {
+                    let alert = UIAlertController(title: "评论失败", message: error.localizedDescription, preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "确定", style: .default))
+                    self.present(alert, animated: true)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - TableView DataSource & Delegate
+extension ForumDetailViewController: UITableViewDataSource, UITableViewDelegate {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return comments.count
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: CommentCell.identifier, for: indexPath) as? CommentCell else {
+            return UITableViewCell()
+        }
+        cell.configure(with: comments[indexPath.row])
+        return cell
     }
 }

@@ -2,355 +2,205 @@
 //  CalendarViewController.swift
 //  ULife
 //
-//  Created by 刘宏伟 on 2025/12/1.
-//  Edited by 高煜尧
-//
+//  课表主页 - 参考活动模块重写
 
 import UIKit
 
-/// UI 层课程模型
-struct Course {
-    let courseId: Int
-    let name: String
-    let timeRange: String
-    let location: String
-    let teacher: String
-    let dayOfWeek: Int
-    let typeDisplay: String
-    let credits: Int
-    let descriptionText: String
-    let color: UIColor
-}
-
-final class CalendarViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
-
-    private var selectedSegementIndex = 0
-    private var courses: [Course] = []
-    private var groupedCourses: [[Course]] = []
+class CalendarViewController: UIViewController {
     
-    // 节次时间表（示例，可按校历替换）
-    private let sectionSlots: [Int: SectionSlot] = [
-        1: SectionSlot(start: "08:00", end: "08:45"),
-        2: SectionSlot(start: "08:55", end: "09:40"),
-        3: SectionSlot(start: "10:00", end: "10:45"),
-        4: SectionSlot(start: "10:55", end: "11:40"),
-        5: SectionSlot(start: "14:00", end: "14:45"),
-        6: SectionSlot(start: "14:55", end: "15:40")
+    // MARK: - Properties
+    private let tableView = UITableView(frame: .zero, style: .insetGrouped)
+
+    private var scheduleItems: [ScheduleItem] = []
+    private var semesters: [Semester] = []
+    private var currentSemesterId = 1
+    
+    // 节次时间表
+    private let sectionSlots: [Int: (start: String, end: String)] = [
+        1: ("08:00", "08:45"),
+        2: ("08:55", "09:40"),
+        3: ("10:00", "10:45"),
+        4: ("10:55", "11:40"),
+        5: ("14:00", "14:45"),
+        6: ("14:55", "15:40"),
+        7: ("16:00", "16:45"),
+        8: ("16:55", "17:40")
     ]
-
-    private let segmentedControl: UISegmentedControl = {
-        let control = UISegmentedControl(items: ["课程显示", "视图显示"])
-        control.selectedSegmentIndex = 0
-        control.selectedSegmentTintColor = .systemBlue
-        control.setTitleTextAttributes([.foregroundColor: UIColor.systemBlue], for: .normal)
-        control.setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
-        return control
-    }()
-
-    private let tableView: UITableView = {
-        let tv = UITableView(frame: .zero, style: .plain)
-        tv.separatorStyle = .none
-        tv.backgroundColor = .systemGroupedBackground
-        tv.register(CourseCell.self, forCellReuseIdentifier: CourseCell.identifier)
-        return tv
-    }()
-
+    
+    // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "课程"
+        title = "课表"
         view.backgroundColor = .systemGroupedBackground
-
-        setupLayout()
-        //loadMockData()
-        loadData()
+        setupUI()
+        loadSemestersAndSchedule()
     }
 
-    private func setupLayout() {
-        view.addSubview(segmentedControl)
-        view.addSubview(tableView)
-
-        segmentedControl.translatesAutoresizingMaskIntoConstraints = false
-        tableView.translatesAutoresizingMaskIntoConstraints = false
-
-        segmentedControl.addTarget(self, action: #selector(segmentChanged(_:)), for: .valueChanged)
-
-        NSLayoutConstraint.activate([
-            segmentedControl.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 12),
-            segmentedControl.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            segmentedControl.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.75),
-
-            tableView.topAnchor.constraint(equalTo: segmentedControl.bottomAnchor, constant: 16),
-            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
-        ])
-
+    // MARK: - Setup UI
+    private func setupUI() {
+        // 表格
         tableView.delegate = self
         tableView.dataSource = self
-    }
+        tableView.register(CourseCell.self, forCellReuseIdentifier: CourseCell.identifier)
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(tableView)
 
-    @objc private func segmentChanged(_ sender: UISegmentedControl) {
-        selectedSegementIndex = sender.selectedSegmentIndex
-        // 视图显示模式可在此扩展
-        regroupWeekly()
-        tableView.reloadData()
+        NSLayoutConstraint.activate([
+            tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
     }
     
-    private func loadData(){
-        //let apiCourses = CalendarDataManager.shared.fetchPublicCoursesMock()
-        let apiCourses = CalendarDataManager.shared.fetchScheduleMock()
-        courses = apiCourses.map { $0.toUICourse(sectionSlots: sectionSlots)}
-        regroupWeekly()
-        tableView.reloadData()
-    }
-    
-    private func regroupWeekly(){
-        let weekdayOrder = [1, 2, 3, 4, 5, 6, 7]
-        groupedCourses = weekdayOrder.map{
-            day in courses.filter{ $0.dayOfWeek == day}
-        }
-    }
-
-    // MARK: - UITableViewDataSource
-        func numberOfSections(in tableView: UITableView) -> Int {
-            if selectedSegementIndex == 1 {
-                return groupedCourses.count
+    // MARK: - Data Loading
+    private func loadSemestersAndSchedule() {
+        Task {
+            do {
+                let semestersResponse = try await CalendarRequest().getSemesters()
+                await MainActor.run {
+                    self.semesters = semestersResponse
+                    if let currentSemester = semestersResponse.first(where: { $0.is_current }) {
+                        self.currentSemesterId = currentSemester.id
+                    } else if let first = semestersResponse.first {
+                        self.currentSemesterId = first.id
+                    }
+                }
+                await MainActor.run {
+                    self.loadSchedule()
+                }
+            } catch {
+                print("加载学期失败: \(error)")
+                // 即便学期加载失败，也尝试使用默认学期ID
+                await MainActor.run {
+                    self.loadSchedule()
+                }
             }
-            return 1
         }
+    }
+    
+    private func loadSchedule() {
+        Task {
+            do {
+                scheduleItems = try await CalendarRequest().getUserSchedule(semesterId: currentSemesterId)
+                
+                await MainActor.run {
+                    self.tableView.reloadData()
+                }
+            } catch {
+                print("加载课表失败: \(error)")
+                await MainActor.run {
+                    self.showError(error)
+                }
+            }
+        }
+    }
+    
+    private func showError(_ error: Error) {
+        let alert = UIAlertController(
+            title: "加载失败",
+            message: error.localizedDescription,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "确定", style: .default))
+        present(alert, animated: true)
+    }
+}
 
+// MARK: - TableView DataSource & Delegate
+extension CalendarViewController: UITableViewDataSource, UITableViewDelegate {
+    
+        func numberOfSections(in tableView: UITableView) -> Int {
+        return 7 // 周一到周日
+        }
 
         func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-            if selectedSegementIndex == 1 {
-                return groupedCourses[section].count
+        let dayOfWeek = section + 1
+        return scheduleItems.filter { $0.dayOfWeek == dayOfWeek }.count
             }
-            return courses.count
+    
+    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        let weekdays = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+        let dayOfWeek = section + 1
+        let coursesForDay = scheduleItems.filter { $0.dayOfWeek == dayOfWeek }
+        return coursesForDay.isEmpty ? nil : weekdays[section]
         }
-
 
         func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
             guard let cell = tableView.dequeueReusableCell(withIdentifier: CourseCell.identifier, for: indexPath) as? CourseCell else {
                 return UITableViewCell()
             }
-            if selectedSegementIndex == 1 {
-                cell.configure(with: groupedCourses[indexPath.section][indexPath.row])
-            } else {
-                cell.configure(with: courses[indexPath.row])
-            }
-            return cell
+        
+        let dayOfWeek = indexPath.section + 1
+        let coursesForDay = scheduleItems.filter { $0.dayOfWeek == dayOfWeek }
+        
+        if coursesForDay.count > indexPath.row {
+            let item = coursesForDay[indexPath.row]
+            cell.configure(with: item, sectionSlots: sectionSlots)
         }
-
-
-        // section 头部标题
-        func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
-            guard selectedSegementIndex == 1 else { return nil }
-            let header = UIView()
-            header.backgroundColor = .systemGroupedBackground
-            let label = UILabel()
-            label.font = .systemFont(ofSize: 14, weight: .semibold)
-            label.textColor = .secondaryLabel
-            label.text = weekdayText(section + 1)
-            label.translatesAutoresizingMaskIntoConstraints = false
-            header.addSubview(label)
-            NSLayoutConstraint.activate([
-                label.leadingAnchor.constraint(equalTo: header.leadingAnchor, constant: 16),
-                label.centerYAnchor.constraint(equalTo: header.centerYAnchor)
-            ])
-            return header
-        }
-
-
-        func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-            return selectedSegementIndex == 1 ? 30 : 0
-        }
-
-
-        // MARK: - UITableViewDelegate
+        
+        return cell
+    }
+    
         func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
             tableView.deselectRow(at: indexPath, animated: true)
-            let course: Course
-            if selectedSegementIndex == 1 {
-                course = groupedCourses[indexPath.section][indexPath.row]
-            } else {
-                course = courses[indexPath.row]
-            }
-            let detailVC = CourseDetailViewController(course: course)
-            navigationController?.pushViewController(detailVC, animated: true)
+        let dayOfWeek = indexPath.section + 1
+        let coursesForDay = scheduleItems.filter { $0.dayOfWeek == dayOfWeek }
+        
+        if coursesForDay.count > indexPath.row {
+            let item = coursesForDay[indexPath.row]
+            showCourseDetail(item)
         }
     }
     
-    private func weekdayText(_ day: Int) -> String {
-        let names = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
-        let idx = day - 1
-        if idx >= 0 && idx < names.count { return names[idx] }
-        return "周\(day)"
+    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let dayOfWeek = indexPath.section + 1
+        let coursesForDay = scheduleItems.filter { $0.dayOfWeek == dayOfWeek }
+        
+        guard coursesForDay.count > indexPath.row else { return nil }
+        let item = coursesForDay[indexPath.row]
+        
+        let deleteAction = UIContextualAction(style: .destructive, title: "删除") { [weak self] _, _, completion in
+            self?.deleteCourse(item)
+            completion(true)
+        }
+        
+        return UISwipeActionsConfiguration(actions: [deleteAction])
     }
-
-
-
-
-
-// 课程详情页
-final class CourseDetailViewController: UIViewController {
-
-
-    private let course: Course
-
-
-    private let nameLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 22, weight: .bold)
-        label.textColor = .label
-        label.numberOfLines = 0
-        return label
-    }()
-
-
-    private let courseIdLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 14, weight: .regular)
-        label.textColor = .secondaryLabel
-        label.numberOfLines = 0
-        return label
-    }()
-
-
-    private let teacherLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 16, weight: .regular)
-        label.textColor = .secondaryLabel
-        label.numberOfLines = 0
-        return label
-    }()
-
-
-    private let timeLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 16, weight: .regular)
-        label.textColor = .secondaryLabel
-        label.numberOfLines = 0
-        return label
-    }()
-
-
-    private let locationLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 16, weight: .regular)
-        label.textColor = .secondaryLabel
-        label.numberOfLines = 0
-        return label
-    }()
-
-    private let typeLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 16, weight: .regular)
-        label.textColor = .secondaryLabel
-        label.numberOfLines = 0
-        return label
-    }()
-
-
-    private let creditsLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 16, weight: .regular)
-        label.textColor = .secondaryLabel
-        label.numberOfLines = 0
-        return label
-    }()
-
-
-    private let descriptionLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 15, weight: .regular)
-        label.textColor = .secondaryLabel
-        label.numberOfLines = 0
-        return label
-    }()
-
-
-    init(course: Course) {
-        self.course = course
-        super.init(nibName: nil, bundle: nil)
+    
+    private func showCourseDetail(_ item: ScheduleItem) {
+        let alert = UIAlertController(
+            title: item.courseName,
+            message: """
+            教师: \(item.teacherName ?? "未知")
+            地点: \(item.location ?? "未知")
+            时间: \(formatTime(item))
+            学分: \(item.credits ?? 0)
+            """,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "确定", style: .default))
+        present(alert, animated: true)
     }
-
-
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+    
+    private func deleteCourse(_ item: ScheduleItem) {
+        Task {
+            do {
+                try await CalendarRequest().deleteScheduleItem(itemId: item.id)
+                await MainActor.run {
+                    self.loadSchedule()
+                }
+            } catch {
+                await MainActor.run {
+                    self.showError(error)
+                }
+            }
+        }
     }
-
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        title = "课程详情"
-        view.backgroundColor = .systemGroupedBackground
-        setupUI()
-        configure()
-    }
-
-
-    private func setupUI() {
-        let stack = UIStackView(arrangedSubviews: [
-            nameLabel,
-            courseIdLabel,
-            teacherLabel,
-            timeLabel,
-            locationLabel,
-            typeLabel,
-            creditsLabel,
-            descriptionLabel
-        ])
-        stack.axis = .vertical
-        stack.spacing = 12
-        stack.alignment = .leading
-
-        let card = UIView()
-        card.backgroundColor = course.color.withAlphaComponent(0.15)
-        card.layer.cornerRadius = 12
-        card.layer.masksToBounds = true
-
-
-        card.addSubview(stack)
-        view.addSubview(card)
-
-
-        card.translatesAutoresizingMaskIntoConstraints = false
-        stack.translatesAutoresizingMaskIntoConstraints = false
-
-
-        NSLayoutConstraint.activate([
-            card.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
-            card.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            card.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-
-
-            stack.topAnchor.constraint(equalTo: card.topAnchor, constant: 20),
-            stack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 20),
-            stack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -20),
-            stack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -20)
-        ])
-    }
-
-
-    private func configure() {
-        nameLabel.text = course.name
-        courseIdLabel.text = "课程ID：\(course.courseId)"
-        teacherLabel.text = "老师：\(course.teacher)"
-        timeLabel.text = "时间：\(weekdayText(course.dayOfWeek))\(course.timeRange)"
-        locationLabel.text = "地点：\(course.location)"
-        typeLabel.text = "课程类型：\(course.typeDisplay)"
-        creditsLabel.text = "学分：\(course.credits)"
-        descriptionLabel.text = "课程描述：\(course.descriptionText)"
-    }
-
-
-    private func weekdayText(_ day: Int) -> String {
-        let names = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
-        let idx = day - 1
-        if idx >= 0 && idx < names.count { return names[idx] }
-        return "周\(day)"
+    
+    private func formatTime(_ item: ScheduleItem) -> String {
+        let start = sectionSlots[item.startSection]?.start ?? "\(item.startSection)"
+        let end = sectionSlots[item.endSection]?.end ?? "\(item.endSection)"
+        return "\(start) - \(end)"
     }
 }
-
-
-
-

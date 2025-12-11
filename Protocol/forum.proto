@@ -1,0 +1,220 @@
+syntax = "proto3";
+
+package campus.forum;
+
+// ========== 基础数据类型 ==========
+
+// 分页信息
+message Pagination {
+    int64 total = 1;
+    int32 page = 2;
+    int32 page_size = 3;
+    int32 pages = 4;
+}
+
+// 用户简要信息
+message UserLite {
+    string id = 1;
+    string student_id = 2;
+    string name = 3;
+    string avatar_url = 4;
+    string college = 5;
+}
+
+// 媒体项
+message MediaItem {
+    string type = 1;  // image, video
+    string url = 2;
+    string thumbnail_url = 3;
+    MediaMeta meta = 4;
+}
+
+message MediaMeta {
+    string size = 1;
+    string width = 2;
+    string height = 3;
+    string filename = 4;
+}
+
+// 统计信息
+message Stats {
+    int32 view_count = 1;
+    int32 like_count = 2;
+    int32 comment_count = 3;
+}
+
+// 用户交互信息
+message UserInteraction {
+    bool is_liked = 1;
+    bool is_collected = 2;
+}
+
+// 评论统计
+message CommentStats {
+    int32 like_count = 1;
+}
+
+// 评论用户交互
+message CommentUserInteraction {
+    bool is_liked = 1;
+}
+
+// ========== 论坛数据模型 ==========
+
+// 板块
+message Board {
+    string id = 1;
+    string name = 2;
+    string icon = 3;
+    string description = 4;
+    string board_type = 5;  // static or dynamic
+}
+
+// 帖子列表项
+message PostListItem {
+    string id = 1;
+    string title = 2;
+    UserLite author = 3;
+    string board_id = 4;
+    string board_name = 5;
+    string created_at = 6;
+    repeated string tags = 7;
+    string cover_image_url = 8;
+    string summary = 9;
+    Stats stats = 10;
+    UserInteraction user_interaction = 11;
+}
+
+// 帖子详情
+message PostDetail {
+    string id = 1;
+    string title = 2;
+    string content = 3;
+    string board_id = 4;
+    string board_name = 5;
+    UserLite author = 6;
+    repeated string tags = 7;
+    repeated MediaItem media = 8;
+    Stats stats = 9;
+    UserInteraction user_interaction = 10;
+    string status = 11;
+    int32 report_count = 12;
+    string created_at = 13;
+    string last_replied_at = 14;
+}
+
+// 评论详情
+message CommentDetail {
+    string id = 1;
+    string post_id = 2;
+    UserLite author = 3;
+    string content = 4;
+    string parent_id = 5;
+    UserLite reply_to = 6;
+    CommentStats stats = 7;
+    CommentUserInteraction user_interaction = 8;
+    string created_at = 9;
+}
+
+// ========== 请求消息 ==========
+
+// 获取板块列表请求（无参数）
+message GetBoardsRequest {}
+
+// 获取帖子列表请求
+message GetPostsRequest {
+    int32 page = 1;
+    int32 page_size = 2;
+    optional string board_id = 3;
+    optional string filter = 4;  // all, my_college
+    optional string sort = 5;    // latest, new, hot
+    optional string keyword = 6;
+}
+
+// 创建帖子请求
+message CreatePostRequest {
+    string board_id = 1;
+    string title = 2;
+    string content = 3;
+    repeated string tags = 4;
+    repeated MediaItem media = 5;
+}
+
+// 点赞请求
+message LikeRequest {
+    string action = 1;  // like or unlike
+}
+
+// 收藏请求
+message CollectRequest {
+    string action = 1;  // collect or uncollect
+}
+
+// 创建评论请求
+message CreateCommentRequest {
+    string content = 1;
+    optional string reply_to_comment_id = 2;
+}
+
+// 举报请求
+message ReportRequest {
+    string target_type = 1;  // post or comment
+    string target_id = 2;
+    string reason = 3;       // ad, politics, abuse, other
+    optional string description = 4;
+}
+
+// ========== 响应消息 ==========
+
+// 板块列表响应
+message GetBoardsResponse {
+    repeated Board list = 1;
+}
+
+// 帖子列表响应
+message GetPostsResponse {
+    repeated PostListItem list = 1;
+    Pagination pagination = 2;
+}
+
+// 帖子详情响应
+message GetPostDetailResponse {
+    PostDetail post = 1;
+}
+
+// 创建帖子响应
+message CreatePostResponse {
+    PostDetail post = 1;
+}
+
+// 点赞响应
+message LikeResponse {
+    int32 current_like_count = 1;
+    bool is_liked = 2;
+}
+
+// 收藏响应
+message CollectResponse {
+    bool is_collected = 1;
+}
+
+// 评论列表响应
+message GetCommentsResponse {
+    repeated CommentDetail list = 1;
+    Pagination pagination = 2;
+}
+
+// 创建评论响应
+message CreateCommentResponse {
+    string comment_id = 1;
+    CommentDetail comment = 2;
+}
+
+// 举报响应
+message ReportResponse {
+    string report_id = 1;
+}
+
+// 简单成功响应
+message EmptyResponse {}
+
