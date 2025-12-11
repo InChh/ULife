@@ -11,12 +11,27 @@ class ProfileViewController: UIViewController {
     // MARK: - Properties
     private let tableView = UITableView(frame: .zero, style: .insetGrouped)
     private let headerView = ProfileHeaderView()
+    private var userSettings = UserManager.shared.getUserSettings()
     
     private var currentUser: User?
     private let avatarCacheKey = "profile.avatar.image"
     private let languageKey = "app.language.selection"
     
-    private let settingSections: [[SettingItem]] = [
+    private var settingSections: [[SettingItem]] = []
+    
+    // MARK: - Lifecycle
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        title = "我的"
+        view.backgroundColor = .systemGroupedBackground
+        buildSettingSections()
+        setupUI()
+        loadUserData()
+        AIAssistantManager.shared.updateVisibility(enabled: userSettings.aiAssistantEnabled)
+    }
+
+    private func buildSettingSections() {
+        settingSections = [
         [
             SettingItem(icon: "person.circle", title: "编辑资料", type: .navigation),
             SettingItem(icon: "lock", title: "修改密码", type: .navigation)
@@ -29,19 +44,14 @@ class ProfileViewController: UIViewController {
             SettingItem(icon: "paintbrush", title: "主题设置", type: .navigation),
             SettingItem(icon: "globe", title: "语言设置", type: .navigation)
         ],
+            [
+                SettingItem(icon: "sparkles", title: "AI 助手", type: .toggle)
+            ],
         [
             SettingItem(icon: "info.circle", title: "关于我们", type: .navigation),
             SettingItem(icon: "arrow.right.square", title: "退出登录", type: .action)
         ]
     ]
-    
-    // MARK: - Lifecycle
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        title = "我的"
-        view.backgroundColor = .systemGroupedBackground
-        setupUI()
-        loadUserData()
     }
     
     // MARK: - Setup UI
@@ -347,8 +357,10 @@ extension ProfileViewController: UITableViewDataSource, UITableViewDelegate {
             cell.accessoryType = .disclosureIndicator
         case .toggle:
             let toggle = UISwitch()
-            toggle.isOn = true
+            toggle.isOn = userSettings.aiAssistantEnabled
+            toggle.addTarget(self, action: #selector(handleAiToggle(_:)), for: .valueChanged)
             cell.accessoryView = toggle
+            cell.selectionStyle = .none
         case .action:
             cell.textLabel?.textColor = .systemRed
         }
@@ -380,6 +392,15 @@ extension ProfileViewController: UITableViewDataSource, UITableViewDelegate {
         default:
             break
         }
+    }
+}
+
+// MARK: - Toggle Actions
+extension ProfileViewController {
+    @objc private func handleAiToggle(_ sender: UISwitch) {
+        userSettings.aiAssistantEnabled = sender.isOn
+        UserManager.shared.saveUserSettings(userSettings)
+        AIAssistantManager.shared.updateVisibility(enabled: sender.isOn)
     }
 }
 

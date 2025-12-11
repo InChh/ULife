@@ -20,6 +20,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             if isLoggedIn {
                 // 已登录，进入主页面
                 window?.rootViewController = UIHelper.createTabViewController()
+                syncAIAssistantVisibility()
             } else {
                 // 未登录，进入登录页面
                 let loginVC = LoginViewController()
@@ -41,6 +42,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         } else {
             window?.rootViewController = main
         }
+        syncAIAssistantVisibility()
+    }
+
+    private func syncAIAssistantVisibility() {
+        let enabled = UserManager.shared.getUserSettings().aiAssistantEnabled
+        AIAssistantManager.shared.updateVisibility(enabled: enabled)
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {

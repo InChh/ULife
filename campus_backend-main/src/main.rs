@@ -13,6 +13,7 @@ use crate::modules::course::controller_proto::course_proto_routes;
 use crate::modules::bbs::controller::bbs_routes;
 use crate::modules::bbs::controller_proto::bbs_proto_routes;
 use crate::modules::activity::controller::activity_routes;
+use crate::modules::ai::controller_proto::ai_proto_routes;
 
 #[tokio::main]
 async fn main() {
@@ -51,7 +52,8 @@ async fn main() {
         // Protobuf API 路由
         .merge(user_proto_routes())
         .merge(course_proto_routes())
-        .merge(bbs_proto_routes());
+        .merge(bbs_proto_routes())
+        .merge(ai_proto_routes());
     
     let app = Router::new()
         .nest("/api", api_routes)

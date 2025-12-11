@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package campus.ai;
+
+// ========== 基础数据 ==========
+
+message ChatMessage {
+    string role = 1;     // system | user | assistant
+    string content = 2;
+    string created_at = 3; // ISO8601，可选
+}
+
+message ChatUsage {
+    int32 prompt_tokens = 1;
+    int32 completion_tokens = 2;
+    int32 total_tokens = 3;
+}
+
+// ========== 请求与响应 ==========
+
+message ChatRequest {
+    optional int64 conversation_id = 1; // 不传则新建会话
+    repeated ChatMessage messages = 2;  // 需包含最新用户消息
+    optional bool stream = 3;           // 若为 true，后端可返回流式
+    optional double temperature = 4;
+    optional int32 max_tokens = 5;
+}
+
+message ChatResponse {
+    int64 conversation_id = 1;
+    ChatMessage reply = 2;
+    optional ChatUsage usage = 3;
+    string model = 4;
+    string request_id = 5;
+}
+
+// 流式增量（如开启 stream）
+message ChatStreamChunk {
+    int64 conversation_id = 1;
+    string delta = 2;
+    string model = 3;
+    bool done = 4;
+    optional ChatUsage usage = 5;
+}
+
+// 会话历史
+message ChatHistoryRequest {
+    int64 conversation_id = 1;
+}
+
+message ChatHistoryResponse {
+    int64 conversation_id = 1;
+    repeated ChatMessage messages = 2;
+    string model = 3;
+}
+
+// 会话列表（可选）
+message ConversationItem {
+    int64 id = 1;
+    string title = 2;
+    string model = 3;
+    string created_at = 4;
+    string updated_at = 5;
+}
+
+message ListConversationsResponse {
+    repeated ConversationItem list = 1;
+}

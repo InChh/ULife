@@ -6,6 +6,10 @@ pub mod campus {
         include!("campus.activity.rs");
     }
     
+    pub mod ai {
+        include!("campus.ai.rs");
+    }
+    
     pub mod user {
         include!("campus.user.rs");
     }
@@ -22,6 +26,8 @@ pub mod campus {
 // 重新导出，方便使用
 #[allow(unused_imports)]
 pub use campus::activity::*;
+#[allow(unused_imports)]
+pub use campus::ai;
 #[allow(unused_imports)]
 pub use campus::user;
 #[allow(unused_imports)]

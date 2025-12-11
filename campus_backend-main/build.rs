@@ -5,6 +5,7 @@ fn main() {
         "../Protocol/user.proto",
         "../Protocol/forum.proto",
         "../Protocol/course.proto",
+        "../Protocol/ai.proto",
     ];
     
     prost_build::Config::new()

@@ -38,5 +38,8 @@ prost = "0.12"
 prost-types = "0.12"
 bytes = "1"
 
+# 10. AI 调用
+async-openai = "0.20"
+
 [build-dependencies]
 prost-build = "0.12"

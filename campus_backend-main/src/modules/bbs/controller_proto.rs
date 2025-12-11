@@ -1,6 +1,6 @@
 // Protobuf 版本的 Forum Controller
 use axum::{
-    extract::{Path, State},
+    extract::State,
     response::{IntoResponse, Response},
     routing::{get, post},
     Router,

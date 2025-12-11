@@ -14,6 +14,9 @@ struct UserSettings: Codable {
     var forumReplyNotification: Bool = true
     var systemNotification: Bool = true
     
+    // AI 助手
+    var aiAssistantEnabled: Bool = true
+    
     // 隐私设置
     var scheduleVisibility: ScheduleVisibility = .classmatesOnly
     var allowPrivateMessages: Bool = true

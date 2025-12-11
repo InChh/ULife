@@ -123,6 +123,93 @@ INSERT INTO `activity_enrollments` VALUES ('01b85563-cd97-4ba4-a5b0-405f19710c01
 UNLOCK TABLES;
 
 --
+-- Table structure for table `ai_conversations`
+--
+
+DROP TABLE IF EXISTS `ai_conversations`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ai_conversations` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '关联用户ID',
+  `title` varchar(128) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '会话标题',
+  `model` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '使用的模型（取自配置）',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_ai_conv_user` (`user_id`,`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `ai_conversations`
+--
+
+LOCK TABLES `ai_conversations` WRITE;
+/*!40000 ALTER TABLE `ai_conversations` DISABLE KEYS */;
+INSERT INTO `ai_conversations` VALUES (1,'test_user_id','你好','deepseek-ai/DeepSeek-OCR','2025-12-11 11:31:06','2025-12-11 11:31:06'),(2,'test_user_id','你好','deepseek-ai/DeepSeek-OCR','2025-12-11 11:36:34','2025-12-11 11:36:34'),(3,'test_user_id','你好','deepseek-ai/DeepSeek-OCR','2025-12-11 11:36:49','2025-12-11 11:36:49'),(4,'test_user_id','你好','deepseek-ai/DeepSeek-OCR','2025-12-11 11:39:47','2025-12-11 11:39:47'),(5,'test_user_id','你好','deepseek-ai/DeepSeek-OCR','2025-12-11 11:50:38','2025-12-11 11:50:38'),(6,'test_user_id','你好','deepseek-ai/DeepSeek-OCR','2025-12-11 11:54:28','2025-12-11 11:54:28'),(7,'test_user_id','你好','deepseek-ai/DeepSeek-OCR','2025-12-11 14:20:56','2025-12-11 14:20:56'),(8,'test_user_id','你好','tencent/Hunyuan-MT-7B','2025-12-11 14:30:59','2025-12-11 14:30:59');
+/*!40000 ALTER TABLE `ai_conversations` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `ai_messages`
+--
+
+DROP TABLE IF EXISTS `ai_messages`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ai_messages` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `conversation_id` bigint unsigned NOT NULL,
+  `role` enum('system','user','assistant') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `content` mediumtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `tokens` int unsigned DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_ai_msg_conv_created` (`conversation_id`,`created_at`),
+  CONSTRAINT `fk_ai_msg_conv` FOREIGN KEY (`conversation_id`) REFERENCES `ai_conversations` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=47 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `ai_messages`
+--
+
+LOCK TABLES `ai_messages` WRITE;
+/*!40000 ALTER TABLE `ai_messages` DISABLE KEYS */;
+INSERT INTO `ai_messages` VALUES (1,1,'user','你好',NULL,'2025-12-11 11:31:06'),(2,1,'assistant','，请问您有问题吗？我可以帮忙解答吗？',11,'2025-12-11 11:31:09'),(3,2,'user','你好',NULL,'2025-12-11 11:36:34'),(4,2,'assistant','，你好！请问您需要什么帮助？',9,'2025-12-11 11:36:36'),(5,3,'user','你好',NULL,'2025-12-11 11:36:49'),(6,3,'assistant','你好！请问您有什么可以帮您的吗？',10,'2025-12-11 11:36:49'),(7,4,'user','你好',NULL,'2025-12-11 11:39:47'),(8,4,'assistant','！很抱歉，我是一个人工智能助手，目前无法回答您的问题。如果您有任何其他问题，我会尽力回答。',23,'2025-12-11 11:39:48'),(9,4,'user','A',NULL,'2025-12-11 11:46:11'),(10,4,'assistant',' study on the efficacy of mindfulness and acceptance based interventions for depression among college students: A systematic review\n\nThe efficacy of mindfulness and acceptance based interventions for depression among college students: A systematic review\n\nIntroduction: Depression is a common mental health problem among college students, and there is a need for effective interventions to help them cope with this problem. Mindfulness and acceptance-based interventions have been suggested as promising interventions for depression, but there is a lack of systematic reviews to evaluate their efficacy. This study aims to conduct a systematic review to evaluate the effectiveness of mindfulness and acceptance-based interventions for depression among college students.\n\nMethods: This systematic review followed PRISMA guidelines. Relevant studies published between 2010 and 2020 were identified through a systematic search of electronic databases. Studies were included if they were randomized controlled trials or cluster-randomized controlled trials that evaluated the efficacy of mindfulness or acceptance-based interventions for depression among college students.\n\nResults: A total of 12 studies were included in the review. The results of the review suggest that mindfulness-based interventions may be more effective than other interventions, such as cognitive-behavioral therapy or medication. However, there is limited evidence to suggest that acceptance-based interventions are more effective than mindfulness-based interventions.\n\nConclusion: The results of this systematic review suggest that mindfulness-based interventions may be more effective than other interventions for depression among college students. However, there is limited evidence to suggest that acceptance-based interventions are more effective than mindfulness-based interventions. Further research is needed to evaluate the effectiveness of these interventions and to identify the factors that may influence their efficacy.',311,'2025-12-11 11:46:13'),(11,4,'user','Hello',NULL,'2025-12-11 11:46:28'),(12,4,'assistant','! How can I help you today?',8,'2025-12-11 11:46:29'),(13,4,'user','我是鸭子',NULL,'2025-12-11 11:46:42'),(14,4,'assistant','\n\n2024-04-19 07:01:50\n\n我是鸭子2024-04-19 07:01:50 \n\n### 推荐\n\n- 3月28日笑话大全幽默笑话大全2024-04-19 07:01:50\n- 3月28日冷笑话2024-04-19 07:01:50\n- 3月28日搞笑笑话大全2024-04-19 07:01:50\n- 3月28日最新幽默笑话2024-04-19 07:01:50\n- 3月28日搞笑幽默笑话大全2024-04-19 07:01:50',144,'2025-12-11 11:46:43'),(15,4,'user','我刚才说我是什么',NULL,'2025-12-11 11:46:51'),(16,4,'assistant','是好事还是好事是好事又是好事是好事是好事是好事是好事是好事还是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事是好事',512,'2025-12-11 11:46:55'),(17,5,'user','你好',NULL,'2025-12-11 11:50:38'),(18,5,'assistant','你好！有什么我可以帮助你的吗？',8,'2025-12-11 11:50:38'),(19,5,'user','你好啊',NULL,'2025-12-11 11:50:49'),(20,5,'user','111',NULL,'2025-12-11 11:51:01'),(21,5,'user','hello',NULL,'2025-12-11 11:54:08'),(22,5,'assistant','111hello111hello111 hello111hello111hello111 hello111hello111hello111hello111 hello111hello111hello111 hello111hello111hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello111 hello',512,'2025-12-11 11:54:13'),(23,6,'user','你好',NULL,'2025-12-11 11:54:28'),(24,6,'assistant','！请问你是哪里人？',6,'2025-12-11 11:54:29'),(25,6,'user','你好啊',NULL,'2025-12-11 11:54:40'),(26,6,'assistant','，很高兴认识你！请问你是哪里人？请问你是哪里人？我是来自哪里！请问你是哪里人？我是来自哪里！我是哪里的人呢？希望我的回答能对你有所帮助。',40,'2025-12-11 11:54:41'),(27,6,'user','我是一个北京人',NULL,'2025-12-11 11:54:59'),(28,6,'assistant','我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京人我是一个北京',512,'2025-12-11 11:55:02'),(29,7,'user','你好',NULL,'2025-12-11 14:20:56'),(30,7,'assistant','！当然，我可以回答关于校园AI的信息，但我需要先确保您提供的答案是最准确和最相关的。如果您有任何特定的问题或需要帮助解决，请随时告诉我，我会尽力提供帮助。',40,'2025-12-11 14:20:57'),(31,7,'user','Hello',NULL,'2025-12-11 14:21:06'),(32,7,'assistant',', how can I assist you today?',8,'2025-12-11 14:21:06'),(33,7,'user','你是谁',NULL,'2025-12-11 14:21:19'),(34,7,'assistant','，我可以为您提供帮助？',6,'2025-12-11 14:21:20'),(35,7,'user','我是一个小狗',NULL,'2025-12-11 14:21:32'),(36,7,'assistant','，正在帮助您解决数学问题。你能告诉我这道题的要求是什么吗？',16,'2025-12-11 14:21:33'),(37,7,'user','你好啊',NULL,'2025-12-11 14:21:40'),(38,7,'assistant','，我很高兴能够帮助你解决这个问题。请告诉我这道题的要求是什么？',15,'2025-12-11 14:21:40'),(39,8,'user','你好',NULL,'2025-12-11 14:30:59'),(40,8,'assistant','你好！我是你的校园 AI 助手，有什么可以帮助你的吗？',15,'2025-12-11 14:31:00'),(41,8,'user','你好啊',NULL,'2025-12-11 14:31:09'),(42,8,'assistant','你好！我是你的校园 AI 助手，有什么可以帮助你的吗？',15,'2025-12-11 14:31:10'),(43,8,'user','我是一个苹果',NULL,'2025-12-11 14:31:17'),(44,8,'assistant','你好！我是你的校园 AI 助手，看起来你可能有些困惑。不过，我可以帮你解答一些问题或者提供一些信息。如果你有关于校园生活、学习或者其他方面的问题，请随时告诉我，我会尽力帮助你。',48,'2025-12-11 14:31:18'),(45,8,'user','我刚才说我是什么',NULL,'2025-12-11 14:31:28'),(46,8,'assistant','你刚才说你是一个苹果？这可能是一个有趣的比喻或者玩笑。实际上，你是一个人类用户，正在与我的校园 AI 助手对话。如果你有任何问题或需要帮助，请随时告诉我。',42,'2025-12-11 14:31:29');
+/*!40000 ALTER TABLE `ai_messages` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `ai_usage_daily`
+--
+
+DROP TABLE IF EXISTS `ai_usage_daily`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ai_usage_daily` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `date` date NOT NULL,
+  `prompt_tokens` int unsigned NOT NULL DEFAULT '0',
+  `completion_tokens` int unsigned NOT NULL DEFAULT '0',
+  `total_tokens` int unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_ai_usage_user_date` (`user_id`,`date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `ai_usage_daily`
+--
+
+LOCK TABLES `ai_usage_daily` WRITE;
+/*!40000 ALTER TABLE `ai_usage_daily` DISABLE KEYS */;
+/*!40000 ALTER TABLE `ai_usage_daily` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `bbs_boards`
 --
 
@@ -324,7 +411,7 @@ CREATE TABLE `bbs_posts` (
 
 LOCK TABLES `bbs_posts` WRITE;
 /*!40000 ALTER TABLE `bbs_posts` DISABLE KEYS */;
-INSERT INTO `bbs_posts` VALUES ('1c7dab33-8b02-44be-9748-daa5893c3c90','Fff','Add','board_5','test_user_id','[]',NULL,'approved',1,0,0,0,'2025-12-11 08:10:12','2025-12-11 08:10:12',NULL),('7cad0981-fae2-455c-9cca-0570b79f12ea','Sad ','Add ','board_2','test_user_id','[]',NULL,'approved',1,0,0,0,'2025-12-11 08:09:36','2025-12-11 08:09:36',NULL),('f38839c4-ba11-452a-9f30-e39fbc703ffc','Sdgsdg','Olio','board_5','test_user_id','[]',NULL,'approved',3,0,0,0,'2025-12-11 08:14:41','2025-12-11 08:25:36',NULL),('post_1','今天图书馆的自习座位好难抢啊','每次想去图书馆自习都抢不到座位，大家有什么好的方法吗？','board_1','test_user_id','[\"图书馆\", \"自习\"]',NULL,'approved',136,16,9,0,'2025-12-11 15:45:33','2025-12-11 08:42:57','2025-12-11 08:16:33'),('post_2','推荐一家学校附近的美食店','在学校西门发现了一家超好吃的川菜馆，价格实惠，味道正宗！','board_3','user_2','[\"美食\", \"推荐\"]',NULL,'approved',97,24,12,0,'2025-12-11 15:45:33','2025-12-11 08:43:01',NULL),('post_3','数据结构课程求组队','下周要做数据结构的课程设计，有没有同学一起组队的？','board_2','user_3','[\"学习\", \"组队\"]',NULL,'approved',66,8,7,0,'2025-12-11 15:45:33','2025-12-11 08:43:16','2025-12-11 08:43:16');
+INSERT INTO `bbs_posts` VALUES ('1c7dab33-8b02-44be-9748-daa5893c3c90','Fff','Add','board_5','test_user_id','[]',NULL,'approved',1,0,0,0,'2025-12-11 08:10:12','2025-12-11 08:10:12',NULL),('7cad0981-fae2-455c-9cca-0570b79f12ea','Sad ','Add ','board_2','test_user_id','[]',NULL,'approved',1,0,0,0,'2025-12-11 08:09:36','2025-12-11 08:09:36',NULL),('f38839c4-ba11-452a-9f30-e39fbc703ffc','Sdgsdg','Olio','board_5','test_user_id','[]',NULL,'approved',5,0,0,0,'2025-12-11 08:14:41','2025-12-11 09:47:06',NULL),('post_1','今天图书馆的自习座位好难抢啊','每次想去图书馆自习都抢不到座位，大家有什么好的方法吗？','board_1','test_user_id','[\"图书馆\", \"自习\"]',NULL,'approved',136,16,9,0,'2025-12-11 15:45:33','2025-12-11 08:42:57','2025-12-11 08:16:33'),('post_2','推荐一家学校附近的美食店','在学校西门发现了一家超好吃的川菜馆，价格实惠，味道正宗！','board_3','user_2','[\"美食\", \"推荐\"]',NULL,'approved',97,24,12,0,'2025-12-11 15:45:33','2025-12-11 08:43:01',NULL),('post_3','数据结构课程求组队','下周要做数据结构的课程设计，有没有同学一起组队的？','board_2','user_3','[\"学习\", \"组队\"]',NULL,'approved',66,8,7,0,'2025-12-11 15:45:33','2025-12-11 08:43:16','2025-12-11 08:43:16');
 /*!40000 ALTER TABLE `bbs_posts` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -560,4 +647,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-12-11 17:04:55
+-- Dump completed on 2025-12-11 22:32:30

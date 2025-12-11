@@ -34,7 +34,8 @@ class ProtoNetworkManager {
     func requestProto<RequestType: SwiftProtobuf.Message, ResponseType: SwiftProtobuf.Message>(
         endpoint: String,
         method: HTTPMethod = .post,
-        request: RequestType? = nil
+        request: RequestType? = nil,
+        retryOnNetworkLoss: Bool = true
     ) async throws -> ResponseType {
         // Build URL
         let urlString = APIConfig.baseURL + endpoint
@@ -77,9 +78,14 @@ class ProtoNetworkManager {
             print("📥 Protobuf Response [\(httpResponse.statusCode)]")
             print("   Data size: \(data.count) bytes")
             
-            // Handle non-200 status codes
-            guard (200...299).contains(httpResponse.statusCode) else {
-                throw NetworkError.serverError(httpResponse.statusCode, "Server error")
+            // Handle non-200 status codes with server message fallback
+            if !(200...299).contains(httpResponse.statusCode) {
+                let serverMessage = String(data: data, encoding: .utf8)?
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                throw NetworkError.serverError(
+                    httpResponse.statusCode,
+                    serverMessage?.isEmpty == false ? serverMessage! : "Server error"
+                )
             }
             
             // Decode protobuf response
@@ -95,6 +101,19 @@ class ProtoNetworkManager {
         } catch let error as NetworkError {
             throw error
         } catch {
+            // 针对网络连接中断（-1005）做一次轻量重试
+            if retryOnNetworkLoss,
+               let urlError = error as? URLError,
+               urlError.code == .networkConnectionLost {
+                print("⚠️ Network connection lost, retrying once...")
+                try await Task.sleep(nanoseconds: 300_000_000) // 0.3s
+                return try await requestProto(
+                    endpoint: endpoint,
+                    method: method,
+                    request: request,
+                    retryOnNetworkLoss: false
+                )
+            }
             throw NetworkError.unknown(error)
         }
     }
