@@ -15,7 +15,7 @@ class ForumDetailViewController: UIViewController {
     
     // 记录评论表的高度约束，方便重复更新
     private var commentTableHeightConstraint: NSLayoutConstraint?
-    
+
     // 弹出输入框
     private var commentContainerView: UIView?
     private var backgroundView: UIView?
@@ -100,7 +100,7 @@ class ForumDetailViewController: UIViewController {
             }.joined(separator: "  ")
             detailView.tagsLabel.text = "\(displayTags)"
         }
-        
+
         detailView.createTimeLabel.text = post.createdAt
         
         //设置头像
@@ -285,7 +285,7 @@ class ForumDetailViewController: UIViewController {
     private func showCommentInput() {
         // 已经显示则不重复创建
         if backgroundView != nil { return }
-        
+
         // 全屏背景窗口 暗淡
         let bgView = UIView()
         bgView.backgroundColor = UIColor.black.withAlphaComponent(0.4)
@@ -297,7 +297,7 @@ class ForumDetailViewController: UIViewController {
             bgView.topAnchor.constraint(equalTo: view.topAnchor),
             bgView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
-        
+
         //评论窗口外嵌一层内容窗口
         let container = UIView()
         container.backgroundColor = .white
@@ -305,29 +305,29 @@ class ForumDetailViewController: UIViewController {
         container.clipsToBounds = true
         container.translatesAutoresizingMaskIntoConstraints = false
         bgView.addSubview(container)
-        
+
         let inputView = CommentInputView()
         inputView.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(inputView)
-        
+
         NSLayoutConstraint.activate([
             //居中
             container.centerXAnchor.constraint(equalTo: bgView.centerXAnchor),
             container.centerYAnchor.constraint(equalTo: bgView.centerYAnchor),
             // 固定一个相对宽度，避免过宽或过窄
             container.widthAnchor.constraint(equalTo: bgView.widthAnchor, multiplier: 0.82),
-            
+
             inputView.topAnchor.constraint(equalTo: container.topAnchor, constant: 16),
             inputView.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
             inputView.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -16),
             inputView.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -16),
         ])
-        
+
         // 绑定手势 点击空白区域关闭窗口
         let tap = UITapGestureRecognizer(target: self, action: #selector(handleBackgroundTap(_:)))
         tap.cancelsTouchesInView = false //保证手势识别不会静止其他事件
         bgView.addGestureRecognizer(tap) //点击背景页面
-        
+
         // 按钮绑定方法
         inputView.onSend = { [weak self] text in
             guard let self = self else { return }
@@ -336,36 +336,36 @@ class ForumDetailViewController: UIViewController {
                 Toast.show("评论内容不能为空", style: .error)
                 return
             }
-            
+
             let newComment = ForumRequest().CreateComment(
                 id: self.post.id,
                 content: content,
                 replyToCommentid: nil
             ).comment
-            
+
             self.insertNewComment(newComment)
             self.hideCommentInput()
         }
-        
+
         backgroundView = bgView
         commentContainerView = container
         commentInputView = inputView
-        
+
         // 弹出键盘
         inputView.beginEditing()
     }
-    
+
     // 点击遮罩层时收起评论窗口（点击内容区域不会关闭）
     @objc private func handleBackgroundTap(_ gesture: UITapGestureRecognizer) {
         guard let bgView = backgroundView,
               let container = commentContainerView else { return }
-        
+
         let location = gesture.location(in: bgView) //获取手势点击的位置
         if !container.frame.contains(location) {
             hideCommentInput()
         }
     }
-    
+
     // 点击评论后消除所有 UI
     private func hideCommentInput() {
         view.endEditing(true)
@@ -542,12 +542,12 @@ class ForumDetailViewController: UIViewController {
         alert.addAction(UIAlertAction(title: "取消", style: .cancel))
         present(alert, animated: true)
     }
-    
+
     // 弹出回复框
     func showReplyInput( commentIndex: Int, replyingToName: String?) {
         // 已经显示则不重复创建
         if backgroundView != nil { return }
-        
+
         // 全屏背景窗口 暗淡
         let bgView = UIView()
         bgView.backgroundColor = UIColor.black.withAlphaComponent(0.4)
@@ -559,7 +559,7 @@ class ForumDetailViewController: UIViewController {
             bgView.topAnchor.constraint(equalTo: view.topAnchor),
             bgView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
-        
+
         //评论窗口外嵌一层内容窗口
         let container = UIView()
         container.backgroundColor = .white
@@ -567,29 +567,29 @@ class ForumDetailViewController: UIViewController {
         container.clipsToBounds = true
         container.translatesAutoresizingMaskIntoConstraints = false
         bgView.addSubview(container)
-        
+
         let inputView = CommentInputView()
         inputView.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(inputView)
-        
+
         NSLayoutConstraint.activate([
             //居中
             container.centerXAnchor.constraint(equalTo: bgView.centerXAnchor),
             container.centerYAnchor.constraint(equalTo: bgView.centerYAnchor),
             // 固定一个相对宽度，避免过宽或过窄
             container.widthAnchor.constraint(equalTo: bgView.widthAnchor, multiplier: 0.82),
-            
+
             inputView.topAnchor.constraint(equalTo: container.topAnchor, constant: 16),
             inputView.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
             inputView.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -16),
             inputView.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -16),
         ])
-        
+
         // 绑定手势 点击空白区域关闭窗口
         let tap = UITapGestureRecognizer(target: self, action: #selector(handleBackgroundTap(_:)))
         tap.cancelsTouchesInView = false //保证手势识别不会静止其他事件
         bgView.addGestureRecognizer(tap) //点击背景页面
-        
+
         // 按钮绑定方法
         inputView.onSend = { [weak self] text in
             guard let self = self else { return }
@@ -600,23 +600,23 @@ class ForumDetailViewController: UIViewController {
             }
             //获取回复的评论和回复
             let comment = maincomments[commentIndex]
-            
+
             let response = ForumRequest().CreateComment(id: comment.postid, content: text, replyToCommentid: comment.id)
             comments.append(response.comment)
 
             self.detailView.commentTableView.reloadData()  //刷新数据
             self.updateTableViewHeight()  //更新高度
-            
+
             self.hideCommentInput()
         }
-        
+
         backgroundView = bgView
         commentContainerView = container
         commentInputView = inputView
-        
+
         // 弹出键盘
         inputView.beginEditing()
     }
-    
+
 
 }
