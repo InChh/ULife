@@ -32,7 +32,7 @@ extension ForumDetailViewController: UITableViewDelegate, UITableViewDataSource
         let comment = maincomments[indexPath.row]
         
         cell.configure(
-            with: comment,
+            with: comment
         )
 
         // 实现 cell 的声明出来的方法

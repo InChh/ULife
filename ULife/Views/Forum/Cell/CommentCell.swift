@@ -282,7 +282,7 @@ class CommentCell: UITableViewCell {
 
     // 更新回复 StackView
     private func updateRepliesStackView(
-        with replies: [Comment],
+        with replies: [Comment]
     ) {
         // 清除所有现有的回复视图
         repliesStackView.arrangedSubviews.forEach { view in
