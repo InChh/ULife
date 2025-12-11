@@ -806,13 +806,14 @@ open class ApiClient: ApiClientProtocol, @unchecked Sendable {
     public func uniffiCloneHandle() -> UInt64 {
         return try! rustCall { uniffi_ulife_lib_fn_clone_apiclient(self.handle, $0) }
     }
-public convenience init(baseUrl: String, cacheFolder: String, cacheSize: UInt64)throws  {
+public convenience init(baseUrl: String, cacheFolder: String, cacheSize: UInt64, fs: FileSystem)throws  {
     let handle =
         try rustCallWithError(FfiConverterTypeError_lift) {
     uniffi_ulife_lib_fn_constructor_apiclient_new(
         FfiConverterString.lower(baseUrl),
         FfiConverterString.lower(cacheFolder),
-        FfiConverterUInt64.lower(cacheSize),$0
+        FfiConverterUInt64.lower(cacheSize),
+        FfiConverterTypeFileSystem_lower(fs),$0
     )
 }
     self.init(unsafeFromHandle: handle)
@@ -822,17 +823,6 @@ public convenience init(baseUrl: String, cacheFolder: String, cacheSize: UInt64)
         try! rustCall { uniffi_ulife_lib_fn_free_apiclient(handle, $0) }
     }
 
-    
-public static func newWithFs(baseUrl: String, cacheFolder: String, cacheSize: UInt64, fs: FileSystem)throws  -> ApiClient  {
-    return try  FfiConverterTypeApiClient_lift(try rustCallWithError(FfiConverterTypeError_lift) {
-    uniffi_ulife_lib_fn_constructor_apiclient_new_with_fs(
-        FfiConverterString.lower(baseUrl),
-        FfiConverterString.lower(cacheFolder),
-        FfiConverterUInt64.lower(cacheSize),
-        FfiConverterTypeFileSystem_lower(fs),$0
-    )
-})
-}
     
 
     
@@ -2385,11 +2375,12 @@ open class PersistenceManager: PersistenceManagerProtocol, @unchecked Sendable {
     /**
      * 创建 PersistenceManager 实例
      */
-public convenience init(baseFolder: String)throws  {
+public convenience init(baseFolder: String, fs: FileSystem)throws  {
     let handle =
         try rustCallWithError(FfiConverterTypeError_lift) {
     uniffi_ulife_lib_fn_constructor_persistencemanager_new(
-        FfiConverterString.lower(baseFolder),$0
+        FfiConverterString.lower(baseFolder),
+        FfiConverterTypeFileSystem_lower(fs),$0
     )
 }
     self.init(unsafeFromHandle: handle)
@@ -2399,15 +2390,6 @@ public convenience init(baseFolder: String)throws  {
         try! rustCall { uniffi_ulife_lib_fn_free_persistencemanager(handle, $0) }
     }
 
-    
-public static func newWithFs(baseFolder: String, fs: FileSystem)throws  -> PersistenceManager  {
-    return try  FfiConverterTypePersistenceManager_lift(try rustCallWithError(FfiConverterTypeError_lift) {
-    uniffi_ulife_lib_fn_constructor_persistencemanager_new_with_fs(
-        FfiConverterString.lower(baseFolder),
-        FfiConverterTypeFileSystem_lower(fs),$0
-    )
-})
-}
     
 
     
@@ -10556,9 +10538,10 @@ private func uniffiForeignFutureDroppedCallback(handle: UInt64) {
 public func uniffiForeignFutureHandleCountUlifeLib() -> Int {
     UNIFFI_FOREIGN_FUTURE_HANDLE_MAP.count
 }
-public func initPersistenceManager(baseFolder: String)throws   {try rustCallWithError(FfiConverterTypeError_lift) {
+public func initPersistenceManager(baseFolder: String, fs: FileSystem)throws   {try rustCallWithError(FfiConverterTypeError_lift) {
     uniffi_ulife_lib_fn_func_init_persistence_manager(
-        FfiConverterString.lower(baseFolder),$0
+        FfiConverterString.lower(baseFolder),
+        FfiConverterTypeFileSystem_lower(fs),$0
     )
 }
 }
@@ -10578,7 +10561,7 @@ private let initializationResult: InitializationResult = {
     if bindings_contract_version != scaffolding_contract_version {
         return InitializationResult.contractVersionMismatch
     }
-    if (uniffi_ulife_lib_checksum_func_init_persistence_manager() != 29513) {
+    if (uniffi_ulife_lib_checksum_func_init_persistence_manager() != 21508) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ulife_lib_checksum_method_apiclient_add_comment_to_post() != 9642) {
@@ -10731,19 +10714,13 @@ private let initializationResult: InitializationResult = {
     if (uniffi_ulife_lib_checksum_method_persistencemanager_save_current_user() != 13532) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_ulife_lib_checksum_constructor_apiclient_new() != 13980) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_ulife_lib_checksum_constructor_apiclient_new_with_fs() != 654) {
+    if (uniffi_ulife_lib_checksum_constructor_apiclient_new() != 41959) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ulife_lib_checksum_constructor_createpostreq_new() != 29188) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_ulife_lib_checksum_constructor_persistencemanager_new() != 46732) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_ulife_lib_checksum_constructor_persistencemanager_new_with_fs() != 23086) {
+    if (uniffi_ulife_lib_checksum_constructor_persistencemanager_new() != 56540) {
         return InitializationResult.apiChecksumMismatch
     }
 

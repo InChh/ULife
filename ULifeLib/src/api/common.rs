@@ -1,6 +1,6 @@
 use prost::Message;
 
-use crate::ApiClient;
+use crate::api::ApiClient;
 use crate::error::Result;
 use crate::pb::storage::{UploadFileResponse, UploadResult};
 

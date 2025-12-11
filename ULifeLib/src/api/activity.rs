@@ -1,4 +1,4 @@
-use crate::{ApiClient, error::Result};
+use crate::{api::ApiClient, error::Result};
 
 #[derive(uniffi::Record, serde::Serialize)]
 pub struct ListActivitiesRequest {

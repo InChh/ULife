@@ -8,27 +8,25 @@ use std::{
     sync::Arc,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
-use tokio::runtime::Handle;
 
 use crate::error::{Error, Result};
-use crate::fs::{block_on_fs, default_fs, FsHandle};
+use crate::fs::FsHandle;
 
 /// Global cache configuration.
 #[derive(Clone)]
 pub struct HybridCacheConfig {
-    /// Directory used to store disk cache entries.
+    /// 用于存储磁盘缓存项的目录
     pub disk_dir: PathBuf,
-    /// Maximum number of entries retained in memory.
+    /// 内存中保留的最大条目数
     pub memory_capacity: u64,
-    /// Optional default TTL applied to inserts that omit a TTL.
+    /// 默认 TTL
     pub default_ttl: Option<Duration>,
-    /// Time to idle before an entry is evicted from memory (and migrated to disk).
+    /// 内存中的缓存项被驱逐（并迁移到磁盘）之前的空闲时间
     pub memory_time_to_idle: Option<Duration>,
-    /// File system implementation used for disk persistence.
+    /// 用于磁盘持久化的文件系统实现
     pub fs: FsHandle,
 }
 
-/// Per-insert options.
 #[derive(Clone, Debug)]
 pub struct CacheOptions {
     pub ttl: Option<Duration>,
@@ -71,7 +69,7 @@ impl CacheEntry {
     }
 }
 
-/// Hybrid cache backed by an in-memory moka cache plus a disk layer.
+/// 混合缓存，结合内存缓存（使用moka库）和磁盘存储。
 pub struct HybridCache<K, V>
 where
     K: Eq + Hash + Clone + Send + Sync + 'static + ToString,
@@ -90,7 +88,7 @@ where
     V: Send + Sync + 'static + Into<Vec<u8>> + From<Vec<u8>>,
 {
     pub fn new(config: HybridCacheConfig) -> Result<Self> {
-        block_on_fs(config.fs.create_dir_all(config.disk_dir.to_string_lossy().to_string()))?;
+        std::fs::create_dir_all(&config.disk_dir)?;
 
         let disk_dir = config.disk_dir.clone();
         let eviction_dir = config.disk_dir.clone();
@@ -128,7 +126,7 @@ where
         })
     }
 
-    /// Insert or update an entry with optional TTL.
+    /// 插入一个缓存项
     pub async fn insert(&self, key: K, value: V, options: CacheOptions) -> Result<()> {
         let ttl = options.ttl.or(self.default_ttl);
         let expires_at = ttl.map(|ttl| SystemTime::now() + ttl);
@@ -141,7 +139,9 @@ where
         Ok(())
     }
 
-    /// Get an entry; load from disk on miss and refresh memory.
+    /// 获取一个缓存项
+    ///
+    /// 在内存未命中时从磁盘加载并刷新到内存缓存
     pub async fn get(&self, key: &K) -> Result<Option<V>> {
         let now = SystemTime::now();
 
@@ -171,7 +171,7 @@ where
         self.remove_from_disk(key).await
     }
 
-    /// Flush in-memory entries to disk (clears memory).
+    /// 将内存中的缓存项刷新到磁盘（清空内存缓存）。
     pub async fn flush(&self) -> Result<()> {
         self.memory.invalidate_all();
         self.memory.run_pending_tasks().await;
@@ -182,6 +182,9 @@ where
         let path = key_to_path(&self.disk_dir, key);
         let bytes = match self.fs.read(path.to_string_lossy().to_string()).await {
             Ok(data) => data,
+            Err(Error::IoError(err)) if err.kind() == std::io::ErrorKind::NotFound => {
+                return Ok(None);
+            }
             Err(err) => return Err(err),
         };
         deserialize_entry(&bytes)
@@ -189,8 +192,13 @@ where
 
     async fn remove_from_disk(&self, key: &K) -> Result<()> {
         let path = key_to_path(&self.disk_dir, key);
-        match self.fs.remove_file(path.to_string_lossy().to_string()).await {
+        match self
+            .fs
+            .remove_file(path.to_string_lossy().to_string())
+            .await
+        {
             Ok(()) => Ok(()),
+            Err(Error::IoError(err)) if err.kind() == std::io::ErrorKind::NotFound => Ok(()),
             Err(err) => Err(err),
         }
     }
@@ -207,9 +215,10 @@ where
             memory.invalidate_all();
             memory.run_pending_tasks().await;
         };
-        if let Ok(handle) = Handle::try_current() {
-            handle.spawn(flush);
-        } else if let Ok(rt) = tokio::runtime::Runtime::new() {
+        if let Ok(rt) = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+        {
             rt.block_on(flush);
         }
     }
@@ -222,8 +231,13 @@ where
     let path = key_to_path(disk_dir, key);
     let temp_path = temp_path_for(&path);
     let data = serialize_entry(entry)?;
-    fs.write(temp_path.to_string_lossy().to_string(), data).await?;
-    fs.rename(temp_path.to_string_lossy().to_string(), path.to_string_lossy().to_string()).await?;
+    fs.write(temp_path.to_string_lossy().to_string(), data)
+        .await?;
+    fs.rename(
+        temp_path.to_string_lossy().to_string(),
+        path.to_string_lossy().to_string(),
+    )
+    .await?;
     Ok(())
 }
 
@@ -336,26 +350,26 @@ impl<K> moka::policy::Expiry<K, CacheEntry> for PerEntryExpiry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::fs::{block_on_fs, default_fs};
+    use crate::fs::default_fs;
     use tokio::time::{Duration, sleep};
 
-    fn temp_root(name: &str) -> PathBuf {
+    async fn temp_root(name: &str, fs: &FsHandle) -> PathBuf {
         let mut path = std::env::temp_dir();
         path.push(format!("hybrid_cache_{name}_{}", std::process::id()));
-        let fs = default_fs();
-        let _ = block_on_fs(fs.remove_dir_all(path.to_string_lossy().to_string()));
+        let _ = fs.remove_dir_all(path.to_string_lossy().to_string()).await;
         path
     }
 
     #[tokio::test]
     async fn insert_and_get_round_trip() {
-        let root = temp_root("basic");
+        let fs = default_fs();
+        let root = temp_root("basic", &fs).await;
         let cache: HybridCache<String, Vec<u8>> = HybridCache::new(HybridCacheConfig {
             disk_dir: root.clone(),
             memory_capacity: 10,
             default_ttl: None,
             memory_time_to_idle: None,
-            fs: default_fs(),
+            fs: fs.clone(),
         })
         .unwrap();
 
@@ -374,13 +388,14 @@ mod tests {
 
     #[tokio::test]
     async fn ttl_expires() {
-        let root = temp_root("ttl");
+        let fs = default_fs();
+        let root = temp_root("ttl", &fs).await;
         let cache: HybridCache<String, Vec<u8>> = HybridCache::new(HybridCacheConfig {
             disk_dir: root.clone(),
             memory_capacity: 10,
             default_ttl: None,
             memory_time_to_idle: None,
-            fs: default_fs(),
+            fs: fs.clone(),
         })
         .unwrap();
 
@@ -402,13 +417,14 @@ mod tests {
 
     #[tokio::test]
     async fn evicted_entry_persists_to_disk() {
-        let root = temp_root("evict");
+        let fs = default_fs();
+        let root = temp_root("evict", &fs).await;
         let cache: HybridCache<String, Vec<u8>> = HybridCache::new(HybridCacheConfig {
             disk_dir: root.clone(),
             memory_capacity: 1,
             default_ttl: None,
             memory_time_to_idle: None,
-            fs: default_fs(),
+            fs: fs.clone(),
         })
         .unwrap();
 

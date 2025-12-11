@@ -2,16 +2,15 @@ use prost::Message;
 use std::sync::Arc;
 use std::time::Duration;
 
-use crate::error::{self, Error, Result};
+use crate::error::{Error, Result};
 use crate::pb::forum::{
     Board, CollectPostRequest, CollectPostResponse, Comment, CreateCommentRequest,
     CreateCommentResponse, CreatePostRequest, CreatePostResponse, CreateReportRequest,
-    CreateReportResponse, DeletePostRequest, GetBoardsRequest, GetBoardsResponse, GetPostResponse,
-    LikeCommentRequest, LikeCommentResponse, LikePostRequest, LikePostResponse,
-    ListCommentsResponse, ListPostsResponse, MediaItem, PostDetail, PostLite, UpdatePostRequest,
-    UpdatePostResponse,
+    CreateReportResponse, GetBoardsRequest, GetBoardsResponse, GetPostResponse, LikeCommentRequest,
+    LikeCommentResponse, LikePostRequest, LikePostResponse, ListCommentsResponse,
+    ListPostsResponse, MediaItem, PostDetail, PostLite, UpdatePostRequest, UpdatePostResponse,
 };
-use crate::{ApiClient, CacheOptions};
+use crate::{CacheOptions, api::ApiClient};
 
 #[derive(uniffi::Enum)]
 pub enum TargetType {
@@ -172,7 +171,7 @@ impl ApiClient {
     pub async fn delete_post(&self, post_id: u64) -> Result<()> {
         let req =
             self.build_auth_request(reqwest::Method::DELETE, &format!("forum/posts/{}", post_id))?;
-        let resp = self.send(req).await?;
+        let _resp = self.send(req).await?;
         Ok(())
     }
 
@@ -295,7 +294,7 @@ impl ApiClient {
             reqwest::Method::DELETE,
             &format!("forum/comments/{}", comment_id),
         )?;
-        let resp = self.send(req).await?;
+        let _resp = self.send(req).await?;
         Ok(())
     }
 

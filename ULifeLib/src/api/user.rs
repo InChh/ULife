@@ -1,7 +1,7 @@
 use prost::Message;
 
 use crate::{
-    ApiClient,
+    api::ApiClient,
     error::{Error, Result},
     pb::{
         self,
@@ -35,7 +35,7 @@ impl ApiClient {
     pub async fn logout(&self) -> Result<()> {
         let method = reqwest::Method::POST;
         let input = LogoutRequest {};
-        let resp = self
+        let _resp = self
             .send(
                 self.build_auth_request(method, "auth/logout")?
                     .body(input.encode_to_vec()),
@@ -87,7 +87,7 @@ impl ApiClient {
     /// 已登录用户在知道当前密码的情况下修改密码
     /// 前端检查新密码的合法性：与旧密码不一致，密码非空，密码强度非过弱小
     pub async fn change_password(&self, old_password: String, new_password: String) -> Result<()> {
-        let resp = self
+        let _resp = self
             .send(
                 self.build_auth_request(reqwest::Method::POST, "auth/change-password")?
                     .body(

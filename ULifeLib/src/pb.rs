@@ -1,10 +1,9 @@
 pub mod common;
-pub mod test;
-pub mod user;
 pub mod course;
 pub mod forum;
 pub mod storage;
-
+pub mod test;
+pub mod user;
 
 impl user::User {
     // pub fn to_model(self) -> crate::model::user::User {

@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use dashmap::DashMap;
 use prost::Message;
 
-use crate::fs::{block_on_fs, default_fs, FsHandle};
+use crate::fs::FsHandle;
 use crate::{error::Result, pb::user::LoginData};
 
 #[derive(uniffi::Object)]
@@ -17,15 +17,14 @@ pub struct PersistenceManager {
 impl PersistenceManager {
     /// 创建 PersistenceManager 实例
     #[uniffi::constructor]
-    pub fn new(base_folder: String) -> Result<Self> {
-        Self::new_with_fs(base_folder, default_fs())
-    }
-
-    #[uniffi::constructor]
-    pub fn new_with_fs(base_folder: String, fs: FsHandle) -> Result<Self> {
-        block_on_fs(fs.create_dir_all(base_folder.clone()))?;
+    pub fn new(base_folder: String, fs: FsHandle) -> Result<Self> {
+        std::fs::create_dir_all(&base_folder)?;
         let key_to_file = DashMap::new();
-        Ok(PersistenceManager { base_folder, key_to_file, fs })
+        Ok(PersistenceManager {
+            base_folder,
+            key_to_file,
+            fs,
+        })
     }
 
     /// 保存当前用户信息到本地存储
@@ -33,8 +32,13 @@ impl PersistenceManager {
         let file_path = PathBuf::from(&self.base_folder).join("current_user");
         let mut buf = Vec::new();
         login_data.encode(&mut buf)?;
-        self.fs.write(file_path.to_string_lossy().to_string(), buf).await?;
-        self.key_to_file.insert("current_user".to_string(), file_path.to_string_lossy().to_string());
+        self.fs
+            .write(file_path.to_string_lossy().to_string(), buf)
+            .await?;
+        self.key_to_file.insert(
+            "current_user".to_string(),
+            file_path.to_string_lossy().to_string(),
+        );
         Ok(())
     }
 

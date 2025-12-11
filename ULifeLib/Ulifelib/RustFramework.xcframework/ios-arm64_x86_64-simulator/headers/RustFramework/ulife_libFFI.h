@@ -313,12 +313,7 @@ void uniffi_ulife_lib_fn_free_apiclient(uint64_t handle, RustCallStatus *_Nonnul
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_CONSTRUCTOR_APICLIENT_NEW
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_CONSTRUCTOR_APICLIENT_NEW
-uint64_t uniffi_ulife_lib_fn_constructor_apiclient_new(RustBuffer base_url, RustBuffer cache_folder, uint64_t cache_size, RustCallStatus *_Nonnull out_status
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_CONSTRUCTOR_APICLIENT_NEW_WITH_FS
-#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_CONSTRUCTOR_APICLIENT_NEW_WITH_FS
-uint64_t uniffi_ulife_lib_fn_constructor_apiclient_new_with_fs(RustBuffer base_url, RustBuffer cache_folder, uint64_t cache_size, uint64_t fs, RustCallStatus *_Nonnull out_status
+uint64_t uniffi_ulife_lib_fn_constructor_apiclient_new(RustBuffer base_url, RustBuffer cache_folder, uint64_t cache_size, uint64_t fs, RustCallStatus *_Nonnull out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_ADD_COMMENT_TO_POST
@@ -599,12 +594,7 @@ void uniffi_ulife_lib_fn_free_persistencemanager(uint64_t handle, RustCallStatus
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_CONSTRUCTOR_PERSISTENCEMANAGER_NEW
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_CONSTRUCTOR_PERSISTENCEMANAGER_NEW
-uint64_t uniffi_ulife_lib_fn_constructor_persistencemanager_new(RustBuffer base_folder, RustCallStatus *_Nonnull out_status
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_CONSTRUCTOR_PERSISTENCEMANAGER_NEW_WITH_FS
-#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_CONSTRUCTOR_PERSISTENCEMANAGER_NEW_WITH_FS
-uint64_t uniffi_ulife_lib_fn_constructor_persistencemanager_new_with_fs(RustBuffer base_folder, uint64_t fs, RustCallStatus *_Nonnull out_status
+uint64_t uniffi_ulife_lib_fn_constructor_persistencemanager_new(RustBuffer base_folder, uint64_t fs, RustCallStatus *_Nonnull out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_PERSISTENCEMANAGER_GET_CURRENT_USER
@@ -624,7 +614,7 @@ uint64_t uniffi_ulife_lib_fn_method_persistencemanager_save_current_user(uint64_
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_FUNC_INIT_PERSISTENCE_MANAGER
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_FUNC_INIT_PERSISTENCE_MANAGER
-void uniffi_ulife_lib_fn_func_init_persistence_manager(RustBuffer base_folder, RustCallStatus *_Nonnull out_status
+void uniffi_ulife_lib_fn_func_init_persistence_manager(RustBuffer base_folder, uint64_t fs, RustCallStatus *_Nonnull out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_FFI_ULIFE_LIB_RUSTBUFFER_ALLOC
@@ -1199,12 +1189,6 @@ uint16_t uniffi_ulife_lib_checksum_constructor_apiclient_new(void
     
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_CONSTRUCTOR_APICLIENT_NEW_WITH_FS
-#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_CONSTRUCTOR_APICLIENT_NEW_WITH_FS
-uint16_t uniffi_ulife_lib_checksum_constructor_apiclient_new_with_fs(void
-    
-);
-#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_CONSTRUCTOR_CREATEPOSTREQ_NEW
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_CONSTRUCTOR_CREATEPOSTREQ_NEW
 uint16_t uniffi_ulife_lib_checksum_constructor_createpostreq_new(void
@@ -1214,12 +1198,6 @@ uint16_t uniffi_ulife_lib_checksum_constructor_createpostreq_new(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_CONSTRUCTOR_PERSISTENCEMANAGER_NEW
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_CONSTRUCTOR_PERSISTENCEMANAGER_NEW
 uint16_t uniffi_ulife_lib_checksum_constructor_persistencemanager_new(void
-    
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_CONSTRUCTOR_PERSISTENCEMANAGER_NEW_WITH_FS
-#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_CONSTRUCTOR_PERSISTENCEMANAGER_NEW_WITH_FS
-uint16_t uniffi_ulife_lib_checksum_constructor_persistencemanager_new_with_fs(void
     
 );
 #endif

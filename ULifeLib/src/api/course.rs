@@ -1,14 +1,15 @@
 use prost::Message;
 
 use crate::{
-    ApiClient, CacheOptions,
+    CacheOptions,
+    api::ApiClient,
     error::Result,
     pb::{
         self,
         course::{
             AddScheduleItemsData, AddScheduleItemsRequest, GetPublicCoursesResponse,
-            GetScheduleRequest, GetScheduleResponse, GetSemestersData, GetSemestersRequest,
-            GetSemestersResponse, PublicCourse, ScheduleItem, ScheduleItemInput, Semester,
+            GetScheduleRequest, GetScheduleResponse, GetSemestersRequest,
+            GetSemestersResponse, PublicCourse, ScheduleItem, Semester,
             UpdateScheduleItemData, UpdateScheduleItemRequest, UpdateScheduleItemResponse,
         },
     },
@@ -137,13 +138,13 @@ impl ApiClient {
 
     /// 删除课程表项
     pub async fn delete_schedule_item(&self, item_id: i64) -> Result<()> {
-        let resp = self
+        let _resp = self
             .send(
                 self.build_auth_request(reqwest::Method::DELETE, "schedule")?
                     .query(&[("item_id", item_id)]),
             )
             .await?;
-        todo!()
+        Ok(())
     }
 
     /// 获取学期列表

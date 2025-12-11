@@ -1,4 +1,3 @@
-use std::path::PathBuf;
 use std::sync::Arc;
 
 use async_trait::async_trait;
@@ -15,7 +14,7 @@ pub trait FileSystem: Send + Sync {
     async fn write(&self, path: String, data: Vec<u8>) -> Result<()>;
     async fn read(&self, path: String) -> Result<Vec<u8>>;
     async fn remove_file(&self, path: String) -> Result<()>;
-    async fn rename(&self, from:String, to: String) -> Result<()>;
+    async fn rename(&self, from: String, to: String) -> Result<()>;
     async fn remove_dir_all(&self, path: String) -> Result<()>;
     fn read_blocking(&self, path: String) -> Result<Vec<u8>>;
 }
@@ -70,7 +69,7 @@ where
     F: std::future::Future<Output = Result<T>>,
 {
     if let Ok(handle) = Handle::try_current() {
-        handle.block_on(future)
+        tokio::task::block_in_place(|| handle.block_on(future))
     } else {
         tokio::runtime::Runtime::new()?.block_on(future)
     }
