@@ -1,5 +1,5 @@
-module ULifeLibFFI {
-    header "ULifeLibFFI.h"
+module ulife_libFFI {
+    header "ulife_libFFI.h"
     export *
     use "Darwin"
     use "_Builtin_stdbool"

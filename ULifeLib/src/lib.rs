@@ -1,37 +1,24 @@
+use once_cell::sync::OnceCell;
+
+use crate::{error::Result, fs::FsHandle, persistence::PersistenceManager};
+
+pub mod error;
+pub mod fs;
+pub mod hybrid_cache;
+pub mod pb;
+pub mod persistence;
+
+pub mod api;
+pub mod model;
+pub use hybrid_cache::{CacheOptions, HybridCache, HybridCacheConfig};
+
 uniffi::setup_scaffolding!();
 
-
-// You can annotate items with uniffi macros to make them available in your swift package.
-// You can export functions...
-#[uniffi::export]
-pub fn add(a: u64, b: u64) -> u64 {
-    a + b
-}
-
-// ... data structs without methods ...
-#[derive(uniffi::Record)]
-pub struct Example {
-    pub items: Vec<String>,
-    pub value: Option<f64>,
-}
-
-// ... classes with methods ...
-#[derive(uniffi::Object)]
-pub struct Greeter {
-    name: String,
-}
+static PERSISTENCE_MANAGER: OnceCell<PersistenceManager> = OnceCell::new();
 
 #[uniffi::export]
-impl Greeter {
-    // Constructors need to be annotated as such
-    #[uniffi::constructor]
-    pub fn new(name: String) -> Self {
-        Self { name }
-    }
-
-    pub fn greet(&self) -> String {
-        format!("Hello, {}!", self.name)
-    }
+pub fn init_persistence_manager(base_folder: String, fs: FsHandle) -> Result<()> {
+    let manager = PersistenceManager::new(base_folder, fs)?;
+    let _ = PERSISTENCE_MANAGER.set(manager);
+    Ok(())
 }
-
-// ... and much more! For more information about uniffi macros, read the UniFFI book: https://mozilla.github.io/uniffi-rs/proc_macro/index.html
