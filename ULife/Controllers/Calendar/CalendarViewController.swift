@@ -99,11 +99,25 @@ final class CalendarViewController: UIViewController, UITableViewDataSource, UIT
     }
     
     private func loadData(){
-        //let apiCourses = CalendarDataManager.shared.fetchPublicCoursesMock()
-        let apiCourses = CalendarDataManager.shared.fetchScheduleMock()
-        courses = apiCourses.map { $0.toUICourse(sectionSlots: sectionSlots)}
-        regroupWeekly()
-        tableView.reloadData()
+        // 先拿学期列表，取当前学期和当前周，再拉课表（此处用 mock，可切换 useMock = false 对接真实接口）
+        CalendarDataManager.shared.fetchSemesters(useMock: true) { [weak self] semesters in
+            guard let self = self else { return }
+            let current = semesters.first(where: { $0.isCurrent }) ?? semesters.first
+            let week = current?.currentWeek() ?? 1
+            let semesterId = Int(current?.id ?? 0)
+
+            CalendarDataManager.shared.fetchSchedule(useMock: true,
+                                                     semesterId: semesterId,
+                                                     week: week) { [weak self] items in
+                guard let self = self else { return }
+                self.courses = items.map { $0.toUICourse(sectionSlots: self.sectionSlots) }
+                self.regroupWeekly()
+                DispatchQueue.main.async {
+                    self.tableView.reloadData()
+                }
+            }
+        }
+
     }
     
     

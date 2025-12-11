@@ -6,15 +6,14 @@
 //
 
 import Foundation
+import UIKit
 
-/// 日历数据管理器（当前提供 mock，后续可替换为 Protobuf/网络）
 final class CalendarDataManager {
     static let shared = CalendarDataManager()
     private init() {}
-
-
-    /// 获取全校课程（mock）
-    func fetchPublicCoursesMock() -> [PublicCourse] {
+    
+    /// mock 全校课程
+    private func mockPublicCourses() -> [PublicCourse] {
         return [
             PublicCourse(courseId: 1, 
                          courseName: "高等数学（上）",
@@ -79,7 +78,8 @@ final class CalendarDataManager {
         ]
     }
     
-    func fetchScheduleMock() -> [ScheduleItem] {
+    // mock 学生课表
+    private func mockSchedule(week: Int) -> [ScheduleItem] {
             return [
                 ScheduleItem(
                     id: 1,
@@ -102,7 +102,7 @@ final class CalendarDataManager {
                     courseName: "大学英语 II",
                     teacherName: "李老师",
                     location: "教二-201",
-                    dayOfWeek: 1,
+                    dayOfWeek: 2,
                     startSection: 1,
                     endSection: 2,
                     weeks: Array(1...16),
@@ -111,8 +111,62 @@ final class CalendarDataManager {
                     description: "必修课，英语综合训练",
                     colorHex: "#F5A623",
                     isCustom: false)
-            ]
+        ]
+    }
+    
+    // mock 学期信息
+    private func mockSemesters() -> [Semester] {
+        return [
+            Semester(
+                id: 1,
+                name: "2024-2025 第一学期",
+                startDate: "2024-09-02",
+                endDate: "2025-01-10",
+                isCurrent: true
+            ),
+            Semester(
+                id: 2,
+                name: "2024-2025 第二学期",
+                startDate: "2025-02-24",
+                endDate: "2025-07-05",
+                isCurrent: false
+            )
+        ]
+    }
+    
+    // MARK: 公共课库
+    func fetchPublicCourses(useMock: Bool = true, completion: @escaping ([PublicCourse]) -> Void) {
+        if useMock {
+            completion(mockPublicCourses())
+        } else {
+            // TODO: 替换为真实接口调用
+            completion([])
         }
+    }
+    
+    // MARK: 个人课表
+    func fetchSchedule(useMock: Bool = true, 
+                       semesterId: Int = 0,
+                       week: Int = 1,
+                       completion: @escaping ([ScheduleItem]) -> Void) {
+        if useMock {
+            completion(mockSchedule(week: week))
+        } else {
+            // TODO: 替换为真实接口调用
+            completion([])
+        }
+    }
+    
+    // MARK: 学期
+    func fetchSemesters(useMock: Bool = true, completion: @escaping ([Semester]) -> Void) {
+        if useMock {
+            completion(mockSemesters())
+        } else {
+            // TODO: 替换为真实接口调用
+            completion([])
+        }
+    }
+    
 }
 
 
