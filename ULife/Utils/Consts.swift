@@ -6,3 +6,13 @@
 //
 
 import Foundation
+
+enum BoardType: String {
+    case staticType = "static"
+    case dynamicType = "dynamic"
+}
+
+enum ReportTargetType : String {
+    case post = "post"
+    case comment = "comment"
+}

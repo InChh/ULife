@@ -6,9 +6,9 @@
 //
 
 import UIKit
+import UlifeLib
 
 class LoginViewController: UIViewController {
-    
     // MARK: - Properties
     
     private let loginView = LoginView()
@@ -74,20 +74,22 @@ class LoginViewController: UIViewController {
             return
         }
         
-        // 模拟登录验证
-        if MockUserData.validateLogin(studentId: credentials.studentId, password: credentials.password) {
-            // 登录成功
-            print("登录成功，学号: \(credentials.studentId)")
-            
-            // 保存登录状态
-            UserDefaults.standard.set(true, forKey: "isLoggedIn")
-            UserDefaults.standard.set(credentials.studentId, forKey: "currentStudentId")
-            
-            // 切换到主界面
-            navigateToMainApp()
-        } else {
-            // 登录失败
-            showAlert(title: "登录失败", message: "学号或密码错误")
+        Task {
+            do {
+                let data = try await NetworkManager.userClient.login(studentId: credentials.studentId, password: credentials.password)
+                try await getPersistenceManager().saveCurrentUser(loginData: data)
+                
+                // 登录成功
+                // 保存登录状态
+                UserDefaults.standard.set(true, forKey: "isLoggedIn")
+                UserDefaults.standard.set(credentials.studentId, forKey: "currentStudentId")
+                
+                // 切换到主界面
+                navigateToMainApp()
+            } catch {
+                showAlert(title: "登录失败", message: "学号或密码错误")
+                print("登录失败: \(error)")
+            }
         }
     }
     
@@ -120,6 +122,7 @@ class LoginViewController: UIViewController {
 }
 
 // MARK: - UITextFieldDelegate
+
 extension LoginViewController: UITextFieldDelegate {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         if textField == loginView.studentIdTextField {

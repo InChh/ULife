@@ -6,26 +6,10 @@
 //
 
 import Foundation
+import UlifeLib
 
-/// 学期模型，对应 proto 的 Semester
-struct Semester: Codable {
-    let id: Int64
-    let name: String
-    let startDate: String   // yyyy-MM-dd
-    let endDate: String
-    let isCurrent: Bool
-
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case name
-        case startDate = "start_date"
-        case endDate   = "end_date"
-        case isCurrent = "is_current"
-    }
-
-
-    /// 根据 start_date 计算当前周次（最少返回 1）
+extension Semester {
+/// 根据 start_date 计算当前周次（最少返回 1）
     func currentWeek(now: Date = Date(), calendar: Calendar = .current) -> Int? {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"

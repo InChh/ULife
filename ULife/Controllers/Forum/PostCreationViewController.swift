@@ -6,6 +6,7 @@
 //  发布帖子
 
 import UIKit
+import UlifeLib
 
 class PostCreationViewController: UIViewController {
 
@@ -82,14 +83,22 @@ class PostCreationViewController: UIViewController {
         let category = categorys[CreateselectedCategoryIndex]
         let tags = customTags
         
-        let createPostRequest = CreatePostRequest(boardid: "\(category.id ?? "")", content: content, media: nil, tags: tags, title: title)
+        Task {
+            do {
+                let createPostRequest = CreatePostRequest(boardId: category.id, title: title, content: content, tags: tags, media: [])
+               
+                let post = try await NetworkManager.forumClient.createPost(input: createPostRequest)
+                
+                navigationController?.popViewController(animated: true)
+                Toast.show("发布成功", style: .normal, duration: 1.0)
+                
+                print(post)
+            } catch {
+                Toast.show("发布失败，请检查网络连接或稍后重试")
+                print("发布帖子失败: \(error)")
+            }
+        }
         
-        let post = ForumRequest().CreatePost(request: createPostRequest)
-        
-        navigationController?.popViewController(animated: true)
-        Toast.show("发布成功", style: .normal, duration: 1.0)
-        
-        print(post)
     }
     
     // 添加标签

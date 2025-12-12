@@ -26,7 +26,7 @@ message PublicCourse {
   int32 end_section = 8;
   repeated int32 weeks_range = 9;
   string type = 10;  // "compulsory" 或 "elective"
-  optional int32 credits = 11;
+  int32 credits = 11;
   optional string description = 12;
 }
 

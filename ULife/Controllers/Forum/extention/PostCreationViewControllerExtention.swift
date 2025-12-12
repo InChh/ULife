@@ -5,6 +5,7 @@
 //  Created by 骑鱼的猫 on 2025/12/8.
 //
 import UIKit
+import UlifeLib
 
 // 文本编辑的代理
 extension PostCreationViewController: UITextFieldDelegate, UITextViewDelegate {

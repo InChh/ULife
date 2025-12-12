@@ -6,16 +6,17 @@
 //
 
 import Foundation
+import UlifeLib
 import UIKit
 
 final class CalendarDataManager {
     static let shared = CalendarDataManager()
     private init() {}
-    
+
     /// mock 全校课程
     private func mockPublicCourses() -> [PublicCourse] {
         return [
-            PublicCourse(courseId: 1, 
+            PublicCourse(id: 1,
                          courseName: "高等数学（上）",
                          teacherName: "王教授",
                          teacherId: 1001,
@@ -23,11 +24,11 @@ final class CalendarDataManager {
                          dayOfWeek: 1,
                          startSection: 1,
                          endSection: 2,
-                         weeksRange: Array(1...16),
-                         type: .compulsory,
+                         weeksRange: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
+                         type: "compulsory",
                          credits: 4,
                          description: "必修课，微积分基础"),
-            PublicCourse(courseId: 2, 
+            PublicCourse(id: 2,
                          courseName: "大学英语 II",
                          teacherName: "李老师",
                          teacherId: 1002,
@@ -35,11 +36,11 @@ final class CalendarDataManager {
                          dayOfWeek: 1,
                          startSection: 3,
                          endSection: 4,
-                         weeksRange: Array(1...16),
-                         type: .compulsory,
+                         weeksRange: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
+                         type: "compulsory",
                          credits: 3,
                          description: "必修课，英语综合训练"),
-            PublicCourse(courseId: 3, 
+            PublicCourse(id: 3,
                          courseName: "计算机网络",
                          teacherName: "赵老师",
                          teacherId: 1003,
@@ -47,11 +48,11 @@ final class CalendarDataManager {
                          dayOfWeek: 3,
                          startSection: 5,
                          endSection: 6,
-                         weeksRange: Array(1...16),
-                         type: .elective,
+                         weeksRange: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
+                         type: "elective",
                          credits: 3,
                          description: "选修课，网络基础与协议"),
-            PublicCourse(courseId: 4, 
+            PublicCourse(id: 4,
                          courseName: "线性代数",
                          teacherName: "张老师",
                          teacherId: 1004,
@@ -59,11 +60,11 @@ final class CalendarDataManager {
                          dayOfWeek: 4,
                          startSection: 1,
                          endSection: 2,
-                         weeksRange: Array(1...16),
-                         type: .compulsory,
+                         weeksRange: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
+                         type: "compulsory",
                          credits: 3,
                          description: "必修课，矩阵与向量空间"),
-            PublicCourse(courseId: 5, 
+            PublicCourse(id: 5,
                          courseName: "体育（羽毛球）",
                          teacherName: "李教练",
                          teacherId: 1005,
@@ -71,8 +72,8 @@ final class CalendarDataManager {
                          dayOfWeek: 5,
                          startSection: 3,
                          endSection: 4,
-                         weeksRange: Array(1...16),
-                         type: .elective,
+                         weeksRange: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
+                         type: "elective",
                          credits: 1,
                          description: "选修课，体育锻炼")
         ]
@@ -91,7 +92,7 @@ final class CalendarDataManager {
                     startSection: 3,
                     endSection: 4,
                     weeks: Array(1...16),
-                    type: .compulsory,
+                    type: "compulsory",
                     credits: 4,
                     description: "必修课，微积分基础",
                     colorHex: "#4A90E2",
@@ -106,14 +107,14 @@ final class CalendarDataManager {
                     startSection: 1,
                     endSection: 2,
                     weeks: Array(1...16),
-                    type: .compulsory,
+                    type: "compulsory",
                     credits: 3,
                     description: "必修课，英语综合训练",
                     colorHex: "#F5A623",
                     isCustom: false)
         ]
     }
-    
+
     // mock 学期信息
     private func mockSemesters() -> [Semester] {
         return [
@@ -133,41 +134,61 @@ final class CalendarDataManager {
             )
         ]
     }
-    
+
     // MARK: 公共课库
     func fetchPublicCourses(useMock: Bool = true, completion: @escaping ([PublicCourse]) -> Void) {
         if useMock {
             completion(mockPublicCourses())
         } else {
-            // TODO: 替换为真实接口调用
-            completion([])
+            Task {
+                do {
+                    let params = GetPublicCoursesRequest(semesterId: nil, name: nil, teacher: nil, page: 1, pageSize: Int32.max)
+                    let courses = try await NetworkManager.courseClient.getPublicCourses(queryParams: params)
+                    completion(courses)
+                } catch {
+                    print("获取公共课库失败: \(error)")
+                    completion([])
+                }
+            }
         }
     }
-    
+
     // MARK: 个人课表
-    func fetchSchedule(useMock: Bool = true, 
+    func fetchSchedule(useMock: Bool = true,
                        semesterId: Int = 0,
                        week: Int = 1,
                        completion: @escaping ([ScheduleItem]) -> Void) {
         if useMock {
             completion(mockSchedule(week: week))
         } else {
-            // TODO: 替换为真实接口调用
-            completion([])
+            Task {
+                do {
+                    let scheduleItems = try await NetworkManager.courseClient.listScheduleItems(semesterId: Int64(semesterId), week: Int32(week), isCached: false)
+                    completion(scheduleItems)
+                } catch {
+                    print("获取个人课表失败: \(error)")
+                    completion([])
+                }
+            }
         }
     }
-    
+
     // MARK: 学期
     func fetchSemesters(useMock: Bool = true, completion: @escaping ([Semester]) -> Void) {
         if useMock {
             completion(mockSemesters())
         } else {
-            // TODO: 替换为真实接口调用
-            completion([])
+            
+            Task {
+                do {
+                    let semesters = try await NetworkManager.courseClient.listSemesters(isCached: false)
+                    completion(semesters)
+                } catch {
+                    print("获取学期列表失败: \(error)")
+                    completion([])
+                }
+            }
         }
     }
-    
+
 }
-
-
-

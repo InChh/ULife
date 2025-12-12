@@ -1,16 +1,14 @@
-use prost::Message;
-
 use crate::api::ApiClient;
 use crate::error::Result;
 use crate::pb::storage::{UploadFileResponse, UploadResult};
 
-#[uniffi::export]
+#[uniffi::export(async_runtime = "tokio")]
 impl ApiClient {
     /// 下载文件
     #[uniffi::method(default(is_cached = true))]
     pub async fn download_file(&self, url: String, is_cached: bool) -> Result<Vec<u8>> {
         if is_cached && let Some(cached_data) = self.cache.get(&url).await? {
-            return Ok(cached_data);
+            return Ok(cached_data.value().clone());
         }
 
         let response = self.client.get(&url).send().await?;
@@ -20,9 +18,7 @@ impl ApiClient {
 
         let data = response.bytes().await?.to_vec();
 
-        self.cache
-            .insert(url.clone(), data.clone(), crate::CacheOptions::default())
-            .await?;
+        self.cache.insert(url.clone(), data.clone());
 
         Ok(data)
     }
@@ -46,7 +42,7 @@ impl ApiClient {
 
         let resp = self.send(req).await?;
         let body_bytes = resp.bytes().await?;
-        let upload_resp = UploadFileResponse::decode(body_bytes.as_ref())?;
+        let upload_resp: UploadFileResponse = self.decode_body(body_bytes.as_ref())?;
         upload_resp
             .data
             .ok_or(crate::error::Error::ResponseDataMissing)

@@ -8,6 +8,7 @@
 // View/CommentCell.swift
 import UIKit
 import Kingfisher
+import UlifeLib
 
 class CommentCell: UITableViewCell {
 
@@ -227,8 +228,10 @@ class CommentCell: UITableViewCell {
     func configure(
         with comment: Comment
     ) {
-        authorLabel.text = comment.author.name
-        timeLabel.text = comment.createdAt.timeAgoString()
+        let formatter = ISO8601DateFormatter()
+        let createdAtDate = formatter.date(from: comment.createdAt) ?? Date()
+        authorLabel.text = comment.author?.name
+        timeLabel.text = createdAtDate.timeAgoString()
         contentLabel.text = comment.content
         
         
@@ -236,7 +239,7 @@ class CommentCell: UITableViewCell {
         // 加载提示器,加载完成前转圈动画
         avatarImageView.kf.indicatorType = .activity
         avatarImageView.kf.setImage(
-            with: URL(string: comment.author.avatarurl),
+            with: URL(string: comment.author?.avatarUrl ?? ""),
             placeholder: UIImage(named: "avatar_placeholder"),
             options: [
                
@@ -257,14 +260,12 @@ class CommentCell: UITableViewCell {
         
 
         //根据是否点赞更新 button 图标
-        // 顶层评论点赞显示：基础数量 + 是否点赞
-        let baseCount = comment.likeCount
-        let displayCount = baseCount + (comment.isLiked ? 1 : 0)
+        let displayCount = comment.stats?.likeCount ?? 0
         // 重要：无论是否为 0，都要重置标题，避免 cell 复用时显示旧的数字
         let title = displayCount == 0 ? "" : "\(displayCount)"
         likeButton.setTitle(title, for: .normal)
-        let color: UIColor = comment.isLiked ? .systemRed : .secondaryLabel
-        let imageName = comment.isLiked ? "heart.fill" : "heart"
+        let color: UIColor = comment.userInteraction?.isLiked == true ? .systemRed : .secondaryLabel
+        let imageName = comment.userInteraction?.isLiked == true ? "heart.fill" : "heart"
         likeButton.setImage(UIImage(systemName: imageName), for: .normal)
         likeButton.tintColor = color
         likeButton.setTitleColor(color, for: .normal)
@@ -273,7 +274,7 @@ class CommentCell: UITableViewCell {
         let newReplies = comments.filter { item in
             // 检查 parentid 是否存在 (非 nil)
             // 如果存在，检查其值是否等于目标 ID
-            return item.parentid == comment.id
+            return item.parentId == comment.id
         }
         
         self.replies = newReplies

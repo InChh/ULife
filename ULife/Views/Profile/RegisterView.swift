@@ -6,6 +6,7 @@
 //  注册界面视图
 
 import UIKit
+import UlifeLib
 
 class RegisterView: UIView {
     
@@ -215,9 +216,9 @@ class RegisterView: UIView {
             name: values[3],
             college: values[4],
             major: values[5],
-            grade: values[6],
-            className: values[7],
-            email: values[8],
+//            grade: values[6],
+//            className: values[7],
+//            email: values[8],
             phone: values[9]
         )
     }
