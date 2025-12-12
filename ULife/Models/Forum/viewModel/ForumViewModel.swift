@@ -4,6 +4,7 @@
 //
 //  Created by 骑鱼的猫 on 2025/12/8.
 //
+import UlifeLib
 
 var MainselectedCategoryIndex: Int = -1
 

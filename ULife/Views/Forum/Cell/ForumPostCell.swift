@@ -7,6 +7,7 @@
 
 import Kingfisher
 import UIKit
+import UlifeLib
 
 class ForumPostCell: UITableViewCell {
 
@@ -233,10 +234,12 @@ class ForumPostCell: UITableViewCell {
 
     /// Configure Data
     func configure(with post: PostLite) {
+        let createdAtDate = ISO8601DateFormatter().date(from: post.createdAt) ?? Date()
+        
         titleLabel.text = post.title
         contentLabel.text = post.summary
-        authorLabel.text = post.author.name
-        timeLabel.text = post.createdAt.timeAgoString()
+        authorLabel.text = post.author?.name
+        timeLabel.text = createdAtDate.timeAgoString()
 
         // 加载提示器,加载完成前转圈动画
         avatarImageView.kf.indicatorType = .activity
@@ -245,7 +248,7 @@ class ForumPostCell: UITableViewCell {
 //        let processor = DownsamplingImageProcessor(size: avatarImageView.bounds.size)
         
         avatarImageView.kf.setImage(
-            with: URL(string: post.author.avatarurl),
+            with: URL(string: post.author?.avatarUrl ?? ""),
             placeholder: UIImage(named: "avatar_placeholder"),
             options: [
                 //.processor(processor),
@@ -265,7 +268,7 @@ class ForumPostCell: UITableViewCell {
             }
         }
 
-        CategoryLabel.text = " \(post.boardName ?? "其他") "
-        ViewCountLabel.text = " \(post.stats.viewCount)人围观 "
+        CategoryLabel.text = " \(post.boardName) "
+        ViewCountLabel.text = " \(post.stats?.viewCount ?? 0)人围观 "
     }
 }

@@ -21,17 +21,6 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
-				Managers/Activity/.gitkeep,
-				Managers/Calendar/.gitkeep,
-				Managers/Forum/.gitkeep,
-				Managers/Profile/.gitkeep,
-				Models/Activity/.gitkeep,
-				Models/Calendar/.gitkeep,
-				Models/Forum/.gitkeep,
-				Models/Profile/.gitkeep,
-				Views/Activity/.gitkeep,
-				Views/Forum/.gitkeep,
-				Views/Profile/.gitkeep,
 			);
 			target = DC5647242EDD20A700B23650 /* ULife */;
 		};

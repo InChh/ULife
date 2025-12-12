@@ -7,6 +7,7 @@
 
 import UIKit
 import Kingfisher
+import UlifeLib
 
 class ReplyView: UIView {
     
@@ -168,7 +169,7 @@ class ReplyView: UIView {
     }
 
     func configure(with reply: Comment) {
-        nameLabel.text = reply.author.name
+        nameLabel.text = reply.author?.name
         
         if let to = reply.replyTo {
             replyToLabel.text = "回复 \(to.name)"
@@ -187,7 +188,7 @@ class ReplyView: UIView {
 //        let processor = DownsamplingImageProcessor(size: avatarImageView.bounds.size)
         
         avatarImageView.kf.setImage(
-            with: URL(string: reply.author.avatarurl),
+            with: URL(string: reply.author?.avatarUrl ?? ""),
             placeholder: UIImage(named: "avatar_placeholder"),
             options: [
                 //.processor(processor),
@@ -209,13 +210,12 @@ class ReplyView: UIView {
 
         
         // 根据点赞状态更新 UI
-        let baseCount = reply.likeCount
-        let displayCount = baseCount + (reply.isLiked ? 1 : 0)
+        let displayCount = reply.stats?.likeCount ?? 0
         // 点赞数为 0 时不显示数字，否则显示具体数量
         let title = displayCount == 0 ? "" : "\(displayCount)"
         likeButton.setTitle(title, for: .normal)
-        let color: UIColor = reply.isLiked ? .systemRed : .secondaryLabel
-        let imageName = reply.isLiked ? "heart.fill" : "heart"
+        let color: UIColor = reply.userInteraction?.isLiked == true ? .systemRed : .secondaryLabel
+        let imageName = reply.userInteraction?.isLiked == true ? "heart.fill" : "heart"
         likeButton.setImage(UIImage(systemName: imageName), for: .normal)
         likeButton.tintColor = color
         likeButton.setTitleColor(color, for: .normal)

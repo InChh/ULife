@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import UlifeLib
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
@@ -13,18 +14,31 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
             guard let windowScene = (scene as? UIWindowScene) else { return }
             window = UIWindow(windowScene: windowScene)
+            do {
+                // 初始化持久化管理器
+                try initPersistenceManager(baseFolder: getDocumentsDirectory().path(), fs: SwiftFileSystem())
+            } catch {
+                print("Error initializing persistence manager: \(error)")
+                exit(1)
+                
+            }
             
-            // 检查登录状态
-            let isLoggedIn = UserDefaults.standard.bool(forKey: "isLoggedIn")
-            
-            if isLoggedIn {
-                // 已登录，进入主页面
-                window?.rootViewController = UIHelper.createTabViewController()
-            } else {
-                // 未登录，进入登录页面
-                let loginVC = LoginViewController()
-                let navController = UINavigationController(rootViewController: loginVC)
-                window?.rootViewController = navController
+            do {
+                // 检查登录状态
+                let isLoggedIn = try getPersistenceManager().getCurrentUserToken() != nil
+                
+                if isLoggedIn {
+                    // 已登录，进入主页面
+                    window?.rootViewController = UIHelper.createTabViewController()
+                } else {
+                    // 未登录，进入登录页面
+                    let loginVC = LoginViewController()
+                    let navController = UINavigationController(rootViewController: loginVC)
+                    window?.rootViewController = navController
+                }
+            } catch {
+                print("Error checking login status: \(error)")
+                exit(1)
             }
             
             window?.makeKeyAndVisible()

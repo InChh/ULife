@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import UlifeLib
 
 class ActivityViewController: UIViewController {
 
@@ -17,8 +18,8 @@ class ActivityViewController: UIViewController {
         return control
     }()
 
-    private var listItems: [ActivityListItem] = []
-    private var pagination: ActivityPagination?
+    private var listItems: [ActivitySummary] = []
+    private var pagination: Pagination?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -63,10 +64,17 @@ class ActivityViewController: UIViewController {
     private func loadData() {
         let keyword = searchController.searchBar.text?.trimmingCharacters(in: .whitespacesAndNewlines)
         let type = selectedType()
-        let result = ActivityDataManager.shared.fetchActivities(keyword: keyword, activityType: type, page: 1, pageSize: 20)
-        listItems = result.list
-        pagination = result.pagination
-        tableView.reloadData()
+        Task {
+            do {
+                let input = GetActivitiesRequest(keyword: keyword, activityType: type?.rawValue, page: 1, pageSize: 20)
+                let result = try await NetworkManager.client.getActivities(input: input)
+                listItems = result.list
+                pagination = result.pagination
+                tableView.reloadData()
+            } catch {
+                
+            }
+        }
     }
 
     private func selectedType() -> ActivityType? {
@@ -101,9 +109,16 @@ extension ActivityViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         let item = listItems[indexPath.row]
-        guard let detail = ActivityDataManager.shared.getActivityDetail(activityId: item.id) else { return }
-        let detailVC = ActivityDetailViewController(activity: detail)
-        navigationController?.pushViewController(detailVC, animated: true)
+        Task{
+            do {
+                let detail = try await NetworkManager.client.getActivityDetails(activityId: item.id)
+                let detailVC = ActivityDetailViewController(activity: detail)
+                navigationController?.pushViewController(detailVC, animated: true)
+            } catch {
+                print("获取活动详情失败: \(error)")
+                Toast.show("获取活动详情失败，请稍后重试", style: .error)
+            }
+        }
     }
 }
 
@@ -161,13 +176,14 @@ final class ActivityCell: UITableViewCell {
         ])
     }
 
-    func configure(with item: ActivityListItem) {
+    func configure(with item: ActivitySummary) {
         titleLabel.text = item.title
         subtitleLabel.text = "\(item.location)"
 
+        let startTimeDate = ISO8601DateFormatter().date(from: item.startTime) ?? Date()
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "M月d日 HH:mm"
-        let timeText = dateFormatter.string(from: item.startTime)
+        let timeText = dateFormatter.string(from: startTimeDate)
         metaLabel.text = "\(timeText) · \(item.currentEnrollments)/\(item.quota) 人"
     }
 }

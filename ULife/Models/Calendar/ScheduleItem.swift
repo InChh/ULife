@@ -7,45 +7,46 @@
 
 import Foundation
 import UIKit
+import UlifeLib
 
-struct ScheduleItem: Codable {
-    let id: Int64
-    let sourceId: Int64?          // 对应公共课的 source_id，可空
-    let courseName: String        // 课程名称
-    let teacherName: String?      // 授课老师
-    let location: String?         // 上课地点
-    let dayOfWeek: Int            // 1-7：周一到周日
-    let startSection: Int         // 起始节次
-    let endSection: Int           // 结束节次
-    let weeks: [Int]              // 上课周次列表
-    let type: CourseType?         // 课程类型：必修/选修
-    let credits: Int?             // 学分
-    let description: String?      // 课程描述
-    let colorHex: String          // 颜色 #RRGGBB
-    let isCustom: Bool            // 是否自定义日程
-
-    enum CourseType: String, Codable {
-        case compulsory
-        case elective
-    }
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case sourceId     = "source_id"
-        case courseName   = "course_name"
-        case teacherName  = "teacher_name"
-        case location
-        case dayOfWeek    = "day_of_week"
-        case startSection = "start_section"
-        case endSection   = "end_section"
-        case weeks
-        case type
-        case credits
-        case description
-        case colorHex     = "color_hex"
-        case isCustom     = "is_custom"
-    }
-}
+//struct ScheduleItem: Codable {
+//    let id: Int64
+//    let sourceId: Int64?          // 对应公共课的 source_id，可空
+//    let courseName: String        // 课程名称
+//    let teacherName: String?      // 授课老师
+//    let location: String?         // 上课地点
+//    let dayOfWeek: Int            // 1-7：周一到周日
+//    let startSection: Int         // 起始节次
+//    let endSection: Int           // 结束节次
+//    let weeks: [Int]              // 上课周次列表
+//    let type: CourseType?         // 课程类型：必修/选修
+//    let credits: Int?             // 学分
+//    let description: String?      // 课程描述
+//    let colorHex: String          // 颜色 #RRGGBB
+//    let isCustom: Bool            // 是否自定义日程
+//
+//    enum CourseType: String, Codable {
+//        case compulsory
+//        case elective
+//    }
+//
+//    enum CodingKeys: String, CodingKey {
+//        case id
+//        case sourceId     = "source_id"
+//        case courseName   = "course_name"
+//        case teacherName  = "teacher_name"
+//        case location
+//        case dayOfWeek    = "day_of_week"
+//        case startSection = "start_section"
+//        case endSection   = "end_section"
+//        case weeks
+//        case type
+//        case credits
+//        case description
+//        case colorHex     = "color_hex"
+//        case isCustom     = "is_custom"
+//    }
+//}
 
 extension ScheduleItem {
     /// 将课表项（包括自定义）转换为 UI 层的通用 Course
@@ -53,11 +54,11 @@ extension ScheduleItem {
     ///   - sectionSlots: 节次对应的时间片，用于生成 timeRange
     ///   - fallbackColor: 颜色解析失败时的兜底色
     func toUICourse(sectionSlots: [Int: SectionSlot], fallbackColor: UIColor = .systemBlue) -> Course {
-        let startText = sectionSlots[startSection]?.start ?? "第\(startSection)节"
-        let endText = sectionSlots[endSection]?.end ?? "第\(endSection)节"
+        let startText = sectionSlots[Int(startSection)]?.start ?? "第\(startSection)节"
+        let endText = sectionSlots[Int(endSection)]?.end ?? "第\(endSection)节"
         let timeRange = "\(startText) - \(endText)"
         let uiColor = UIColor(hexString: colorHex) ?? fallbackColor
-        let typeDisplay = type == .compulsory ? "必修" : "选修"
+        let typeDisplay = type == "compulsory" ? "必修" : "选修"
 
 
         return Course(
@@ -68,9 +69,9 @@ extension ScheduleItem {
             endSection: endSection,
             location: location ?? "",
             teacher: teacherName ?? "",
-            dayOfWeek: dayOfWeek,
+            dayOfWeek: Int(dayOfWeek),
             typeDisplay: typeDisplay,
-            credits: credits ?? 0,
+            credits: credits.map { Int($0) } ?? 0,
             descriptionText: description ?? "",
             color: uiColor
         )

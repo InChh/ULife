@@ -5,6 +5,7 @@
 //  Created by 骑鱼的猫 on 2025/12/8.
 //  ForumViewController扩展
 import UIKit
+import UlifeLib
 
 // 扩展实现 TableView 代理
 extension ForumViewController: UITableViewDelegate, UITableViewDataSource {
@@ -39,14 +40,21 @@ extension ForumViewController: UITableViewDelegate, UITableViewDataSource {
         let postid = posts[indexPath.row].id
       
         
-        let forumDetailController = ForumDetailViewController(
-            post: ForumRequest().GetPostDetail(id: postid)
-        )
-        // 导航到详情页
-        navigationController?.pushViewController(
-            forumDetailController,
-            animated: true
-        )
+        Task {
+            do {
+                let post = try await NetworkManager.client.getPost(postId: postid)
+                let forumDetailController = ForumDetailViewController(
+                    post: post
+                )
+                // 导航到详情页
+                navigationController?.pushViewController(
+                    forumDetailController,
+                    animated: true
+                )
+            } catch {
+                Toast.show("获取帖子详情失败", style: .error)
+            }
+        }
     }
     
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {

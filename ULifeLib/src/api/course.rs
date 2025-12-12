@@ -8,9 +8,9 @@ use crate::{
         self,
         course::{
             AddScheduleItemsData, AddScheduleItemsRequest, GetPublicCoursesResponse,
-            GetScheduleRequest, GetScheduleResponse, GetSemestersRequest,
-            GetSemestersResponse, PublicCourse, ScheduleItem, Semester,
-            UpdateScheduleItemData, UpdateScheduleItemRequest, UpdateScheduleItemResponse,
+            GetScheduleRequest, GetScheduleResponse, GetSemestersRequest, GetSemestersResponse,
+            PublicCourse, ScheduleItem, Semester, UpdateScheduleItemData,
+            UpdateScheduleItemRequest, UpdateScheduleItemResponse,
         },
     },
 };

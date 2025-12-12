@@ -21,6 +21,8 @@ pub enum Error {
     UnknownError,
     #[error("HTTP error with status: {0}")]
     HttpError(reqwest::StatusCode),
+    #[error("{1}")]
+    LogicError(i32, String),
     #[error("Unauthorized access")]
     UnAuthorized,
 }

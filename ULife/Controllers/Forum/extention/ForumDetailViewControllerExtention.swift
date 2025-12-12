@@ -6,6 +6,7 @@
 //  帖子详情页扩展
 
 import UIKit
+import UlifeLib
 
 extension ForumDetailViewController: UITableViewDelegate, UITableViewDataSource
 {
@@ -63,10 +64,10 @@ extension ForumDetailViewController: UITableViewDelegate, UITableViewDataSource
             }
         } else {
             // 点击某一条回复：回复这条回复的作者
-            cell.onReplyTap = { [weak self] reply in
+            cell.onReplyTap = { [weak self] (reply: Comment) in
                 self?.showReplyInput(
                     commentIndex: indexPath.row,
-                    replyingToName: reply.author.name
+                    replyingToName: reply.author?.name
                 )
             }
         }

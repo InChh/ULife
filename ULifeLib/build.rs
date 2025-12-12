@@ -17,7 +17,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 生成
     let mut config = prost_build::Config::new();
     config.out_dir(&out_dir); // 默认是 OUT_DIR，这里改为自定义目录
-    config.type_attribute(".", "#[derive(uniffi::Record)]");
+    // Record 只用于 message，Enum 用于 proto 枚举
+    config.message_attribute(
+        ".",
+        "#[derive(uniffi::Record, serde::Serialize, serde::Deserialize)]",
+    );
+    config.enum_attribute(
+        ".",
+        "#[derive(uniffi::Enum, serde::Serialize, serde::Deserialize)]",
+    );
 
     config
         .compile_protos(&protos, &[proto_root])

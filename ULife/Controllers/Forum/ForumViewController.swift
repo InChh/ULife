@@ -6,6 +6,7 @@
 //  论坛主页 UI
 
 import UIKit
+import UlifeLib
 
 class ForumViewController: UIViewController {
     
@@ -114,17 +115,22 @@ class ForumViewController: UIViewController {
             mainView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
         ])
     }
-    
+
     // 装载原始数据
     private func loadData() {
-        // 获取板块数组
-        categorys = ForumRequest().getBoard()
-       
-        refresh()
+        Task {
+            do {
+                // 获取板块数组
+                categorys = try await NetworkManager.client.listBoards()
+                refresh()
+            } catch {
+                Toast.show("获取可用板块失败，请检查网络连接或稍后重试")
+                print("获取板块失败: \(error)")
+            }
+        }
     }
 
-
-    //绑定事件
+    // 绑定事件
     private func setupBindings() {
         //发帖按钮
         mainView.createPostButton.addAction(
@@ -217,50 +223,58 @@ class ForumViewController: UIViewController {
         applyFilterAndSort(isFresh: true)
     }
     
-    ///搜索 并更新 tableView
+    /// 搜索 并更新 tableView
     // 根据当前排序方式 / 标签 / 搜索关键字更新列表
-    func applyFilterAndSort(isFresh: Bool){
+    func applyFilterAndSort(isFresh: Bool) {
         guard !pageState.isLoading else { return }
         pageState.isLoading = true
-        
-        
+
         // 标签
         var selectedCategoryID: String? = nil
         if MainselectedCategoryIndex != -1 {
             selectedCategoryID = categorys[MainselectedCategoryIndex].id
         }
-        
-        var key: String? = nil
+
+        var keywords: [String]? = nil
         // 关键词
         if let keyword = searchTextField.text?
             .trimmingCharacters(in: .whitespacesAndNewlines),
-           !keyword.isEmpty
+            !keyword.isEmpty
         {
-            key = keyword
+            keywords = [keyword]
         }
-        
-        
-        let request = GetPostListRequest(boardId: selectedCategoryID, filter: Filter.all, keyword: key, page: pageState.page,pageSize: pageState.pageSize, sort: sortMode)
-        
-        //print("\(categorys[MainselectedCategoryIndex].name ?? "") \(key ?? "")  \(sortMode)")
-        
-        
-        let newPosts = ForumRequest().GetPostList(request: request).posts
-        if isFresh {
-            posts = newPosts
-        }else{
-            posts.append(contentsOf: newPosts)
-        }
-        
-        // 判断是否还有更多数据
-        if newPosts.count < pageState.pageSize {
-            pageState.hasMore = false
-        } else {
-            pageState.page += 1
-        }
-        
-        pageState.isLoading = false
-        mainView.tableView.reloadData()
-    }
 
+        Task {
+            do {
+                let request = ListPostsRequest(
+                    page: UInt64(pageState.page),
+                    pageSize: UInt64(pageState.pageSize),
+                    boardId: selectedCategoryID,
+                    filter: [Filter.all.rawValue],
+                    sort: [sortMode.rawValue],
+                    keyword: keywords
+                )
+
+                let newPosts = try await NetworkManager.client.listPosts(params: request)
+                if isFresh {
+                    posts = newPosts
+                } else {
+                    posts.append(contentsOf: newPosts)
+                }
+
+                // 判断是否还有更多数据
+                if newPosts.count < pageState.pageSize {
+                    pageState.hasMore = false
+                } else {
+                    pageState.page += 1
+                }
+
+                pageState.isLoading = false
+                mainView.tableView.reloadData()
+            } catch {
+                Toast.show("获取帖子列表失败，请检查网络连接或稍后重试")
+                print("获取帖子列表失败: \(error)")
+            }
+        }
+    }
 }

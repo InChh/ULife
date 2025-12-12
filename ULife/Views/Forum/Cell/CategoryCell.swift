@@ -6,6 +6,7 @@
 //  板块删选栏的元素
 
 import UIKit
+import UlifeLib
 
 class CategoryCell: UICollectionViewCell {
     

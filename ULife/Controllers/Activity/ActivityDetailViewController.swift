@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import UlifeLib
 
 final class ActivityDetailViewController: UIViewController {
     
@@ -105,11 +106,14 @@ final class ActivityDetailViewController: UIViewController {
     private func render() {
         titleLabel.text = activity.title
         
+        let startTimeDate = Date(timeIntervalSince1970: TimeInterval(activity.startTime))
+        let endTimeDate = Date(timeIntervalSince1970: TimeInterval(activity.endTime))
+
         let df = DateFormatter()
         df.dateFormat = "M月d日 HH:mm"
-        let timeText = "\(df.string(from: activity.startTime)) - \(df.string(from: activity.endTime))"
+        let timeText = "\(df.string(from: startTimeDate)) - \(df.string(from: endTimeDate))"
         
-        metaLabel.text = "\(activity.activityType.displayName) · \(timeText)"
+        metaLabel.text = "\(ActivityType(rawValue: activity.activityType)?.displayName ?? "未知") · \(timeText)"
         locationLabel.text = "地点：\(activity.location)"
         organizerLabel.text = "主办方：\(activity.organizer)"
         contentLabel.text = activity.content
@@ -118,7 +122,7 @@ final class ActivityDetailViewController: UIViewController {
     }
     
     private func updateButtons() {
-        if activity.isEnrolled {
+        if activity.isEnrolled ?? false {
             enrollButton.setTitle("取消报名", for: .normal)
             enrollButton.backgroundColor = .systemGray
         } else {
@@ -126,60 +130,63 @@ final class ActivityDetailViewController: UIViewController {
             enrollButton.backgroundColor = .systemBlue
         }
         
-        let collectTitle = activity.isCollected ? "取消收藏" : "收藏"
+        let collectTitle = activity.isCollected == true ? "取消收藏" : "收藏"
         collectButton.setTitle(collectTitle, for: .normal)
     }
     
     @objc private func handleEnroll() {
-        if activity.isEnrolled {
-            do {
-                try ActivityDataManager.shared.cancelEnroll(activityId: activity.id)
-                activity.isEnrolled = false
-                showToast("已取消报名")
-            } catch {
-                showToast("取消失败")
+        Task {
+            if activity.isEnrolled ?? false {
+                do {
+                    try await NetworkManager.client.unrollActivity(activityId: activity.id)
+                    activity.isEnrolled = false
+                    showToast("已取消报名")
+                } catch {
+                    showToast("取消失败")
+                }
+            } else {
+                do {
+
+                    let input = EnrollActivityRequest(activityId: activity.id,
+                                                     userName: "测试用户",
+                                                        studentId: "2025123456",
+                                                        major: "软件工程",
+                                                      phoneNumber: "13800000000")
+                        
+                    try await NetworkManager.client.enrollActivity(input: input)
+                    activity.isEnrolled = true
+                    showToast("报名成功")
+                } catch Error.LogicError(message: let msg) {
+                    showToast(msg)
+                } catch {
+                    showToast("报名失败")
+                }
             }
-        } else {
-            do {
-                try ActivityDataManager.shared.enroll(
-                    activityId: activity.id,
-                    userName: "测试用户",
-                    studentId: "2025123456",
-                    major: "软件工程",
-                    phoneNumber: "13800000000"
-                )
-                activity.isEnrolled = true
-                showToast("报名成功")
-            } catch ActivityDataManager.ActivityActionError.quotaFull {
-                showToast("名额已满")
-            } catch ActivityDataManager.ActivityActionError.alreadyEnrolled {
-                showToast("已报名过")
-            } catch {
-                showToast("报名失败")
-            }
+            updateButtons()
         }
-        updateButtons()
     }
     
     @objc private func handleCollect() {
-        if activity.isCollected {
-            do {
-                try ActivityDataManager.shared.cancelCollect(activityId: activity.id)
-                activity.isCollected = false
-                showToast("已取消收藏")
-            } catch {
-                showToast("操作失败")
+        Task {
+            if activity.isCollected ?? false {
+                do {
+                    try await NetworkManager.client.uncollectActivity(activityId: activity.id)
+                    activity.isCollected = false
+                    showToast("已取消收藏")
+                } catch {
+                    showToast("操作失败")
+                }
+            } else {
+                do {
+                    try await NetworkManager.client.collectActivity(activityId: activity.id)
+                    activity.isCollected = true
+                    showToast("已收藏")
+                } catch {
+                    showToast("操作失败")
+                }
             }
-        } else {
-            do {
-                try ActivityDataManager.shared.collect(activityId: activity.id)
-                activity.isCollected = true
-                showToast("已收藏")
-            } catch {
-                showToast("操作失败")
-            }
+            updateButtons()
         }
-        updateButtons()
     }
     
     private func showToast(_ text: String) {

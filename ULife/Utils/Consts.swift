@@ -6,3 +6,13 @@
 //
 
 import Foundation
+
+enum BoardConsts {
+    static let boardTypeStatic = "static"
+    static let boardTypeDynamic = "dynamic"
+}
+
+enum ReportTargetType : String {
+    case post = "post"
+    case comment = "comment"
+}

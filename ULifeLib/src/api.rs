@@ -67,7 +67,7 @@ impl ApiClient {
     /// 发送请求
     async fn send(&self, builder: RequestBuilder) -> Result<reqwest::Response> {
         let resp = builder.send().await?;
-        if !resp.status().is_success() {
+        if !resp.status().is_success() && resp.status() != reqwest::StatusCode::CONFLICT {
             return Err(Error::HttpError(resp.status()));
         }
         Ok(resp)
