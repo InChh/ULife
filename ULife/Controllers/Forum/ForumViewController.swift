@@ -117,12 +117,19 @@ class ForumViewController: UIViewController {
     }
 
     // 装载原始数据
+    // 装载原始数据
     private func loadData() {
-        Task {
+        Task { [weak self] in
             do {
                 // 获取板块数组
-                categorys = try await NetworkManager.forumClient.listBoards()
-                refresh()
+                let boards = try await NetworkManager.forumClient.listBoards()
+                categorys = boards
+
+                // 在主线程刷新板块列表，并触发一次帖子刷新
+                await MainActor.run {
+                    self?.mainView.CategoryCollectionView.reloadData()
+                    self?.refresh()
+                }
             } catch {
                 Toast.show("获取可用板块失败，请检查网络连接或稍后重试")
                 print("获取板块失败: \(error)")
