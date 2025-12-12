@@ -121,7 +121,7 @@ class ForumViewController: UIViewController {
         Task {
             do {
                 // 获取板块数组
-                categorys = try await NetworkManager.client.listBoards()
+                categorys = try await NetworkManager.forumClient.listBoards()
                 refresh()
             } catch {
                 Toast.show("获取可用板块失败，请检查网络连接或稍后重试")
@@ -247,15 +247,15 @@ class ForumViewController: UIViewController {
         Task {
             do {
                 let request = ListPostsRequest(
-                    page: UInt64(pageState.page),
-                    pageSize: UInt64(pageState.pageSize),
+                    page:Int32(pageState.page),
+                    pageSize:Int32(pageState.pageSize),
                     boardId: selectedCategoryID,
-                    filter: [Filter.all.rawValue],
-                    sort: [sortMode.rawValue],
-                    keyword: keywords
+                    keyword: keywords?.joined(separator: ","),
+                    filter: Filter.all.rawValue,
+                    sort: sortMode.rawValue,
                 )
 
-                let newPosts = try await NetworkManager.client.listPosts(params: request)
+                let newPosts = try await NetworkManager.forumClient.listPosts(params: request)
                 if isFresh {
                     posts = newPosts
                 } else {

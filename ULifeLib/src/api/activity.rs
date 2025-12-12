@@ -11,14 +11,36 @@ use crate::{
 #[uniffi::export(async_runtime = "tokio")]
 impl ApiClient {
     /// 获取活动列表
-    pub async fn get_activities(&self, input: GetActivitiesRequest) -> Result<GetActivitiesData> {
-        let req = self
-            .build_request(reqwest::Method::GET, "/activities")
-            .query(&input);
-        let resp = self.send(req).await?;
-        let body_bytes = resp.bytes().await?;
-        let resp: GetActivitiesResponse = self.decode_body(body_bytes.as_ref())?;
-        resp.data.ok_or(Error::ResponseDataMissing)
+    #[uniffi::method(default(is_cached = true))]
+    pub async fn get_activities(
+        &self,
+        input: GetActivitiesRequest,
+        is_cached: bool,
+    ) -> Result<GetActivitiesData> {
+        if is_cached
+            && let Some(hit) = self
+                .cache
+                .get(&self.cache_key(format!("activities_{:?}", input)))
+                .await?
+        {
+            let resp: GetActivitiesResponse = self.decode_body(hit.as_slice())?;
+            resp.data.ok_or(Error::ResponseDataMissing)
+        } else {
+            let req = self
+                .build_request(reqwest::Method::GET, "/activities")
+                .query(&input);
+            let resp = self.send(req).await?;
+            let body_bytes = resp.bytes().await?;
+            let resp: GetActivitiesResponse = self.decode_body(body_bytes.as_ref())?;
+
+            self.cache
+                .insert(
+                    self.cache_key(format!("activities_{:?}", input)),
+                    body_bytes.to_vec(),
+                );
+
+            resp.data.ok_or(Error::ResponseDataMissing)
+        }
     }
 
     /// 获取活动详情

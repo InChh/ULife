@@ -69,14 +69,14 @@ message UpdatePostResponse {
   PostDetail data = 3;
 }
 
-// message ListPostsRequest {
-//   int32 page = 1;
-//   int32 page_size = 2;
-//   optional string board_id = 3;  
-//   optional string keyword = 4;
-//   optional string filter = 5; 
-//   optional string sort = 6;   
-// }
+message ListPostsRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+  optional string board_id = 3;  
+  optional string keyword = 4;
+  optional string filter = 5; 
+  optional string sort = 6;   
+}
 
 message ListPostsResponse {
   int32 code = 1;
@@ -129,7 +129,8 @@ message CollectPostResponse {
 }
 
 message CollectPostData {
-  bool is_collected = 1;
+  int32 current_collect_count = 1;
+  bool is_collected = 2;
 }
 
 // ---------------------
@@ -284,7 +285,12 @@ message Comment {
     int32 like_count = 1;
   }
   CommentStats stats = 7;
-  UserInteraction user_interaction = 8;
+
+  message CommentUserInteraction {
+    bool is_liked = 1;
+  }
+
+  CommentUserInteraction user_interaction = 8;
   string created_at = 9;
 }
 
@@ -325,6 +331,7 @@ message PostStats {
   int32 view_count = 1;
   int32 like_count = 2;
   int32 comment_count = 3;
+  int32 collect_count = 4;
 }
 
 message UserInteraction {

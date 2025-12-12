@@ -4,38 +4,25 @@ use crate::{
     pb::{
         self,
         course::{
-            AddScheduleItemsData, AddScheduleItemsRequest, GetPublicCoursesResponse,
-            GetScheduleRequest, GetScheduleResponse, GetSemestersRequest, GetSemestersResponse,
-            PublicCourse, ScheduleItem, Semester, UpdateScheduleItemData,
-            UpdateScheduleItemRequest, UpdateScheduleItemResponse,
+            AddScheduleItemsData, AddScheduleItemsRequest, GetPublicCoursesRequest, GetPublicCoursesResponse, GetScheduleRequest, GetScheduleResponse, GetSemestersRequest, GetSemestersResponse, PublicCourse, ScheduleItem, Semester, UpdateScheduleItemData, UpdateScheduleItemRequest, UpdateScheduleItemResponse
         },
     },
 };
 
-#[derive(uniffi::Record, serde::Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ListCoursesRequest {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(rename = "semester_id")]
-    pub semester_id: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub teacher: Option<String>,
-    pub page: u64,
-    pub page_size: u64,
-}
 
 #[uniffi::export(async_runtime = "tokio")]
 impl ApiClient {
     /// 获取全校课程列表
     #[uniffi::method(default(is_cached = true))]
-    pub async fn list_courses(
+    pub async fn get_public_courses(
         &self,
-        query_params: ListCoursesRequest,
+        query_params: GetPublicCoursesRequest,
         is_cached: bool,
     ) -> Result<Vec<PublicCourse>> {
-        let cache_key = self.cache_key("courses");
+        let cache_key = self.cache_key(format!(
+            "courses_{:?}",
+            query_params
+        ));
         if is_cached && let Some(hit) = self.cache.get(&cache_key).await? {
             let resp: GetPublicCoursesResponse = self.decode_body(hit.as_slice())?;
             let list = resp.data.unwrap_or_default().list;

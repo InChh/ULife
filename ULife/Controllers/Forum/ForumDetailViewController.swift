@@ -127,22 +127,27 @@ class ForumDetailViewController: UIViewController {
         }
 
         Task {
-            // 获取评论列表
-            comments = try await NetworkManager.client.getPostComments(postId: post.id, page: 1, pageSize: UInt64.max) // 评论暂时不分页，获取全部
-            
-            maincomments = comments.filter { item in
-                // 检查 parentid 是否存在 (非 nil)
-                // 如果存在，检查其值是否等于目标 ID
-                return item.parentId == nil
+            do {
+                // 获取评论列表
+                comments = try await NetworkManager.forumClient.getPostComments(postId: post.id, page: 1, pageSize: UInt64.max) // 评论暂时不分页，获取全部
+                
+                maincomments = comments.filter { item in
+                    // 检查 parentid 是否存在 (非 nil)
+                    // 如果存在，检查其值是否等于目标 ID
+                    return item.parentId == nil
+                }
+
+                // 更新评论区标题和 TableView
+                self.detailView.commentHeaderLabel.text =
+                    "评论 (\(comments.count))"
+
+                self.detailView.commentTableView.reloadData()  // tabelview
+                // 通知 ScrollView 更新内容高度
+                self.updateTableViewHeight()
+            } catch {
+                Toast.show("获取评论列表失败，请稍后重试", style: .error)
+                print("获取评论列表失败: \(error)")
             }
-
-            // 更新评论区标题和 TableView
-            self.detailView.commentHeaderLabel.text =
-                "评论 (\(comments.count))"
-
-            self.detailView.commentTableView.reloadData()  // tabelview
-            // 通知 ScrollView 更新内容高度
-            self.updateTableViewHeight()
         }
         
     }
@@ -171,12 +176,12 @@ class ForumDetailViewController: UIViewController {
 
     //点赞
     @objc private func handleLikeTap() {
-        updateLikeButtonState()
+        updateLikeButtonState(update: true)
     }
 
     //收藏
     @objc private func handleCollectionTap() {
-        updatecollectedButtonState()
+        updatecollectedButtonState(update: true)
     }
 
     //举报
@@ -197,11 +202,12 @@ class ForumDetailViewController: UIViewController {
                         Task {
                             do {
                                 let request = CreateReportRequest(targetType: ReportTargetType.post.rawValue, targetId: self.post.id, reason: reason, description: nil)
-                                let _ = try await NetworkManager.client.createReport(input: request)
+                                let _ = try await NetworkManager.forumClient.createReport(input: request)
                                 print("举报理由: \(reason)")
                                 Toast.show("举报成功", style: .normal)
                             } catch {
                                 Toast.show("举报失败，请稍后重试", style: .error)
+                                print("举报失败: \(error)")
                             }
                         }
                     }
@@ -244,11 +250,12 @@ class ForumDetailViewController: UIViewController {
                         // 如果用户没填，可以提示或者直接当作"其他"处理
                         // 发送举报请求到服务器
                         let request = CreateReportRequest(targetType: ReportTargetType.post.rawValue, targetId: self.post.id, reason: "其他", description: nil)
-                        let _ = try await NetworkManager.client.createReport(input: request)
+                        let _ = try await NetworkManager.forumClient.createReport(input: request)
                         print("举报理由: 其他,用户未填写详情")
                         Toast.show("举报成功", style: .normal)
                     } catch {
                         Toast.show("举报失败，请稍后重试", style: .error)
+                        print("举报失败: \(error)")
                     }
                 }
                 return
@@ -258,11 +265,12 @@ class ForumDetailViewController: UIViewController {
                     // 提交带详情的举报
                     // 发送举报请求到服务器
                     let request = CreateReportRequest(targetType: ReportTargetType.post.rawValue, targetId: self.post.id, reason: "其他", description: text)
-                    let _ = try await NetworkManager.client.createReport(input: request)
+                    let _ = try await NetworkManager.forumClient.createReport(input: request)
                     print("举报理由: 其他\(text)")
                     Toast.show("举报成功", style: .normal)
                 } catch {
                     Toast.show("举报失败，请稍后重试", style: .error)
+                    print("举报失败: \(error)")
                 }
             }
         }
@@ -345,12 +353,13 @@ class ForumDetailViewController: UIViewController {
 
             Task {
                 do {
-                    let newComment = try await NetworkManager.client.createComment(input: CreateCommentRequest(postId: self.post.id, content: content, replyToCommentId: nil)).comment!
+                    let newComment = try await NetworkManager.forumClient.createComment(input: CreateCommentRequest(postId: self.post.id, content: content, replyToCommentId: nil)).comment!
 
                     self.insertNewComment(newComment)
                     self.hideCommentInput()
                 } catch {
                     Toast.show("创建评论失败，请稍后重试", style: .error)
+                    print("创建评论失败: \(error)")
                 }
             }
         }
@@ -384,24 +393,28 @@ class ForumDetailViewController: UIViewController {
     }
 
     // 更新底部工具栏点赞按钮的 UI 样式
-    private func updateLikeButtonState() {
+    private func updateLikeButtonState(update: Bool = false) {
         Task {
             do {
                 var isLiked = post.userInteraction?.isLiked ?? false
-                
-                var responseData: LikePostData
-                if isLiked {
-                    responseData = try await NetworkManager.client.unlikePost(postId: post.id)
-                    post.userInteraction?.isLiked = false
-                } else {
-                    responseData = try await NetworkManager.client.likePost(postId: post.id)
-                    post.userInteraction?.isLiked = true
+
+                var currentLikeCount = post.stats?.likeCount ?? 0
+
+                if update {
+                    var responseData: LikePostData
+                    if isLiked {
+                        responseData = try await NetworkManager.forumClient.unlikePost(postId: post.id)
+                    } else {
+                        responseData = try await NetworkManager.forumClient.likePost(postId: post.id)
+                    }
+                    isLiked = responseData.isLiked
+                    post.userInteraction?.isLiked = responseData.isLiked
+                    currentLikeCount = responseData.currentLikeCount
                 }
-                
-                let isLikedAfterUpdate = responseData.isLiked
-                let systemName = isLikedAfterUpdate ? "hand.thumbsup.fill" : "hand.thumbsup"
-                let color: UIColor = isLikedAfterUpdate ? .systemRed : .label
-                let text = isLikedAfterUpdate ? "\(responseData.currentLikeCount)" : "点赞"
+
+                let systemName = isLiked ? "hand.thumbsup.fill" : "hand.thumbsup"
+                let color: UIColor = isLiked ? .systemRed : .label
+                let text = isLiked && currentLikeCount != 0 ? "\(currentLikeCount)" : "点赞"
 
                 // 获取当前的配置进行修改
                 var config = detailView.likeButton.configuration
@@ -419,29 +432,33 @@ class ForumDetailViewController: UIViewController {
                 detailView.likeButton.configuration = config
             } catch {
                 Toast.show("操作失败，请稍后重试", style: .error)
+                print("切换帖子点赞状态失败: \(error)")
             }
         }
     }
 
     // 更新底部工具栏收藏按钮的 UI 样式
-    private func updatecollectedButtonState() {
+    private func updatecollectedButtonState(update: Bool = false) {
         Task {
             do {
                 var isCollected = post.userInteraction?.isCollected ?? false
-                var responseData: CollectPostData
-                
-                if isCollected {
-                    responseData = try await NetworkManager.client.uncollectPost(postId: post.id)
-                    post.userInteraction?.isCollected = false
-                } else {
-                    responseData = try await NetworkManager.client.collectPost(postId: post.id)
-                    post.userInteraction?.isCollected = true
+                var currentCollectCount = post.stats?.collectCount ?? 0
+
+                if update {
+                    var responseData: CollectPostData
+                    if isCollected {
+                        responseData = try await NetworkManager.forumClient.uncollectPost(postId: post.id)
+                    } else {
+                        responseData = try await NetworkManager.forumClient.collectPost(postId: post.id)
+                    }
+                    isCollected = responseData.isCollected
+                    post.userInteraction?.isCollected = responseData.isCollected
+                    currentCollectCount = responseData.currentCollectCount
                 }
-                
-                let isCollectedAfterUpdate = responseData.isCollected
-                let systemName = isCollectedAfterUpdate ? "star.fill" : "star"
-                let color: UIColor = isCollectedAfterUpdate ? .systemRed : .label
-                let text = isCollectedAfterUpdate ? "已收藏" : "收藏"
+
+                let systemName = isCollected ? "star.fill" : "star"
+                let color: UIColor = isCollected ? .systemRed : .label
+                let text = isCollected && currentCollectCount != 0 ? "\(currentCollectCount)" : "收藏"
 
                 var config = detailView.CollectButton.configuration
                 config?.image = UIImage(systemName: systemName)
@@ -456,7 +473,9 @@ class ForumDetailViewController: UIViewController {
 
                 detailView.CollectButton.configuration = config
 
-            } catch {}
+            } catch {
+                print("切换收藏状态失败：\(error)")
+            }
         }
     }
 
@@ -469,13 +488,15 @@ class ForumDetailViewController: UIViewController {
             do {
                 var comment = maincomments[index]
                 let isLiked = comment.userInteraction?.isLiked ?? false
+                var responseData: LikeCommentData
                 if isLiked {
-                    let _ = try await NetworkManager.client.unlikeComment(commentId: comment.id)
+                    responseData = try await NetworkManager.forumClient.unlikeComment(commentId: comment.id)
                     comment.userInteraction?.isLiked = false
                 } else {
-                    let _ = try await NetworkManager.client.likeComment(commentId: comment.id)
+                    responseData = try await NetworkManager.forumClient.likeComment(commentId: comment.id)
                     comment.userInteraction?.isLiked = true
                 }
+                comment.stats?.likeCount = responseData.currentLikeCount
                 
                 // 重新加载该条评论
                 maincomments[index] = comment
@@ -484,6 +505,7 @@ class ForumDetailViewController: UIViewController {
                 updateTableViewHeight()
             } catch {
                 Toast.show("操作失败，请稍后重试", style: .error)
+                print("切换评论点赞状态失败: \(error)")
             }
         }
     }
@@ -497,13 +519,15 @@ class ForumDetailViewController: UIViewController {
                 let replyindex = comments.firstIndex(where: { $0.id == reply.id })
                 var comment = comments[replyindex!]
                 let isLiked = comment.userInteraction?.isLiked ?? false
+                var responseData: LikeCommentData
                 if isLiked {
-                    let _ = try await NetworkManager.client.unlikeComment(commentId: comment.id)
+                    responseData  = try await NetworkManager.forumClient.unlikeComment(commentId: comment.id)
                     comment.userInteraction?.isLiked = false
                 } else {
-                    let _ = try await NetworkManager.client.likeComment(commentId: comment.id)
+                    responseData = try await NetworkManager.forumClient.likeComment(commentId: comment.id)
                     comment.userInteraction?.isLiked = true
                 }
+                comment.stats?.likeCount = responseData.currentLikeCount
                 
                 comments[replyindex!] = comment
                 let indexPath = IndexPath(row: index, section: 0)
@@ -511,6 +535,7 @@ class ForumDetailViewController: UIViewController {
                 updateTableViewHeight()
             } catch {
                 Toast.show("操作失败，请稍后重试", style: .error)
+                print("切换回复点赞状态失败: \(error)")
             }
         }
     }
@@ -543,7 +568,7 @@ class ForumDetailViewController: UIViewController {
                     Task {
                         do {
                             let id = maincomments[commentIndex].id
-                            try await NetworkManager.client.deleteComment(commentId: id)
+                            try await NetworkManager.forumClient.deleteComment(commentId: id)
                             
                             maincomments.remove(at: commentIndex)
                             comments.removeAll { comment in
@@ -591,7 +616,7 @@ class ForumDetailViewController: UIViewController {
                 }
                 Task {
                     do {
-                        try await NetworkManager.client.deleteComment(commentId: reply.id)
+                        try await NetworkManager.forumClient.deleteComment(commentId: reply.id)
                         // 刷新列表和高度
                         self.detailView.commentTableView.reloadData()
                         self.updateTableViewHeight()
@@ -668,7 +693,7 @@ class ForumDetailViewController: UIViewController {
                     //获取回复的评论和回复
                     let comment = maincomments[commentIndex]
 
-                    let response = try await NetworkManager.client.createComment(input: CreateCommentRequest(postId: comment.postId, content: content, replyToCommentId: comment.id))
+                    let response = try await NetworkManager.forumClient.createComment(input: CreateCommentRequest(postId: comment.postId, content: content, replyToCommentId: comment.id))
                     comments.append(response.comment!)
 
                     self.detailView.commentTableView.reloadData()  //刷新数据
@@ -677,6 +702,7 @@ class ForumDetailViewController: UIViewController {
                     self.hideCommentInput()
                 } catch {
                     Toast.show("创建评论失败，请稍后重试", style: .error)
+                    print("创建评论失败: \(error)")
                 }
             }
         }

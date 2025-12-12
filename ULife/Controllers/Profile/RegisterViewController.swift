@@ -121,7 +121,7 @@ class RegisterViewController: UIViewController {
         
         Task {
             do {
-                let _ = try await NetworkManager.client.register(input: registerData)
+                let _ = try await NetworkManager.userClient.register(input: registerData)
                 showAlert(title: "注册成功", message: "请使用学号和密码登录") { [weak self] in
                     self?.navigationController?.popViewController(animated: true)
                 }

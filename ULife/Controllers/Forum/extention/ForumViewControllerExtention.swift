@@ -42,7 +42,11 @@ extension ForumViewController: UITableViewDelegate, UITableViewDataSource {
         
         Task {
             do {
-                let post = try await NetworkManager.client.getPost(postId: postid)
+                var post = try await NetworkManager.forumClient.getPost(postId: postid)
+                
+                let createdAtDate = ISO8601DateFormatter().date(from: post.createdAt) ?? Date()
+                post.createdAt = createdAtDate.formatted(.dateTime.year().month().day().hour().minute())
+                
                 let forumDetailController = ForumDetailViewController(
                     post: post
                 )
@@ -53,6 +57,7 @@ extension ForumViewController: UITableViewDelegate, UITableViewDataSource {
                 )
             } catch {
                 Toast.show("获取帖子详情失败", style: .error)
+                print("获取帖子详情失败：\(error)")
             }
         }
     }

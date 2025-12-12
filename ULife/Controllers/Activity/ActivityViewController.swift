@@ -67,12 +67,12 @@ class ActivityViewController: UIViewController {
         Task {
             do {
                 let input = GetActivitiesRequest(keyword: keyword, activityType: type?.rawValue, page: 1, pageSize: 20)
-                let result = try await NetworkManager.client.getActivities(input: input)
+                let result = try await NetworkManager.activityClient.getActivities(input: input)
                 listItems = result.list
                 pagination = result.pagination
                 tableView.reloadData()
             } catch {
-                
+                print("获取活动列表失败： \(error)")
             }
         }
     }
@@ -111,7 +111,7 @@ extension ActivityViewController: UITableViewDataSource, UITableViewDelegate {
         let item = listItems[indexPath.row]
         Task{
             do {
-                let detail = try await NetworkManager.client.getActivityDetails(activityId: item.id)
+                let detail = try await NetworkManager.activityClient.getActivityDetails(activityId: item.id)
                 let detailVC = ActivityDetailViewController(activity: detail)
                 navigationController?.pushViewController(detailVC, animated: true)
             } catch {

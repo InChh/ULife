@@ -1,33 +1,13 @@
 use crate::api::ApiClient;
 use crate::error::{Error, Result};
 use crate::pb::forum::{
-    Board, CollectPostData, CollectPostRequest, CollectPostResponse, Comment, CreateCommentData,
-    CreateCommentRequest, CreateCommentResponse, CreatePostRequest, CreatePostResponse,
-    CreateReportRequest, CreateReportResponse, GetBoardsRequest, GetBoardsResponse,
-    GetPostResponse, LikeCommentData, LikeCommentRequest, LikeCommentResponse, LikePostData,
-    LikePostRequest, LikePostResponse, ListCommentsResponse, ListPostsResponse, MediaItem,
-    PostDetail, PostLite, UpdatePostRequest, UpdatePostResponse,
+    Board, CollectPostData, CollectPostRequest, CollectPostResponse, Comment, CreateCommentData, CreateCommentRequest, CreateCommentResponse, CreatePostRequest, CreatePostResponse, CreateReportRequest, CreateReportResponse, GetBoardsRequest, GetBoardsResponse, GetPostResponse, LikeCommentData, LikeCommentRequest, LikeCommentResponse, LikePostData, LikePostRequest, LikePostResponse, ListCommentsResponse, ListPostsRequest, ListPostsResponse, MediaItem, PostDetail, PostLite, UpdatePostRequest, UpdatePostResponse
 };
 
 #[derive(uniffi::Enum)]
 pub enum TargetType {
     Post { post_id: u64 },
     Comment { comment_id: u64 },
-}
-
-#[derive(uniffi::Record, serde::Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ListPostsRequest {
-    pub page: u64,
-    pub page_size: u64,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub board_id: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub filter: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub sort: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub keyword: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone, uniffi::Object)]
@@ -111,7 +91,7 @@ impl ApiClient {
         params: ListPostsRequest,
         is_cached: bool,
     ) -> Result<Vec<PostLite>> {
-        let cache_key = self.cache_key("forum_posts");
+        let cache_key = self.cache_key(format!("forum_posts_{:?}", params));
         if is_cached && let Some(hit) = self.cache.get(&cache_key).await? {
             let resp: ListPostsResponse = self.decode_body(hit.as_slice())?;
             let data = resp.data.ok_or(Error::ResponseDataMissing)?;
@@ -169,7 +149,7 @@ impl ApiClient {
     /// 举报帖子或评论
     pub async fn create_report(&self, input: CreateReportRequest) -> Result<String> {
         let req = self.prepare_body(
-            self.build_auth_request(reqwest::Method::POST, "forum/report")?,
+            self.build_auth_request(reqwest::Method::POST, "forum/reports")?,
             &input,
         )?;
         let resp = self.send(req).await?;
@@ -187,7 +167,7 @@ impl ApiClient {
         page_size: u64,
         is_cached: bool,
     ) -> Result<Vec<Comment>> {
-        let cache_key = self.cache_key(format!("forum_post_{}_comments", post_id));
+        let cache_key = self.cache_key(format!("forum_post_{}_comments_{}_{}", post_id, page, page_size));
         if is_cached && let Some(hit) = self.cache.get(&cache_key).await? {
             let resp: ListCommentsResponse = self.decode_body(hit.as_slice())?;
             Ok(resp.data.ok_or(Error::ResponseDataMissing)?.list)
@@ -336,7 +316,7 @@ impl ApiClient {
         };
         let req = self.prepare_body(
             self.build_auth_request(
-                reqwest::Method::DELETE,
+                reqwest::Method::POST,
                 &format!("forum/posts/{}/collect", post_id),
             )?,
             &input,

@@ -76,7 +76,7 @@ class LoginViewController: UIViewController {
         
         Task {
             do {
-                let data = try await NetworkManager.client.login(studentId: credentials.studentId, password: credentials.password)
+                let data = try await NetworkManager.userClient.login(studentId: credentials.studentId, password: credentials.password)
                 try await getPersistenceManager().saveCurrentUser(loginData: data)
                 
                 // 登录成功

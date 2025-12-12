@@ -87,7 +87,7 @@ class PostCreationViewController: UIViewController {
             do {
                 let createPostRequest = CreatePostRequest(boardId: category.id, title: title, content: content, tags: tags, media: [])
                
-                let post = try await NetworkManager.client.createPost(input: createPostRequest)
+                let post = try await NetworkManager.forumClient.createPost(input: createPostRequest)
                 
                 navigationController?.popViewController(animated: true)
                 Toast.show("发布成功", style: .normal, duration: 1.0)

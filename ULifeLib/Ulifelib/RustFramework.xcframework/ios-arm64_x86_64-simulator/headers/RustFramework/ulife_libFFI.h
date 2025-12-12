@@ -383,7 +383,7 @@ uint64_t uniffi_ulife_lib_fn_method_apiclient_enroll_activity(uint64_t ptr, Rust
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_GET_ACTIVITIES
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_GET_ACTIVITIES
-uint64_t uniffi_ulife_lib_fn_method_apiclient_get_activities(uint64_t ptr, RustBuffer input
+uint64_t uniffi_ulife_lib_fn_method_apiclient_get_activities(uint64_t ptr, RustBuffer input, int8_t is_cached
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_GET_ACTIVITY_DETAILS
@@ -399,6 +399,11 @@ uint64_t uniffi_ulife_lib_fn_method_apiclient_get_post(uint64_t ptr, RustBuffer 
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_GET_POST_COMMENTS
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_GET_POST_COMMENTS
 uint64_t uniffi_ulife_lib_fn_method_apiclient_get_post_comments(uint64_t ptr, RustBuffer post_id, uint64_t page, uint64_t page_size, int8_t is_cached
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_GET_PUBLIC_COURSES
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_GET_PUBLIC_COURSES
+uint64_t uniffi_ulife_lib_fn_method_apiclient_get_public_courses(uint64_t ptr, RustBuffer query_params, int8_t is_cached
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_GET_USER_PROFILE
@@ -419,11 +424,6 @@ uint64_t uniffi_ulife_lib_fn_method_apiclient_like_post(uint64_t ptr, RustBuffer
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_LIST_BOARDS
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_LIST_BOARDS
 uint64_t uniffi_ulife_lib_fn_method_apiclient_list_boards(uint64_t ptr
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_LIST_COURSES
-#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_LIST_COURSES
-uint64_t uniffi_ulife_lib_fn_method_apiclient_list_courses(uint64_t ptr, RustBuffer query_params, int8_t is_cached
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_LIST_MY_ACTIVITIES
@@ -1002,6 +1002,12 @@ uint16_t uniffi_ulife_lib_checksum_method_apiclient_get_post_comments(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_GET_PUBLIC_COURSES
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_GET_PUBLIC_COURSES
+uint16_t uniffi_ulife_lib_checksum_method_apiclient_get_public_courses(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_GET_USER_PROFILE
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_GET_USER_PROFILE
 uint16_t uniffi_ulife_lib_checksum_method_apiclient_get_user_profile(void
@@ -1023,12 +1029,6 @@ uint16_t uniffi_ulife_lib_checksum_method_apiclient_like_post(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_LIST_BOARDS
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_LIST_BOARDS
 uint16_t uniffi_ulife_lib_checksum_method_apiclient_list_boards(void
-    
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_LIST_COURSES
-#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_APICLIENT_LIST_COURSES
-uint16_t uniffi_ulife_lib_checksum_method_apiclient_list_courses(void
     
 );
 #endif

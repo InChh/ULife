@@ -142,8 +142,8 @@ final class CalendarDataManager {
         } else {
             Task {
                 do {
-                    let params = ListCoursesRequest(semesterId: nil, name: nil, teacher: nil, page: 1, pageSize: UInt64.max)
-                    let courses = try await NetworkManager.client.listCourses(queryParams: params)
+                    let params = GetPublicCoursesRequest(semesterId: nil, name: nil, teacher: nil, page: 1, pageSize: Int32.max)
+                    let courses = try await NetworkManager.courseClient.getPublicCourses(queryParams: params)
                     completion(courses)
                 } catch {
                     print("获取公共课库失败: \(error)")
@@ -163,7 +163,7 @@ final class CalendarDataManager {
         } else {
             Task {
                 do {
-                    let scheduleItems = try await NetworkManager.client.listScheduleItems(semesterId: Int64(semesterId), week: Int32(week))
+                    let scheduleItems = try await NetworkManager.courseClient.listScheduleItems(semesterId: Int64(semesterId), week: Int32(week), isCached: false)
                     completion(scheduleItems)
                 } catch {
                     print("获取个人课表失败: \(error)")
@@ -181,7 +181,7 @@ final class CalendarDataManager {
             
             Task {
                 do {
-                    let semesters = try await NetworkManager.client.listSemesters()
+                    let semesters = try await NetworkManager.courseClient.listSemesters(isCached: false)
                     completion(semesters)
                 } catch {
                     print("获取学期列表失败: \(error)")

@@ -108,8 +108,8 @@ public extension UserLite {
 }
 
 public extension PostStats {
-    static func mockStats(views: Int, likes: Int, comments: Int) -> PostStats {
-        return PostStats(viewCount: Int32(views), likeCount: Int32(likes), commentCount: Int32(comments))
+    static func mockStats(views: Int, likes: Int, comments: Int, collects: Int) -> PostStats {
+        return PostStats(viewCount: Int32(views), likeCount: Int32(likes), commentCount: Int32(comments), collectCount: Int32(collects))
     }
 }
 
@@ -128,7 +128,7 @@ public extension UserInteraction {
 public func mockPostLite(index: Int) -> PostLite {
     let isOdd = index % 2 != 0
     let author: UserLite? = isOdd ? UserLite.mockAuthor1 : UserLite.mockAuthor2
-    let stats = PostStats.mockStats(views: 300 + index * 10, likes: 50 + index * 2, comments: 10 + index)
+    let stats = PostStats.mockStats(views: 300 + index * 10, likes: 50 + index * 2, comments: 10 + index, collects: 20 + index)
     let summaryContent = "这是关于帖子主题 \(index) 的摘要内容。内容越长越好，但为了演示需要截断..."
 
     // use ISO8601 string for createdAt to match generated type

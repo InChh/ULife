@@ -623,7 +623,7 @@ public protocol ApiClientProtocol: AnyObject, Sendable {
     /**
      * 获取活动列表
      */
-    func getActivities(input: GetActivitiesRequest) async throws  -> GetActivitiesData
+    func getActivities(input: GetActivitiesRequest, isCached: Bool) async throws  -> GetActivitiesData
     
     /**
      * 获取活动详情
@@ -639,6 +639,11 @@ public protocol ApiClientProtocol: AnyObject, Sendable {
      * 获取指定帖子评论列表
      */
     func getPostComments(postId: String, page: UInt64, pageSize: UInt64, isCached: Bool) async throws  -> [Comment]
+    
+    /**
+     * 获取全校课程列表
+     */
+    func getPublicCourses(queryParams: GetPublicCoursesRequest, isCached: Bool) async throws  -> [PublicCourse]
     
     /**
      * 获取当前用户信息
@@ -660,11 +665,6 @@ public protocol ApiClientProtocol: AnyObject, Sendable {
      * 获取论坛版块列表
      */
     func listBoards() async throws  -> [Board]
-    
-    /**
-     * 获取全校课程列表
-     */
-    func listCourses(queryParams: ListCoursesRequest, isCached: Bool) async throws  -> [PublicCourse]
     
     /**
      * 获取我的活动列表
@@ -1056,13 +1056,13 @@ open func enrollActivity(input: EnrollActivityRequest)async throws   {
     /**
      * 获取活动列表
      */
-open func getActivities(input: GetActivitiesRequest)async throws  -> GetActivitiesData  {
+open func getActivities(input: GetActivitiesRequest, isCached: Bool = true)async throws  -> GetActivitiesData  {
     return
         try  await uniffiRustCallAsync(
             rustFutureFunc: {
                 uniffi_ulife_lib_fn_method_apiclient_get_activities(
                     self.uniffiCloneHandle(),
-                    FfiConverterTypeGetActivitiesRequest_lower(input)
+                    FfiConverterTypeGetActivitiesRequest_lower(input),FfiConverterBool.lower(isCached)
                 )
             },
             pollFunc: ffi_ulife_lib_rust_future_poll_rust_buffer,
@@ -1129,6 +1129,26 @@ open func getPostComments(postId: String, page: UInt64, pageSize: UInt64, isCach
             completeFunc: ffi_ulife_lib_rust_future_complete_rust_buffer,
             freeFunc: ffi_ulife_lib_rust_future_free_rust_buffer,
             liftFunc: FfiConverterSequenceTypeComment.lift,
+            errorHandler: FfiConverterTypeError_lift
+        )
+}
+    
+    /**
+     * 获取全校课程列表
+     */
+open func getPublicCourses(queryParams: GetPublicCoursesRequest, isCached: Bool = true)async throws  -> [PublicCourse]  {
+    return
+        try  await uniffiRustCallAsync(
+            rustFutureFunc: {
+                uniffi_ulife_lib_fn_method_apiclient_get_public_courses(
+                    self.uniffiCloneHandle(),
+                    FfiConverterTypeGetPublicCoursesRequest_lower(queryParams),FfiConverterBool.lower(isCached)
+                )
+            },
+            pollFunc: ffi_ulife_lib_rust_future_poll_rust_buffer,
+            completeFunc: ffi_ulife_lib_rust_future_complete_rust_buffer,
+            freeFunc: ffi_ulife_lib_rust_future_free_rust_buffer,
+            liftFunc: FfiConverterSequenceTypePublicCourse.lift,
             errorHandler: FfiConverterTypeError_lift
         )
 }
@@ -1210,26 +1230,6 @@ open func listBoards()async throws  -> [Board]  {
             completeFunc: ffi_ulife_lib_rust_future_complete_rust_buffer,
             freeFunc: ffi_ulife_lib_rust_future_free_rust_buffer,
             liftFunc: FfiConverterSequenceTypeBoard.lift,
-            errorHandler: FfiConverterTypeError_lift
-        )
-}
-    
-    /**
-     * 获取全校课程列表
-     */
-open func listCourses(queryParams: ListCoursesRequest, isCached: Bool = true)async throws  -> [PublicCourse]  {
-    return
-        try  await uniffiRustCallAsync(
-            rustFutureFunc: {
-                uniffi_ulife_lib_fn_method_apiclient_list_courses(
-                    self.uniffiCloneHandle(),
-                    FfiConverterTypeListCoursesRequest_lower(queryParams),FfiConverterBool.lower(isCached)
-                )
-            },
-            pollFunc: ffi_ulife_lib_rust_future_poll_rust_buffer,
-            completeFunc: ffi_ulife_lib_rust_future_complete_rust_buffer,
-            freeFunc: ffi_ulife_lib_rust_future_free_rust_buffer,
-            liftFunc: FfiConverterSequenceTypePublicCourse.lift,
             errorHandler: FfiConverterTypeError_lift
         )
 }
@@ -2477,7 +2477,7 @@ public struct Activity: Equatable, Hashable {
     public var currentEnrollments: Int32
     public var needSignIn: Bool
     public var status: Int32
-    public var createdAt: Int64
+    public var createdAt: String
     /**
      * 仅在详情接口返回
      */
@@ -2489,7 +2489,7 @@ public struct Activity: Equatable, Hashable {
     public init(id: String, title: String, content: String, coverUrl: String, activityType: Int32, location: String, organizer: String, 
         /**
          * Unix timestamp (seconds)
-         */startTime: String, endTime: String, quota: Int32, currentEnrollments: Int32, needSignIn: Bool, status: Int32, createdAt: Int64, 
+         */startTime: String, endTime: String, quota: Int32, currentEnrollments: Int32, needSignIn: Bool, status: Int32, createdAt: String, 
         /**
          * 仅在详情接口返回
          */isEnrolled: Bool?, isCollected: Bool?) {
@@ -2538,7 +2538,7 @@ public struct FfiConverterTypeActivity: FfiConverterRustBuffer {
                 currentEnrollments: FfiConverterInt32.read(from: &buf), 
                 needSignIn: FfiConverterBool.read(from: &buf), 
                 status: FfiConverterInt32.read(from: &buf), 
-                createdAt: FfiConverterInt64.read(from: &buf), 
+                createdAt: FfiConverterString.read(from: &buf), 
                 isEnrolled: FfiConverterOptionBool.read(from: &buf), 
                 isCollected: FfiConverterOptionBool.read(from: &buf)
         )
@@ -2558,7 +2558,7 @@ public struct FfiConverterTypeActivity: FfiConverterRustBuffer {
         FfiConverterInt32.write(value.currentEnrollments, into: &buf)
         FfiConverterBool.write(value.needSignIn, into: &buf)
         FfiConverterInt32.write(value.status, into: &buf)
-        FfiConverterInt64.write(value.createdAt, into: &buf)
+        FfiConverterString.write(value.createdAt, into: &buf)
         FfiConverterOptionBool.write(value.isEnrolled, into: &buf)
         FfiConverterOptionBool.write(value.isCollected, into: &buf)
     }
@@ -3651,11 +3651,13 @@ public func FfiConverterTypeCollectActivityResponse_lower(_ value: CollectActivi
 
 
 public struct CollectPostData: Equatable, Hashable {
+    public var currentCollectCount: Int32
     public var isCollected: Bool
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(isCollected: Bool) {
+    public init(currentCollectCount: Int32, isCollected: Bool) {
+        self.currentCollectCount = currentCollectCount
         self.isCollected = isCollected
     }
 
@@ -3673,11 +3675,13 @@ public struct FfiConverterTypeCollectPostData: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CollectPostData {
         return
             try CollectPostData(
+                currentCollectCount: FfiConverterInt32.read(from: &buf), 
                 isCollected: FfiConverterBool.read(from: &buf)
         )
     }
 
     public static func write(_ value: CollectPostData, into buf: inout [UInt8]) {
+        FfiConverterInt32.write(value.currentCollectCount, into: &buf)
         FfiConverterBool.write(value.isCollected, into: &buf)
     }
 }
@@ -3874,12 +3878,12 @@ public struct CollectionSummary: Equatable, Hashable {
     public var activityId: String
     public var title: String
     public var coverUrl: String
-    public var startTime: Int64
-    public var endTime: Int64
+    public var startTime: String
+    public var endTime: String
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(activityId: String, title: String, coverUrl: String, startTime: Int64, endTime: Int64) {
+    public init(activityId: String, title: String, coverUrl: String, startTime: String, endTime: String) {
         self.activityId = activityId
         self.title = title
         self.coverUrl = coverUrl
@@ -3904,8 +3908,8 @@ public struct FfiConverterTypeCollectionSummary: FfiConverterRustBuffer {
                 activityId: FfiConverterString.read(from: &buf), 
                 title: FfiConverterString.read(from: &buf), 
                 coverUrl: FfiConverterString.read(from: &buf), 
-                startTime: FfiConverterInt64.read(from: &buf), 
-                endTime: FfiConverterInt64.read(from: &buf)
+                startTime: FfiConverterString.read(from: &buf), 
+                endTime: FfiConverterString.read(from: &buf)
         )
     }
 
@@ -3913,8 +3917,8 @@ public struct FfiConverterTypeCollectionSummary: FfiConverterRustBuffer {
         FfiConverterString.write(value.activityId, into: &buf)
         FfiConverterString.write(value.title, into: &buf)
         FfiConverterString.write(value.coverUrl, into: &buf)
-        FfiConverterInt64.write(value.startTime, into: &buf)
-        FfiConverterInt64.write(value.endTime, into: &buf)
+        FfiConverterString.write(value.startTime, into: &buf)
+        FfiConverterString.write(value.endTime, into: &buf)
     }
 }
 
@@ -3942,12 +3946,12 @@ public struct Comment: Equatable, Hashable {
     public var parentId: String?
     public var replyTo: UserLite?
     public var stats: CommentStats?
-    public var userInteraction: UserInteraction?
+    public var userInteraction: CommentUserInteraction?
     public var createdAt: String
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(id: String, postId: String, author: UserLite?, content: String, parentId: String?, replyTo: UserLite?, stats: CommentStats?, userInteraction: UserInteraction?, createdAt: String) {
+    public init(id: String, postId: String, author: UserLite?, content: String, parentId: String?, replyTo: UserLite?, stats: CommentStats?, userInteraction: CommentUserInteraction?, createdAt: String) {
         self.id = id
         self.postId = postId
         self.author = author
@@ -3980,7 +3984,7 @@ public struct FfiConverterTypeComment: FfiConverterRustBuffer {
                 parentId: FfiConverterOptionString.read(from: &buf), 
                 replyTo: FfiConverterOptionTypeUserLite.read(from: &buf), 
                 stats: FfiConverterOptionTypeCommentStats.read(from: &buf), 
-                userInteraction: FfiConverterOptionTypeUserInteraction.read(from: &buf), 
+                userInteraction: FfiConverterOptionTypeCommentUserInteraction.read(from: &buf), 
                 createdAt: FfiConverterString.read(from: &buf)
         )
     }
@@ -3993,7 +3997,7 @@ public struct FfiConverterTypeComment: FfiConverterRustBuffer {
         FfiConverterOptionString.write(value.parentId, into: &buf)
         FfiConverterOptionTypeUserLite.write(value.replyTo, into: &buf)
         FfiConverterOptionTypeCommentStats.write(value.stats, into: &buf)
-        FfiConverterOptionTypeUserInteraction.write(value.userInteraction, into: &buf)
+        FfiConverterOptionTypeCommentUserInteraction.write(value.userInteraction, into: &buf)
         FfiConverterString.write(value.createdAt, into: &buf)
     }
 }
@@ -4059,6 +4063,54 @@ public func FfiConverterTypeCommentStats_lift(_ buf: RustBuffer) throws -> Comme
 #endif
 public func FfiConverterTypeCommentStats_lower(_ value: CommentStats) -> RustBuffer {
     return FfiConverterTypeCommentStats.lower(value)
+}
+
+
+public struct CommentUserInteraction: Equatable, Hashable {
+    public var isLiked: Bool
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(isLiked: Bool) {
+        self.isLiked = isLiked
+    }
+
+    
+}
+
+#if compiler(>=6)
+extension CommentUserInteraction: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCommentUserInteraction: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CommentUserInteraction {
+        return
+            try CommentUserInteraction(
+                isLiked: FfiConverterBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: CommentUserInteraction, into buf: inout [UInt8]) {
+        FfiConverterBool.write(value.isLiked, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCommentUserInteraction_lift(_ buf: RustBuffer) throws -> CommentUserInteraction {
+    return try FfiConverterTypeCommentUserInteraction.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCommentUserInteraction_lower(_ value: CommentUserInteraction) -> RustBuffer {
+    return FfiConverterTypeCommentUserInteraction.lower(value)
 }
 
 
@@ -5240,13 +5292,13 @@ public struct EnrollmentSummary: Equatable, Hashable {
     public var activityId: String
     public var title: String
     public var coverUrl: String
-    public var startTime: Int64
-    public var endTime: Int64
+    public var startTime: String
+    public var endTime: String
     public var myStatus: Int32
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(activityId: String, title: String, coverUrl: String, startTime: Int64, endTime: Int64, myStatus: Int32) {
+    public init(activityId: String, title: String, coverUrl: String, startTime: String, endTime: String, myStatus: Int32) {
         self.activityId = activityId
         self.title = title
         self.coverUrl = coverUrl
@@ -5272,8 +5324,8 @@ public struct FfiConverterTypeEnrollmentSummary: FfiConverterRustBuffer {
                 activityId: FfiConverterString.read(from: &buf), 
                 title: FfiConverterString.read(from: &buf), 
                 coverUrl: FfiConverterString.read(from: &buf), 
-                startTime: FfiConverterInt64.read(from: &buf), 
-                endTime: FfiConverterInt64.read(from: &buf), 
+                startTime: FfiConverterString.read(from: &buf), 
+                endTime: FfiConverterString.read(from: &buf), 
                 myStatus: FfiConverterInt32.read(from: &buf)
         )
     }
@@ -5282,8 +5334,8 @@ public struct FfiConverterTypeEnrollmentSummary: FfiConverterRustBuffer {
         FfiConverterString.write(value.activityId, into: &buf)
         FfiConverterString.write(value.title, into: &buf)
         FfiConverterString.write(value.coverUrl, into: &buf)
-        FfiConverterInt64.write(value.startTime, into: &buf)
-        FfiConverterInt64.write(value.endTime, into: &buf)
+        FfiConverterString.write(value.startTime, into: &buf)
+        FfiConverterString.write(value.endTime, into: &buf)
         FfiConverterInt32.write(value.myStatus, into: &buf)
     }
 }
@@ -7725,70 +7777,6 @@ public func FfiConverterTypeListCommentsResponse_lower(_ value: ListCommentsResp
 }
 
 
-public struct ListCoursesRequest: Equatable, Hashable {
-    public var semesterId: String?
-    public var name: String?
-    public var teacher: String?
-    public var page: UInt64
-    public var pageSize: UInt64
-
-    // Default memberwise initializers are never public by default, so we
-    // declare one manually.
-    public init(semesterId: String?, name: String?, teacher: String?, page: UInt64, pageSize: UInt64) {
-        self.semesterId = semesterId
-        self.name = name
-        self.teacher = teacher
-        self.page = page
-        self.pageSize = pageSize
-    }
-
-    
-}
-
-#if compiler(>=6)
-extension ListCoursesRequest: Sendable {}
-#endif
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public struct FfiConverterTypeListCoursesRequest: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ListCoursesRequest {
-        return
-            try ListCoursesRequest(
-                semesterId: FfiConverterOptionString.read(from: &buf), 
-                name: FfiConverterOptionString.read(from: &buf), 
-                teacher: FfiConverterOptionString.read(from: &buf), 
-                page: FfiConverterUInt64.read(from: &buf), 
-                pageSize: FfiConverterUInt64.read(from: &buf)
-        )
-    }
-
-    public static func write(_ value: ListCoursesRequest, into buf: inout [UInt8]) {
-        FfiConverterOptionString.write(value.semesterId, into: &buf)
-        FfiConverterOptionString.write(value.name, into: &buf)
-        FfiConverterOptionString.write(value.teacher, into: &buf)
-        FfiConverterUInt64.write(value.page, into: &buf)
-        FfiConverterUInt64.write(value.pageSize, into: &buf)
-    }
-}
-
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeListCoursesRequest_lift(_ buf: RustBuffer) throws -> ListCoursesRequest {
-    return try FfiConverterTypeListCoursesRequest.lift(buf)
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeListCoursesRequest_lower(_ value: ListCoursesRequest) -> RustBuffer {
-    return FfiConverterTypeListCoursesRequest.lower(value)
-}
-
-
 public struct ListPostsData: Equatable, Hashable {
     public var list: [PostLite]
     public var pagination: Pagination?
@@ -7842,22 +7830,22 @@ public func FfiConverterTypeListPostsData_lower(_ value: ListPostsData) -> RustB
 
 
 public struct ListPostsRequest: Equatable, Hashable {
-    public var page: UInt64
-    public var pageSize: UInt64
+    public var page: Int32
+    public var pageSize: Int32
     public var boardId: String?
-    public var filter: [String]?
-    public var sort: [String]?
-    public var keyword: [String]?
+    public var keyword: String?
+    public var filter: String?
+    public var sort: String?
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(page: UInt64, pageSize: UInt64, boardId: String?, filter: [String]?, sort: [String]?, keyword: [String]?) {
+    public init(page: Int32, pageSize: Int32, boardId: String?, keyword: String?, filter: String?, sort: String?) {
         self.page = page
         self.pageSize = pageSize
         self.boardId = boardId
+        self.keyword = keyword
         self.filter = filter
         self.sort = sort
-        self.keyword = keyword
     }
 
     
@@ -7874,22 +7862,22 @@ public struct FfiConverterTypeListPostsRequest: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ListPostsRequest {
         return
             try ListPostsRequest(
-                page: FfiConverterUInt64.read(from: &buf), 
-                pageSize: FfiConverterUInt64.read(from: &buf), 
+                page: FfiConverterInt32.read(from: &buf), 
+                pageSize: FfiConverterInt32.read(from: &buf), 
                 boardId: FfiConverterOptionString.read(from: &buf), 
-                filter: FfiConverterOptionSequenceString.read(from: &buf), 
-                sort: FfiConverterOptionSequenceString.read(from: &buf), 
-                keyword: FfiConverterOptionSequenceString.read(from: &buf)
+                keyword: FfiConverterOptionString.read(from: &buf), 
+                filter: FfiConverterOptionString.read(from: &buf), 
+                sort: FfiConverterOptionString.read(from: &buf)
         )
     }
 
     public static func write(_ value: ListPostsRequest, into buf: inout [UInt8]) {
-        FfiConverterUInt64.write(value.page, into: &buf)
-        FfiConverterUInt64.write(value.pageSize, into: &buf)
+        FfiConverterInt32.write(value.page, into: &buf)
+        FfiConverterInt32.write(value.pageSize, into: &buf)
         FfiConverterOptionString.write(value.boardId, into: &buf)
-        FfiConverterOptionSequenceString.write(value.filter, into: &buf)
-        FfiConverterOptionSequenceString.write(value.sort, into: &buf)
-        FfiConverterOptionSequenceString.write(value.keyword, into: &buf)
+        FfiConverterOptionString.write(value.keyword, into: &buf)
+        FfiConverterOptionString.write(value.filter, into: &buf)
+        FfiConverterOptionString.write(value.sort, into: &buf)
     }
 }
 
@@ -8612,13 +8600,15 @@ public struct PostStats: Equatable, Hashable {
     public var viewCount: Int32
     public var likeCount: Int32
     public var commentCount: Int32
+    public var collectCount: Int32
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(viewCount: Int32, likeCount: Int32, commentCount: Int32) {
+    public init(viewCount: Int32, likeCount: Int32, commentCount: Int32, collectCount: Int32) {
         self.viewCount = viewCount
         self.likeCount = likeCount
         self.commentCount = commentCount
+        self.collectCount = collectCount
     }
 
     
@@ -8637,7 +8627,8 @@ public struct FfiConverterTypePostStats: FfiConverterRustBuffer {
             try PostStats(
                 viewCount: FfiConverterInt32.read(from: &buf), 
                 likeCount: FfiConverterInt32.read(from: &buf), 
-                commentCount: FfiConverterInt32.read(from: &buf)
+                commentCount: FfiConverterInt32.read(from: &buf), 
+                collectCount: FfiConverterInt32.read(from: &buf)
         )
     }
 
@@ -8645,6 +8636,7 @@ public struct FfiConverterTypePostStats: FfiConverterRustBuffer {
         FfiConverterInt32.write(value.viewCount, into: &buf)
         FfiConverterInt32.write(value.likeCount, into: &buf)
         FfiConverterInt32.write(value.commentCount, into: &buf)
+        FfiConverterInt32.write(value.collectCount, into: &buf)
     }
 }
 
@@ -9524,15 +9516,15 @@ public struct UpdateActivityRequest: Equatable, Hashable {
     public var activityType: Int32?
     public var location: String?
     public var organizer: String?
-    public var startTime: Int64?
-    public var endTime: Int64?
+    public var startTime: String?
+    public var endTime: String?
     public var quota: Int32?
     public var needSignIn: Bool?
     public var status: Int32?
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(activityId: String, title: String?, content: String?, coverUrl: String?, activityType: Int32?, location: String?, organizer: String?, startTime: Int64?, endTime: Int64?, quota: Int32?, needSignIn: Bool?, status: Int32?) {
+    public init(activityId: String, title: String?, content: String?, coverUrl: String?, activityType: Int32?, location: String?, organizer: String?, startTime: String?, endTime: String?, quota: Int32?, needSignIn: Bool?, status: Int32?) {
         self.activityId = activityId
         self.title = title
         self.content = content
@@ -9568,8 +9560,8 @@ public struct FfiConverterTypeUpdateActivityRequest: FfiConverterRustBuffer {
                 activityType: FfiConverterOptionInt32.read(from: &buf), 
                 location: FfiConverterOptionString.read(from: &buf), 
                 organizer: FfiConverterOptionString.read(from: &buf), 
-                startTime: FfiConverterOptionInt64.read(from: &buf), 
-                endTime: FfiConverterOptionInt64.read(from: &buf), 
+                startTime: FfiConverterOptionString.read(from: &buf), 
+                endTime: FfiConverterOptionString.read(from: &buf), 
                 quota: FfiConverterOptionInt32.read(from: &buf), 
                 needSignIn: FfiConverterOptionBool.read(from: &buf), 
                 status: FfiConverterOptionInt32.read(from: &buf)
@@ -9584,8 +9576,8 @@ public struct FfiConverterTypeUpdateActivityRequest: FfiConverterRustBuffer {
         FfiConverterOptionInt32.write(value.activityType, into: &buf)
         FfiConverterOptionString.write(value.location, into: &buf)
         FfiConverterOptionString.write(value.organizer, into: &buf)
-        FfiConverterOptionInt64.write(value.startTime, into: &buf)
-        FfiConverterOptionInt64.write(value.endTime, into: &buf)
+        FfiConverterOptionString.write(value.startTime, into: &buf)
+        FfiConverterOptionString.write(value.endTime, into: &buf)
         FfiConverterOptionInt32.write(value.quota, into: &buf)
         FfiConverterOptionBool.write(value.needSignIn, into: &buf)
         FfiConverterOptionInt32.write(value.status, into: &buf)
@@ -11547,6 +11539,30 @@ fileprivate struct FfiConverterOptionTypeCommentStats: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionTypeCommentUserInteraction: FfiConverterRustBuffer {
+    typealias SwiftType = CommentUserInteraction?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeCommentUserInteraction.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeCommentUserInteraction.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypeCreateCommentData: FfiConverterRustBuffer {
     typealias SwiftType = CreateCommentData?
 
@@ -12211,30 +12227,6 @@ fileprivate struct FfiConverterOptionTypeUserLite: FfiConverterRustBuffer {
         switch try readInt(&buf) as Int8 {
         case 0: return nil
         case 1: return try FfiConverterTypeUserLite.read(from: &buf)
-        default: throw UniffiInternalError.unexpectedOptionalTag
-        }
-    }
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-fileprivate struct FfiConverterOptionSequenceString: FfiConverterRustBuffer {
-    typealias SwiftType = [String]?
-
-    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
-        guard let value = value else {
-            writeInt(&buf, Int8(0))
-            return
-        }
-        writeInt(&buf, Int8(1))
-        FfiConverterSequenceString.write(value, into: &buf)
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
-        switch try readInt(&buf) as Int8 {
-        case 0: return nil
-        case 1: return try FfiConverterSequenceString.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
@@ -12923,7 +12915,7 @@ private let initializationResult: InitializationResult = {
     if (uniffi_ulife_lib_checksum_method_apiclient_enroll_activity() != 25422) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_ulife_lib_checksum_method_apiclient_get_activities() != 58665) {
+    if (uniffi_ulife_lib_checksum_method_apiclient_get_activities() != 19742) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ulife_lib_checksum_method_apiclient_get_activity_details() != 64929) {
@@ -12933,6 +12925,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ulife_lib_checksum_method_apiclient_get_post_comments() != 22473) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ulife_lib_checksum_method_apiclient_get_public_courses() != 34237) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ulife_lib_checksum_method_apiclient_get_user_profile() != 37227) {
@@ -12945,9 +12940,6 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ulife_lib_checksum_method_apiclient_list_boards() != 21147) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_ulife_lib_checksum_method_apiclient_list_courses() != 827) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ulife_lib_checksum_method_apiclient_list_my_activities() != 13481) {

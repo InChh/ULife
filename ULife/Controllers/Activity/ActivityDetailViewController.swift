@@ -139,7 +139,7 @@ final class ActivityDetailViewController: UIViewController {
         Task {
             if activity.isEnrolled ?? false {
                 do {
-                    try await NetworkManager.client.unrollActivity(activityId: activity.id)
+                    try await NetworkManager.activityClient.unrollActivity(activityId: activity.id)
                     activity.isEnrolled = false
                     showToast("已取消报名")
                 } catch {
@@ -154,7 +154,7 @@ final class ActivityDetailViewController: UIViewController {
                                                         major: "软件工程",
                                                       phoneNumber: "13800000000")
                         
-                    try await NetworkManager.client.enrollActivity(input: input)
+                    try await NetworkManager.activityClient.enrollActivity(input: input)
                     activity.isEnrolled = true
                     showToast("报名成功")
                 } catch Error.LogicError(message: let msg) {
@@ -171,7 +171,7 @@ final class ActivityDetailViewController: UIViewController {
         Task {
             if activity.isCollected ?? false {
                 do {
-                    try await NetworkManager.client.uncollectActivity(activityId: activity.id)
+                    try await NetworkManager.activityClient.uncollectActivity(activityId: activity.id)
                     activity.isCollected = false
                     showToast("已取消收藏")
                 } catch {
@@ -179,7 +179,7 @@ final class ActivityDetailViewController: UIViewController {
                 }
             } else {
                 do {
-                    try await NetworkManager.client.collectActivity(activityId: activity.id)
+                    try await NetworkManager.activityClient.collectActivity(activityId: activity.id)
                     activity.isCollected = true
                     showToast("已收藏")
                 } catch {

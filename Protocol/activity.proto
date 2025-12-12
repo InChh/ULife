@@ -57,7 +57,7 @@ message Activity {
   int32 current_enrollments = 11;
   bool need_sign_in = 12;
   ActivityStatus status = 13;
-  int64 created_at = 14;
+  string created_at = 14;
   // 仅在详情接口返回
   optional bool is_enrolled = 15;
   optional bool is_collected = 16;
@@ -91,8 +91,8 @@ message EnrollmentSummary {
   string activity_id = 1;
   string title = 2;
   string cover_url = 3;
-  int64 start_time = 4;
-  int64 end_time = 5;
+  string start_time = 4;
+  string end_time = 5;
   EnrollmentStatus my_status = 6;
 }
 
@@ -101,8 +101,8 @@ message CollectionSummary {
   string activity_id = 1;
   string title = 2;
   string cover_url = 3;
-  int64 start_time = 4;
-  int64 end_time = 5;
+  string start_time = 4;
+  string end_time = 5;
 }
 
 // ====================
@@ -132,8 +132,8 @@ message UpdateActivityRequest {
   optional ActivityType activity_type = 5;
   optional string location = 6;
   optional string organizer = 7;
-  optional int64 start_time = 8;
-  optional int64 end_time = 9;
+  optional string start_time = 8;
+  optional string end_time = 9;
   optional int32 quota = 10;
   optional bool need_sign_in = 11;
   optional ActivityStatus status = 12;
