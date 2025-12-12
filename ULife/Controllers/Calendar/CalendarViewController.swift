@@ -13,6 +13,8 @@ struct Course {
     let courseId: Int
     let name: String
     let timeRange: String
+    let startSection: Int
+    let endSection: Int
     let location: String
     let teacher: String
     let dayOfWeek: Int
@@ -61,8 +63,8 @@ final class CalendarViewController: UIViewController, UITableViewDataSource, UIT
         view.backgroundColor = .systemGroupedBackground
 
         setupLayout()
-        //loadMockData()
         loadData()
+        //runNotificationTest()
     }
 
     private func setupLayout() {
@@ -97,18 +99,100 @@ final class CalendarViewController: UIViewController, UITableViewDataSource, UIT
     }
     
     private func loadData(){
-        //let apiCourses = CalendarDataManager.shared.fetchPublicCoursesMock()
-        let apiCourses = CalendarDataManager.shared.fetchScheduleMock()
-        courses = apiCourses.map { $0.toUICourse(sectionSlots: sectionSlots)}
-        regroupWeekly()
-        tableView.reloadData()
+        // 先拿学期列表，取当前学期和当前周，再拉课表（此处用 mock，可切换 useMock = false 对接真实接口）
+        CalendarDataManager.shared.fetchSemesters(useMock: true) { [weak self] semesters in
+            guard let self = self else { return }
+            let current = semesters.first(where: { $0.isCurrent }) ?? semesters.first
+            let week = current?.currentWeek() ?? 1
+            let semesterId = Int(current?.id ?? 0)
+
+            CalendarDataManager.shared.fetchSchedule(useMock: true,
+                                                     semesterId: semesterId,
+                                                     week: week) { [weak self] items in
+                guard let self = self else { return }
+                self.courses = items.map { $0.toUICourse(sectionSlots: self.sectionSlots) }
+                self.regroupWeekly()
+                DispatchQueue.main.async {
+                    self.tableView.reloadData()
+                }
+            }
+        }
+
     }
+    
+    
+    /*
+    // MARK: - 🧪 临时测试代码
+        func runNotificationTest() {
+            print("开始测试推送...")
+            
+            // 获取当前时间 + 2分钟
+            let now = Date()
+            let calendar = Calendar.current
+            guard let targetDate = calendar.date(byAdding: .minute, value: 2, to: now) else { return }
+            
+            // 转换星期
+            let iosWeekday = calendar.component(.weekday, from: now)
+            let myModelDay = (iosWeekday == 1) ? 7 : (iosWeekday - 1)
+            
+            // 构造时间字符串 "HH:mm"
+            let hour = calendar.component(.hour, from: targetDate)
+            let minute = calendar.component(.minute, from: targetDate)
+            let timeString = String(format: "%02d:%02d", hour, minute)
+            
+            // 造一个假的时间表 (Mock Slots)
+            // 假设这是一个第 999 节课
+            let testSectionId = 999
+            let testSlots: [Int: SectionSlot] = [
+                testSectionId: SectionSlot(start: timeString, end: "23:59")
+            ]
+            
+            // 造一个假课程
+            let testCourse = Course(
+                courseId: 8888,
+                name: "测试课",
+                timeRange: "测试时间",
+                startSection: testSectionId, // 关联上面的时间表
+                endSection: testSectionId,
+                location: "测试地点",
+                teacher: "调试老师",
+                dayOfWeek: myModelDay,      // 必须是今天
+                typeDisplay: "测试",
+                credits: 0,
+                descriptionText: "1分钟后响铃",
+                color: .red
+            )
+            
+            // 调用Manager
+            print("正在设置闹钟：课程时间 \(timeString)，提前 1 分钟...")
+            
+            CourseReminderManager.shared.requestAuthorization { granted in
+                guard granted else {
+                    print("没有通知权限")
+                    return
+                }
+                
+                // 你的 Manager 逻辑是：课程时间 - leadMinutes = 响铃时间
+                // 所以：(当前+2分钟) - 1分钟 = 当前+1分钟
+                CourseReminderManager.shared.enableReminder(
+                    for: testCourse,
+                    sectionSlots: testSlots, // 传入刚才造的假时间表
+                    leadMinutes: 1
+                )
+                print("设置成功！请等待 1 分钟，留意顶部弹窗。")
+            }
+        }
+     */
+    
+    
     
     private func regroupWeekly(){
         let weekdayOrder = [1, 2, 3, 4, 5, 6, 7]
-        groupedCourses = weekdayOrder.map{
-            day in courses.filter{ $0.dayOfWeek == day}
-        }
+        groupedCourses = weekdayOrder.map { day in
+                    courses
+                        .filter { $0.dayOfWeek == day }
+                        .sorted { $0.startSection < $1.startSection }
+                }
     }
 
     // MARK: - UITableViewDataSource
@@ -119,14 +203,12 @@ final class CalendarViewController: UIViewController, UITableViewDataSource, UIT
             return 1
         }
 
-
         func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
             if selectedSegementIndex == 1 {
                 return groupedCourses[section].count
             }
             return courses.count
         }
-
 
         func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
             guard let cell = tableView.dequeueReusableCell(withIdentifier: CourseCell.identifier, for: indexPath) as? CourseCell else {
@@ -139,7 +221,6 @@ final class CalendarViewController: UIViewController, UITableViewDataSource, UIT
             }
             return cell
         }
-
 
         // section 头部标题
         func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
@@ -174,7 +255,7 @@ final class CalendarViewController: UIViewController, UITableViewDataSource, UIT
             } else {
                 course = courses[indexPath.row]
             }
-            let detailVC = CourseDetailViewController(course: course)
+            let detailVC = CourseDetailViewController(course: course, sectionSlots: sectionSlots)
             navigationController?.pushViewController(detailVC, animated: true)
         }
     }
@@ -195,7 +276,20 @@ final class CourseDetailViewController: UIViewController {
 
 
     private let course: Course
-
+    private let sectionSlots: [Int: SectionSlot]
+    private let reminderSwitch: UISwitch = {
+        let sw = UISwitch()
+        sw.onTintColor = .systemBlue
+        return sw
+    }()
+    private let leadOptions = [10, 30, 60]
+    private lazy var leadSegment: UISegmentedControl = {
+        let control = UISegmentedControl(items: ["提前10分钟", "提前30分钟", "提前60分钟"])
+        control.selectedSegmentIndex = 0
+        control.selectedSegmentTintColor = .systemBlue
+        control.setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
+        return control
+    }()
 
     private let nameLabel: UILabel = {
         let label = UILabel()
@@ -214,7 +308,6 @@ final class CourseDetailViewController: UIViewController {
         return label
     }()
 
-
     private let teacherLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 16, weight: .regular)
@@ -223,7 +316,6 @@ final class CourseDetailViewController: UIViewController {
         return label
     }()
 
-
     private let timeLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 16, weight: .regular)
@@ -231,7 +323,6 @@ final class CourseDetailViewController: UIViewController {
         label.numberOfLines = 0
         return label
     }()
-
 
     private let locationLabel: UILabel = {
         let label = UILabel()
@@ -249,7 +340,6 @@ final class CourseDetailViewController: UIViewController {
         return label
     }()
 
-
     private let creditsLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 16, weight: .regular)
@@ -257,7 +347,6 @@ final class CourseDetailViewController: UIViewController {
         label.numberOfLines = 0
         return label
     }()
-
 
     private let descriptionLabel: UILabel = {
         let label = UILabel()
@@ -267,17 +356,15 @@ final class CourseDetailViewController: UIViewController {
         return label
     }()
 
-
-    init(course: Course) {
+    init(course: Course, sectionSlots: [Int: SectionSlot]) {
         self.course = course
+        self.sectionSlots = sectionSlots
         super.init(nibName: nil, bundle: nil)
     }
-
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -285,10 +372,32 @@ final class CourseDetailViewController: UIViewController {
         view.backgroundColor = .systemGroupedBackground
         setupUI()
         configure()
+        setupReminder()
     }
 
-
     private func setupUI() {
+        
+        let reminderRow = UIStackView(arrangedSubviews: [
+            {
+                let lbl = UILabel()
+                lbl.text = "课前提醒"
+                lbl.font = .systemFont(ofSize: 16, weight: .regular)
+                lbl.textColor = .label
+                return lbl
+            }(),
+            reminderSwitch
+        ])
+        reminderRow.axis = .horizontal
+        reminderRow.spacing = 8
+        reminderRow.alignment = .center
+        
+        let leadRow = UIStackView(arrangedSubviews: [
+            leadSegment
+        ])
+        leadRow.axis = .vertical
+        leadRow.spacing = 6
+        leadRow.alignment = .leading
+        
         let stack = UIStackView(arrangedSubviews: [
             nameLabel,
             courseIdLabel,
@@ -297,7 +406,9 @@ final class CourseDetailViewController: UIViewController {
             locationLabel,
             typeLabel,
             creditsLabel,
-            descriptionLabel
+            descriptionLabel,
+            reminderRow,
+            leadRow
         ])
         stack.axis = .vertical
         stack.spacing = 12
@@ -342,6 +453,47 @@ final class CourseDetailViewController: UIViewController {
         descriptionLabel.text = "课程描述：\(course.descriptionText)"
     }
 
+    private func setupReminder() {
+        reminderSwitch.isOn = CourseReminderManager.shared.isReminderEnabled(for: course)
+        reminderSwitch.addTarget(self, action: #selector(reminderSwitchChanged(_:)), for: .valueChanged)
+        let savedLead = CourseReminderManager.shared.leadMinutes(for: course)
+        if let idx = leadOptions.firstIndex(of: savedLead) {
+            leadSegment.selectedSegmentIndex = idx
+        } else {
+            leadSegment.selectedSegmentIndex = 0
+        }
+        leadSegment.addTarget(self, action: #selector(leadSegmentChanged(_:)), for: .valueChanged)
+    }
+
+    @objc private func reminderSwitchChanged(_ sender: UISwitch) {
+        CourseReminderManager.shared.requestAuthorization { granted in
+            DispatchQueue.main.async {
+                if !granted {
+                    sender.isOn = false
+                    return
+                }
+                if sender.isOn {
+                    CourseReminderManager.shared.enableReminder(for: self.course, sectionSlots: self.sectionSlots)
+                } else {
+                    CourseReminderManager.shared.disableReminder(for: self.course)
+                }
+            }
+        }
+    }
+
+    @objc private func leadSegmentChanged(_ sender: UISegmentedControl) {
+            guard reminderSwitch.isOn else { return }
+            CourseReminderManager.shared.enableReminder(for: course, sectionSlots: sectionSlots, leadMinutes: currentLeadMinutes())
+    }
+
+
+    private func currentLeadMinutes() -> Int {
+        let idx = leadSegment.selectedSegmentIndex
+        if idx >= 0 && idx < leadOptions.count {
+            return leadOptions[idx]
+        }
+        return leadOptions.first ?? 10
+    }
 
     private func weekdayText(_ day: Int) -> String {
         let names = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
