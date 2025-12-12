@@ -10,8 +10,6 @@ import UIKit
 final class CourseCell: UITableViewCell {
     static let identifier = "CourseCell"
 
-
-    // 白色卡片背景
     private let containerView: UIView = {
         let view = UIView()
         view.layer.cornerRadius = 14
@@ -85,6 +83,7 @@ final class CourseCell: UITableViewCell {
 
 
     func configure(with course: Course) {
+        // 使用课程颜色作为背景，默认值为白色
         if course.color == .white {
             containerView.backgroundColor = course.color
         }else{

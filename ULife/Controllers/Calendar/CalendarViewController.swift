@@ -8,7 +8,7 @@
 
 import UIKit
 
-/// UI 层课程模型
+/// UI 层课程模型 （由后端映射用于展示）
 struct Course {
     let courseId: Int
     let name: String
@@ -25,12 +25,14 @@ struct Course {
 }
 
 final class CalendarViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
-
+    // 切换选择默认值 0：展示全部课程；1: 按天分组视图
     private var selectedSegementIndex = 0
+    // 原始课程列表
     private var courses: [Course] = []
+    // 按周几分足后的课程
     private var groupedCourses: [[Course]] = []
     
-    // 节次时间表（示例，可按校历替换）
+    // 硬编码定义节次时间表
     private let sectionSlots: [Int: SectionSlot] = [
         1: SectionSlot(start: "08:00", end: "08:45"),
         2: SectionSlot(start: "08:55", end: "09:40"),
@@ -64,7 +66,7 @@ final class CalendarViewController: UIViewController, UITableViewDataSource, UIT
 
         setupLayout()
         loadData()
-        //runNotificationTest()
+        runNotificationTest()
     }
 
     private func setupLayout() {
@@ -98,6 +100,7 @@ final class CalendarViewController: UIViewController, UITableViewDataSource, UIT
         tableView.reloadData()
     }
     
+    /// 拉取学期 -> 推算当前周次 -> 用学期和周次拉取课表
     private func loadData(){
         // 先拿学期列表，取当前学期和当前周，再拉课表（此处用 mock，可切换 useMock = false 对接真实接口）
         CalendarDataManager.shared.fetchSemesters(useMock: true) { [weak self] semesters in
@@ -121,8 +124,7 @@ final class CalendarViewController: UIViewController, UITableViewDataSource, UIT
     }
     
     
-    /*
-    // MARK: - 🧪 临时测试代码
+    // MARK: 临时测试代码
         func runNotificationTest() {
             print("开始测试推送...")
             
@@ -182,7 +184,6 @@ final class CalendarViewController: UIViewController, UITableViewDataSource, UIT
                 print("设置成功！请等待 1 分钟，留意顶部弹窗。")
             }
         }
-     */
     
     
     
@@ -191,87 +192,84 @@ final class CalendarViewController: UIViewController, UITableViewDataSource, UIT
         groupedCourses = weekdayOrder.map { day in
                     courses
                         .filter { $0.dayOfWeek == day }
-                        .sorted { $0.startSection < $1.startSection }
+                        .sorted { $0.startSection < $1.startSection } // 同一天按照节次生序排列
                 }
     }
 
     // MARK: - UITableViewDataSource
-        func numberOfSections(in tableView: UITableView) -> Int {
-            if selectedSegementIndex == 1 {
-                return groupedCourses.count
-            }
-            return 1
+    func numberOfSections(in tableView: UITableView) -> Int {
+        if selectedSegementIndex == 1 {
+            return groupedCourses.count
         }
-
-        func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-            if selectedSegementIndex == 1 {
-                return groupedCourses[section].count
-            }
-            return courses.count
-        }
-
-        func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-            guard let cell = tableView.dequeueReusableCell(withIdentifier: CourseCell.identifier, for: indexPath) as? CourseCell else {
-                return UITableViewCell()
-            }
-            if selectedSegementIndex == 1 {
-                cell.configure(with: groupedCourses[indexPath.section][indexPath.row])
-            } else {
-                cell.configure(with: courses[indexPath.row])
-            }
-            return cell
-        }
-
-        // section 头部标题
-        func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
-            guard selectedSegementIndex == 1 else { return nil }
-            let header = UIView()
-            header.backgroundColor = .systemGroupedBackground
-            let label = UILabel()
-            label.font = .systemFont(ofSize: 14, weight: .semibold)
-            label.textColor = .secondaryLabel
-            label.text = weekdayText(section + 1)
-            label.translatesAutoresizingMaskIntoConstraints = false
-            header.addSubview(label)
-            NSLayoutConstraint.activate([
-                label.leadingAnchor.constraint(equalTo: header.leadingAnchor, constant: 16),
-                label.centerYAnchor.constraint(equalTo: header.centerYAnchor)
-            ])
-            return header
-        }
-
-
-        func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-            return selectedSegementIndex == 1 ? 30 : 0
-        }
-
-
-        // MARK: - UITableViewDelegate
-        func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-            tableView.deselectRow(at: indexPath, animated: true)
-            let course: Course
-            if selectedSegementIndex == 1 {
-                course = groupedCourses[indexPath.section][indexPath.row]
-            } else {
-                course = courses[indexPath.row]
-            }
-            let detailVC = CourseDetailViewController(course: course, sectionSlots: sectionSlots)
-            navigationController?.pushViewController(detailVC, animated: true)
-        }
+        return 1
     }
+
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        if selectedSegementIndex == 1 {
+            return groupedCourses[section].count
+        }
+        return courses.count
+    }
+
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: CourseCell.identifier, for: indexPath) as? CourseCell else {
+            return UITableViewCell()
+        }
+        if selectedSegementIndex == 1 {
+            cell.configure(with: groupedCourses[indexPath.section][indexPath.row])
+        } else {
+            cell.configure(with: courses[indexPath.row])
+        }
+        return cell
+    }
+
+    // section 头部标题
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        guard selectedSegementIndex == 1 else { return nil }
+        let header = UIView()
+        header.backgroundColor = .systemGroupedBackground
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 14, weight: .semibold)
+        label.textColor = .secondaryLabel
+        label.text = weekdayText(section + 1)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        header.addSubview(label)
+        NSLayoutConstraint.activate([
+            label.leadingAnchor.constraint(equalTo: header.leadingAnchor, constant: 16),
+            label.centerYAnchor.constraint(equalTo: header.centerYAnchor)
+        ])
+        return header
+    }
+
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        return selectedSegementIndex == 1 ? 30 : 0
+    }
+
+    // MARK: - UITableViewDelegate
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        let course: Course
+        if selectedSegementIndex == 1 {
+            course = groupedCourses[indexPath.section][indexPath.row]
+        } else {
+            course = courses[indexPath.row]
+        }
+        let detailVC = CourseDetailViewController(course: course, sectionSlots: sectionSlots)
+        navigationController?.pushViewController(detailVC, animated: true)
+    }
+}
     
-    private func weekdayText(_ day: Int) -> String {
-        let names = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
-        let idx = day - 1
-        if idx >= 0 && idx < names.count { return names[idx] }
-        return "周\(day)"
-    }
+private func weekdayText(_ day: Int) -> String {        let names = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+    let idx = day - 1
+    if idx >= 0 && idx < names.count { return names[idx] }
+    return "周\(day)"
+}
 
 
 
 
 
-// 课程详情页
+/// 二级菜单：课程详情页
 final class CourseDetailViewController: UIViewController {
 
 
