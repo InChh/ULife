@@ -36,33 +36,3 @@ struct User: Codable {
         return "\(college) · \(major) · \(grade)级"
     }
 }
-
-// 登录请求模型
-struct LoginRequest: Codable {
-    let studentId: String
-    let password: String
-}
-
-// 注册请求模型
-struct RegisterRequest: Codable {
-    let studentId: String
-    let password: String
-    let name: String
-    let college: String
-    let major: String
-    let grade: String
-    let className: String
-    let email: String
-    let phone: String
-}
-
-// 用户信息更新模型
-struct UserUpdateRequest: Codable {
-    let name: String?
-    let avatar: String?
-    let bio: String?
-    let qq: String?
-    let wechat: String?
-    let email: String?
-    let phone: String?
-}

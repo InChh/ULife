@@ -11,11 +11,9 @@ import UlifeLib
 enum NetworkManager {
     static let client: ApiClient = {
         do {
-            return try ApiClient(
-                baseUrl: "http://localhost:8888",
-                cacheFolder: getCachesDirectory().absoluteString,
-                cacheSize: 1024 * 100,
-                fs: SwiftFileSystem()
+            return try ApiClient.withProtocol(
+                baseUrl: "https://m1.apifoxmock.com/m1/7500709-7236287-6678144",
+                protocol: .json
             )
         } catch {
             fatalError("Failed to initialize ApiClient: \(error)")

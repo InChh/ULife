@@ -106,8 +106,9 @@ final class ActivityDetailViewController: UIViewController {
     private func render() {
         titleLabel.text = activity.title
         
-        let startTimeDate = Date(timeIntervalSince1970: TimeInterval(activity.startTime))
-        let endTimeDate = Date(timeIntervalSince1970: TimeInterval(activity.endTime))
+        let isoFormatter = ISO8601DateFormatter()
+        let startTimeDate = isoFormatter.date(from: activity.startTime) ?? Date()
+        let endTimeDate = isoFormatter.date(from: activity.endTime) ?? Date()
 
         let df = DateFormatter()
         df.dateFormat = "M月d日 HH:mm"

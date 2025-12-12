@@ -51,8 +51,8 @@ message Activity {
   ActivityType activity_type = 5;
   string location = 6;
   string organizer = 7;
-  int64 start_time = 8;        // Unix timestamp (seconds)
-  int64 end_time = 9;
+  string start_time = 8;        // Unix timestamp (seconds)
+  string end_time = 9;
   int32 quota = 10;
   int32 current_enrollments = 11;
   bool need_sign_in = 12;
@@ -115,8 +115,8 @@ message CreateActivityRequest {
   string content = 2;
   string location = 3;
   string organizer = 4;
-  int64 start_time = 5;
-  int64 end_time = 6;
+  string start_time = 5;
+  string end_time = 6;
   optional string cover_url = 7;
   optional ActivityType activity_type = 8;
   optional int32 quota = 9;

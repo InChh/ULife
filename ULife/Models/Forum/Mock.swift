@@ -15,35 +15,35 @@ public extension Board {
                 name: "二手交易",
                 icon: "💰",
                 description: "发布和寻找各种闲置物品，支持同城交易。",
-                type: BoardConsts.boardTypeStatic
+                type: BoardType.staticType.rawValue
             ),
             Board(
                 id: "B-002",
                 name: "学术交流",
                 icon: "📚",
                 description: "分享学习经验、笔记和考试资料。",
-                type: BoardConsts.boardTypeStatic
+                type: BoardType.staticType.rawValue
             ),
             Board(
                 id: "B-003",
                 name: "校园生活",
                 icon: "☕",
                 description: "记录生活点滴、分享心情、吐槽日常。",
-                type: BoardConsts.boardTypeStatic
+                type: BoardType.staticType.rawValue
             ),
             Board(
                 id: "B-004",
                 name: "兴趣交友",
                 icon: "🤝",
                 description: "寻找志同道合的小伙伴，组队游戏、运动或活动。",
-                type: BoardConsts.boardTypeStatic
+                type: BoardType.staticType.rawValue
             ),
             Board(
                 id: "B-005",
                 name: "文娱热议",
                 icon: "🎬",
                 description: "近期热门影视、音乐、书籍的讨论区。",
-                type: BoardConsts.boardTypeStatic
+                type: BoardType.staticType.rawValue
             ),
             // 以下模拟管理员临时创建的板块 (dynamic)
             Board(
@@ -51,35 +51,35 @@ public extension Board {
                 name: "校园歌手大赛",
                 icon: "🎤",
                 description: "本周校园歌手大赛的报名及投票专区。",
-                type: BoardConsts.boardTypeDynamic
+                type: BoardType.dynamicType.rawValue
             ),
             Board(
                 id: "B-007",
                 name: "食堂改进建议",
                 icon: "🍽️",
                 description: "针对食堂菜品和服务的意见征集。",
-                type: BoardConsts.boardTypeDynamic
+                type: BoardType.dynamicType.rawValue
             ),
             Board(
                 id: "B-008",
                 name: "实习招聘季",
                 icon: "💼",
                 description: "毕业季招聘信息和面试经验分享。",
-                type: BoardConsts.boardTypeDynamic
+                type: BoardType.dynamicType.rawValue
             ),
             Board(
                 id: "B-009",
                 name: "临时公告栏",
                 icon: "⚠️",
                 description: "紧急通知：校内停电及检修信息发布。",
-                type: BoardConsts.boardTypeDynamic
+                type: BoardType.dynamicType.rawValue
             ),
             Board(
                 id: "B-010",
                 name: "代码人生",
                 icon: "💻",
                 description: "记录和讨论各种计算机技术和编程话题。",
-                type: BoardConsts.boardTypeStatic
+                type: BoardType.staticType.rawValue
             )
         ]
     }

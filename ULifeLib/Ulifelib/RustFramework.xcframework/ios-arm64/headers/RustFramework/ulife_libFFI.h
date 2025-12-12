@@ -313,7 +313,12 @@ void uniffi_ulife_lib_fn_free_apiclient(uint64_t handle, RustCallStatus *_Nonnul
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_CONSTRUCTOR_APICLIENT_NEW
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_CONSTRUCTOR_APICLIENT_NEW
-uint64_t uniffi_ulife_lib_fn_constructor_apiclient_new(RustBuffer base_url, RustBuffer cache_folder, uint64_t cache_size, uint64_t fs, RustCallStatus *_Nonnull out_status
+uint64_t uniffi_ulife_lib_fn_constructor_apiclient_new(RustBuffer base_url, RustCallStatus *_Nonnull out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_CONSTRUCTOR_APICLIENT_WITH_PROTOCOL
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_CONSTRUCTOR_APICLIENT_WITH_PROTOCOL
+uint64_t uniffi_ulife_lib_fn_constructor_apiclient_with_protocol(RustBuffer base_url, RustBuffer protocol, RustCallStatus *_Nonnull out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_APICLIENT_ADD_SCHEDULE_ITEM
@@ -613,6 +618,11 @@ uint64_t uniffi_ulife_lib_fn_func_get_persistence_manager(RustCallStatus *_Nonnu
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_FUNC_INIT_API_CACHE
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_FUNC_INIT_API_CACHE
+uint64_t uniffi_ulife_lib_fn_func_init_api_cache(RustBuffer cache_folder, uint64_t cache_size
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_FUNC_INIT_PERSISTENCE_MANAGER
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_FUNC_INIT_PERSISTENCE_MANAGER
 void uniffi_ulife_lib_fn_func_init_persistence_manager(RustBuffer base_folder, uint64_t fs, RustCallStatus *_Nonnull out_status
@@ -881,6 +891,12 @@ void ffi_ulife_lib_rust_future_complete_void(uint64_t handle, RustCallStatus *_N
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_FUNC_GET_PERSISTENCE_MANAGER
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_FUNC_GET_PERSISTENCE_MANAGER
 uint16_t uniffi_ulife_lib_checksum_func_get_persistence_manager(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_FUNC_INIT_API_CACHE
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_FUNC_INIT_API_CACHE
+uint16_t uniffi_ulife_lib_checksum_func_init_api_cache(void
     
 );
 #endif
@@ -1187,6 +1203,12 @@ uint16_t uniffi_ulife_lib_checksum_method_persistencemanager_save_current_user(v
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_CONSTRUCTOR_APICLIENT_NEW
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_CONSTRUCTOR_APICLIENT_NEW
 uint16_t uniffi_ulife_lib_checksum_constructor_apiclient_new(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_CONSTRUCTOR_APICLIENT_WITH_PROTOCOL
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_CONSTRUCTOR_APICLIENT_WITH_PROTOCOL
+uint16_t uniffi_ulife_lib_checksum_constructor_apiclient_with_protocol(void
     
 );
 #endif

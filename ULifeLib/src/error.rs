@@ -11,6 +11,8 @@ pub enum Error {
     ProstDecodeError(#[from] prost::DecodeError),
     #[error("Protobuf encode error: {0}")]
     ProstEncodeError(#[from] prost::EncodeError),
+    #[error("JSON serialization error: {0}")]
+    SerdeJsonError(#[from] serde_json::Error),
     #[error("Response data is missing")]
     ResponseDataMissing,
     #[error("Cache serialization error: {0}")]
@@ -25,4 +27,6 @@ pub enum Error {
     LogicError(i32, String),
     #[error("Unauthorized access")]
     UnAuthorized,
+    #[error("Cache error: {0}")]
+    CacheError(#[from] foyer::Error),
 }

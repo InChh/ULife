@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import UlifeLib
 
 /// UI 层课程模型
 struct Course {
@@ -100,13 +101,13 @@ final class CalendarViewController: UIViewController, UITableViewDataSource, UIT
     
     private func loadData(){
         // 先拿学期列表，取当前学期和当前周，再拉课表（此处用 mock，可切换 useMock = false 对接真实接口）
-        CalendarDataManager.shared.fetchSemesters(useMock: true) { [weak self] semesters in
+        CalendarDataManager.shared.fetchSemesters(useMock: false) { [weak self] semesters in
             guard let self = self else { return }
             let current = semesters.first(where: { $0.isCurrent }) ?? semesters.first
             let week = current?.currentWeek() ?? 1
             let semesterId = Int(current?.id ?? 0)
 
-            CalendarDataManager.shared.fetchSchedule(useMock: true,
+            CalendarDataManager.shared.fetchSchedule(useMock: false,
                                                      semesterId: semesterId,
                                                      week: week) { [weak self] items in
                 guard let self = self else { return }

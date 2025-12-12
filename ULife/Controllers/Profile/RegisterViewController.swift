@@ -6,6 +6,7 @@
 //  注册控制器
 
 import UIKit
+import UlifeLib
 
 class RegisterViewController: UIViewController {
     
@@ -118,13 +119,15 @@ class RegisterViewController: UIViewController {
             return
         }
         
-        // 模拟注册
-        if MockUserData.register(registerData) {
-            showAlert(title: "注册成功", message: "请使用学号和密码登录") { [weak self] in
-                self?.navigationController?.popViewController(animated: true)
+        Task {
+            do {
+                let _ = try await NetworkManager.client.register(input: registerData)
+                showAlert(title: "注册成功", message: "请使用学号和密码登录") { [weak self] in
+                    self?.navigationController?.popViewController(animated: true)
+                }
+            } catch {
+                showAlert(title: "注册失败", message: "注册过程中出现错误，请稍后重试")
             }
-        } else {
-            showAlert(title: "注册失败", message: "注册过程中出现错误，请稍后重试")
         }
     }
     

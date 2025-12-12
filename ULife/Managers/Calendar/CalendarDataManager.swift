@@ -140,8 +140,16 @@ final class CalendarDataManager {
         if useMock {
             completion(mockPublicCourses())
         } else {
-            // TODO: 替换为真实接口调用
-            completion([])
+            Task {
+                do {
+                    let params = ListCoursesRequest(semesterId: nil, name: nil, teacher: nil, page: 1, pageSize: UInt64.max)
+                    let courses = try await NetworkManager.client.listCourses(queryParams: params)
+                    completion(courses)
+                } catch {
+                    print("获取公共课库失败: \(error)")
+                    completion([])
+                }
+            }
         }
     }
 
@@ -153,8 +161,15 @@ final class CalendarDataManager {
         if useMock {
             completion(mockSchedule(week: week))
         } else {
-            // TODO: 替换为真实接口调用
-            completion([])
+            Task {
+                do {
+                    let scheduleItems = try await NetworkManager.client.listScheduleItems(semesterId: Int64(semesterId), week: Int32(week))
+                    completion(scheduleItems)
+                } catch {
+                    print("获取个人课表失败: \(error)")
+                    completion([])
+                }
+            }
         }
     }
 
@@ -163,12 +178,17 @@ final class CalendarDataManager {
         if useMock {
             completion(mockSemesters())
         } else {
-            // TODO: 替换为真实接口调用
-            completion([])
+            
+            Task {
+                do {
+                    let semesters = try await NetworkManager.client.listSemesters()
+                    completion(semesters)
+                } catch {
+                    print("获取学期列表失败: \(error)")
+                    completion([])
+                }
+            }
         }
     }
 
 }
-
-
-

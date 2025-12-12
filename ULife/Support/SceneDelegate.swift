@@ -11,22 +11,20 @@ import UlifeLib
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
 
-        func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
-            guard let windowScene = (scene as? UIWindowScene) else { return }
-            window = UIWindow(windowScene: windowScene)
+        func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions)
+    {
+        guard let windowScene = (scene as? UIWindowScene) else { return }
+        window = UIWindow(windowScene: windowScene)
+        Task {
             do {
                 // 初始化持久化管理器
                 try initPersistenceManager(baseFolder: getDocumentsDirectory().path(), fs: SwiftFileSystem())
-            } catch {
-                print("Error initializing persistence manager: \(error)")
-                exit(1)
-                
-            }
-            
-            do {
+                // 初始化缓存
+                let cache_folder_path: String = getCachesDirectory().appending(path: "api_cache").path()
+                try await initApiCache(cacheFolder: cache_folder_path, cacheSize: 50 * 1024 * 1024) // 50 MB
                 // 检查登录状态
                 let isLoggedIn = try getPersistenceManager().getCurrentUserToken() != nil
-                
+
                 if isLoggedIn {
                     // 已登录，进入主页面
                     window?.rootViewController = UIHelper.createTabViewController()
@@ -37,12 +35,13 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                     window?.rootViewController = navController
                 }
             } catch {
-                print("Error checking login status: \(error)")
+                print("Error initializing: \(error)")
                 exit(1)
             }
-            
-            window?.makeKeyAndVisible()
         }
+
+        window?.makeKeyAndVisible()
+    }
 
     func sceneDidDisconnect(_ scene: UIScene) {
         // Called as the scene is being released by the system.

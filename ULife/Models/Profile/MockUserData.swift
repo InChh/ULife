@@ -6,6 +6,7 @@
 //  模拟用户数据
 
 import Foundation
+import UlifeLib
 
 struct MockUserData {
     // 当前登录用户（模拟数据）

@@ -1,6 +1,4 @@
-use prost::Message;
-use std::time::Duration;
-
+use crate::api::ApiClient;
 use crate::error::{Error, Result};
 use crate::pb::forum::{
     Board, CollectPostData, CollectPostRequest, CollectPostResponse, Comment, CreateCommentData,
@@ -10,7 +8,6 @@ use crate::pb::forum::{
     LikePostRequest, LikePostResponse, ListCommentsResponse, ListPostsResponse, MediaItem,
     PostDetail, PostLite, UpdatePostRequest, UpdatePostResponse,
 };
-use crate::{CacheOptions, api::ApiClient};
 
 #[derive(uniffi::Enum)]
 pub enum TargetType {
@@ -76,38 +73,33 @@ impl Default for CreatePostReq {
     }
 }
 
-#[uniffi::export]
+#[uniffi::export(async_runtime = "tokio")]
 impl ApiClient {
     /// 获取论坛版块列表
     pub async fn list_boards(&self) -> Result<Vec<Board>> {
-        let req = self
-            .build_request(reqwest::Method::GET, "forum/boards")
-            .body(GetBoardsRequest {}.encode_to_vec());
+        let req = self.prepare_body(
+            self.build_request(reqwest::Method::GET, "forum/boards"),
+            &GetBoardsRequest {},
+        )?;
         let resp = self.send(req).await?;
         let body_bytes = resp.bytes().await?;
-        let resp = GetBoardsResponse::decode(body_bytes.clone())?;
+        let resp: GetBoardsResponse = self.decode_body(body_bytes.as_ref())?;
         let list = resp.data.unwrap_or_default().list;
         Ok(list)
     }
     /// 获取指定帖子详情
     #[uniffi::method(default(is_cached = true))]
     pub async fn get_post(&self, post_id: String, is_cached: bool) -> Result<PostDetail> {
-        let key = format!("forum_post_{}", post_id);
+        let key = self.cache_key(format!("forum_post_{}", post_id));
         if is_cached && let Some(hit) = self.cache.get(&key).await? {
-            let resp = GetPostResponse::decode(hit.as_slice())?;
+            let resp: GetPostResponse = self.decode_body(hit.as_slice())?;
             resp.data.ok_or(Error::ResponseDataMissing)
         } else {
             let req = self.build_request(reqwest::Method::GET, &format!("forum/posts/{}", post_id));
             let resp = self.send(req).await?;
             let bytes = resp.bytes().await?;
-            let resp = GetPostResponse::decode(bytes.clone())?;
-            self.cache
-                .insert(
-                    key.clone(),
-                    bytes.clone().to_vec(),
-                    CacheOptions::with_ttl(Duration::from_secs(120)),
-                )
-                .await?;
+            let resp: GetPostResponse = self.decode_body(bytes.as_ref())?;
+            self.cache.insert(key.clone(), bytes.clone().to_vec());
             resp.data.ok_or(Error::ResponseDataMissing)
         }
     }
@@ -119,8 +111,9 @@ impl ApiClient {
         params: ListPostsRequest,
         is_cached: bool,
     ) -> Result<Vec<PostLite>> {
-        if is_cached && let Some(hit) = self.cache.get(&"forum_posts".into()).await? {
-            let resp = ListPostsResponse::decode(hit.as_slice())?;
+        let cache_key = self.cache_key("forum_posts");
+        if is_cached && let Some(hit) = self.cache.get(&cache_key).await? {
+            let resp: ListPostsResponse = self.decode_body(hit.as_slice())?;
             let data = resp.data.ok_or(Error::ResponseDataMissing)?;
             Ok(data.list)
         } else {
@@ -129,17 +122,9 @@ impl ApiClient {
                 .query(&params);
             let resp = self.send(req).await?;
             let bytes = resp.bytes().await?;
-            let resp = ListPostsResponse::decode(bytes.clone())?;
+            let resp: ListPostsResponse = self.decode_body(bytes.as_ref())?;
 
-            self.cache
-                .insert(
-                    "forum_posts".into(),
-                    bytes.to_vec(),
-                    CacheOptions {
-                        ttl: Some(std::time::Duration::from_secs(10 * 60)),
-                    },
-                )
-                .await?;
+            self.cache.insert(cache_key, bytes.to_vec());
             let data = resp.data.ok_or(Error::ResponseDataMissing)?;
             Ok(data.list)
         }
@@ -147,12 +132,13 @@ impl ApiClient {
 
     /// 发布新帖子
     pub async fn create_post(&self, input: CreatePostRequest) -> Result<PostDetail> {
-        let req = self
-            .build_auth_request(reqwest::Method::POST, "forum/posts")?
-            .body(input.encode_to_vec());
+        let req = self.prepare_body(
+            self.build_auth_request(reqwest::Method::POST, "forum/posts")?,
+            &input,
+        )?;
         let resp = self.send(req).await?;
         let body_bytes = resp.bytes().await?;
-        let resp = CreatePostResponse::decode(body_bytes.clone())?;
+        let resp: CreatePostResponse = self.decode_body(body_bytes.as_ref())?;
         resp.data.ok_or(Error::ResponseDataMissing)
     }
 
@@ -162,12 +148,13 @@ impl ApiClient {
         post_id: String,
         input: UpdatePostRequest,
     ) -> Result<PostDetail> {
-        let req = self
-            .build_auth_request(reqwest::Method::PATCH, &format!("forum/posts/{}", post_id))?
-            .body(input.encode_to_vec());
+        let req = self.prepare_body(
+            self.build_auth_request(reqwest::Method::PATCH, &format!("forum/posts/{}", post_id))?,
+            &input,
+        )?;
         let resp = self.send(req).await?;
         let body_bytes = resp.bytes().await?;
-        let resp = UpdatePostResponse::decode(body_bytes.clone())?;
+        let resp: UpdatePostResponse = self.decode_body(body_bytes.as_ref())?;
         resp.data.ok_or(Error::ResponseDataMissing)
     }
 
@@ -181,12 +168,13 @@ impl ApiClient {
 
     /// 举报帖子或评论
     pub async fn create_report(&self, input: CreateReportRequest) -> Result<String> {
-        let req = self
-            .build_auth_request(reqwest::Method::POST, "forum/report")?
-            .body(input.encode_to_vec());
+        let req = self.prepare_body(
+            self.build_auth_request(reqwest::Method::POST, "forum/report")?,
+            &input,
+        )?;
         let resp = self.send(req).await?;
         let body_bytes = resp.bytes().await?;
-        let resp = CreateReportResponse::decode(body_bytes.clone())?;
+        let resp: CreateReportResponse = self.decode_body(body_bytes.as_ref())?;
         Ok(resp.data.ok_or(Error::ResponseDataMissing)?.report_id)
     }
 
@@ -199,13 +187,9 @@ impl ApiClient {
         page_size: u64,
         is_cached: bool,
     ) -> Result<Vec<Comment>> {
-        if is_cached
-            && let Some(hit) = self
-                .cache
-                .get(&format!("forum_post_{}_comments", post_id))
-                .await?
-        {
-            let resp = ListCommentsResponse::decode(hit.as_slice())?;
+        let cache_key = self.cache_key(format!("forum_post_{}_comments", post_id));
+        if is_cached && let Some(hit) = self.cache.get(&cache_key).await? {
+            let resp: ListCommentsResponse = self.decode_body(hit.as_slice())?;
             Ok(resp.data.ok_or(Error::ResponseDataMissing)?.list)
         } else {
             let req = self
@@ -216,15 +200,9 @@ impl ApiClient {
                 .query(&[("page", page), ("pageSize", page_size)]);
             let resp = self.send(req).await?;
             let body_bytes = resp.bytes().await?;
-            let resp = ListCommentsResponse::decode(body_bytes.clone())?;
+            let resp: ListCommentsResponse = self.decode_body(body_bytes.as_ref())?;
 
-            self.cache
-                .insert(
-                    format!("forum_post_{}_comments", post_id),
-                    body_bytes.to_vec(),
-                    CacheOptions::with_ttl(Duration::from_secs(120)),
-                )
-                .await?;
+            self.cache.insert(cache_key, body_bytes.to_vec());
 
             Ok(resp.data.ok_or(Error::ResponseDataMissing)?.list)
         }
@@ -232,15 +210,16 @@ impl ApiClient {
 
     /// 创建评论
     pub async fn create_comment(&self, input: CreateCommentRequest) -> Result<CreateCommentData> {
-        let req = self
-            .build_auth_request(
+        let req = self.prepare_body(
+            self.build_auth_request(
                 reqwest::Method::POST,
                 &format!("forum/posts/{}/comments", input.post_id),
-            )?
-            .body(input.encode_to_vec());
+            )?,
+            &input,
+        )?;
         let resp = self.send(req).await?;
         let body_bytes = resp.bytes().await?;
-        let resp = CreateCommentResponse::decode(body_bytes.clone())?;
+        let resp: CreateCommentResponse = self.decode_body(body_bytes.as_ref())?;
         resp.data.ok_or(Error::ResponseDataMissing)
     }
 
@@ -260,15 +239,16 @@ impl ApiClient {
             id: comment_id.to_string(),
             action: "like".to_string(),
         };
-        let req = self
-            .build_auth_request(
+        let req = self.prepare_body(
+            self.build_auth_request(
                 reqwest::Method::POST,
                 &format!("forum/comments/{}/like", comment_id),
-            )?
-            .body(input.encode_to_vec());
+            )?,
+            &input,
+        )?;
         let resp = self.send(req).await?;
         let body_bytes = resp.bytes().await?;
-        let resp = LikeCommentResponse::decode(body_bytes.clone())?;
+        let resp: LikeCommentResponse = self.decode_body(body_bytes.as_ref())?;
         resp.data.ok_or(Error::ResponseDataMissing)
     }
 
@@ -278,15 +258,16 @@ impl ApiClient {
             id: comment_id.to_string(),
             action: "unlike".to_string(),
         };
-        let req = self
-            .build_auth_request(
+        let req = self.prepare_body(
+            self.build_auth_request(
                 reqwest::Method::POST,
                 &format!("forum/comments/{}/like", comment_id),
-            )?
-            .body(input.encode_to_vec());
+            )?,
+            &input,
+        )?;
         let resp = self.send(req).await?;
         let body_bytes = resp.bytes().await?;
-        let resp = LikeCommentResponse::decode(body_bytes.clone())?;
+        let resp: LikeCommentResponse = self.decode_body(body_bytes.as_ref())?;
         resp.data.ok_or(Error::ResponseDataMissing)
     }
 
@@ -296,15 +277,16 @@ impl ApiClient {
             id: post_id.to_string(),
             action: "like".to_string(),
         };
-        let req = self
-            .build_auth_request(
+        let req = self.prepare_body(
+            self.build_auth_request(
                 reqwest::Method::POST,
                 &format!("forum/posts/{}/like", post_id),
-            )?
-            .body(input.encode_to_vec());
+            )?,
+            &input,
+        )?;
         let resp = self.send(req).await?;
         let body_bytes = resp.bytes().await?;
-        let resp = LikePostResponse::decode(body_bytes.clone())?;
+        let resp: LikePostResponse = self.decode_body(body_bytes.as_ref())?;
         resp.data.ok_or(Error::ResponseDataMissing)
     }
 
@@ -314,15 +296,16 @@ impl ApiClient {
             id: post_id.to_string(),
             action: "unlike".to_string(),
         };
-        let req = self
-            .build_auth_request(
+        let req = self.prepare_body(
+            self.build_auth_request(
                 reqwest::Method::POST,
                 &format!("forum/posts/{}/like", post_id),
-            )?
-            .body(input.encode_to_vec());
+            )?,
+            &input,
+        )?;
         let resp = self.send(req).await?;
         let body_bytes = resp.bytes().await?;
-        let resp = LikePostResponse::decode(body_bytes.clone())?;
+        let resp: LikePostResponse = self.decode_body(body_bytes.as_ref())?;
         resp.data.ok_or(Error::ResponseDataMissing)
     }
 
@@ -332,15 +315,16 @@ impl ApiClient {
             id: post_id.to_string(),
             action: "collect".to_string(),
         };
-        let req = self
-            .build_auth_request(
+        let req = self.prepare_body(
+            self.build_auth_request(
                 reqwest::Method::POST,
                 &format!("forum/posts/{}/collect", post_id),
-            )?
-            .body(input.encode_to_vec());
+            )?,
+            &input,
+        )?;
         let resp = self.send(req).await?;
         let body_bytes = resp.bytes().await?;
-        let resp = CollectPostResponse::decode(body_bytes.clone())?;
+        let resp: CollectPostResponse = self.decode_body(body_bytes.as_ref())?;
         resp.data.ok_or(Error::ResponseDataMissing)
     }
 
@@ -350,15 +334,16 @@ impl ApiClient {
             id: post_id.to_string(),
             action: "uncollect".to_string(),
         };
-        let req = self
-            .build_auth_request(
+        let req = self.prepare_body(
+            self.build_auth_request(
                 reqwest::Method::DELETE,
                 &format!("forum/posts/{}/collect", post_id),
-            )?
-            .body(input.encode_to_vec());
+            )?,
+            &input,
+        )?;
         let resp = self.send(req).await?;
         let body_bytes = resp.bytes().await?;
-        let resp = CollectPostResponse::decode(body_bytes.clone())?;
+        let resp: CollectPostResponse = self.decode_body(body_bytes.as_ref())?;
         resp.data.ok_or(Error::ResponseDataMissing)
     }
 }

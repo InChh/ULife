@@ -7,9 +7,9 @@
 
 import Foundation
 
-enum BoardConsts {
-    static let boardTypeStatic = "static"
-    static let boardTypeDynamic = "dynamic"
+enum BoardType: String {
+    case staticType = "static"
+    case dynamicType = "dynamic"
 }
 
 enum ReportTargetType : String {
