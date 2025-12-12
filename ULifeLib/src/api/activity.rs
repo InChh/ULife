@@ -33,11 +33,10 @@ impl ApiClient {
             let body_bytes = resp.bytes().await?;
             let resp: GetActivitiesResponse = self.decode_body(body_bytes.as_ref())?;
 
-            self.cache
-                .insert(
-                    self.cache_key(format!("activities_{:?}", input)),
-                    body_bytes.to_vec(),
-                );
+            self.cache.insert(
+                self.cache_key(format!("activities_{:?}", input)),
+                body_bytes.to_vec(),
+            );
 
             resp.data.ok_or(Error::ResponseDataMissing)
         }
@@ -85,27 +84,33 @@ impl ApiClient {
 
     /// 收藏活动
     pub async fn collect_activity(&self, activity_id: String) -> Result<()> {
-        let req = self.build_auth_request(
-            reqwest::Method::POST,
-            &format!("/activities/{}/collect", activity_id),
-        )?;
+        let req = self
+            .build_auth_request(
+                reqwest::Method::POST,
+                &format!("/activities/{}/collect", activity_id),
+            )
+            .await?;
         let _resp = self.send(req).await?;
         Ok(())
     }
 
     /// 取消收藏活动
     pub async fn uncollect_activity(&self, activity_id: String) -> Result<()> {
-        let req = self.build_auth_request(
-            reqwest::Method::DELETE,
-            &format!("/activities/{}/collect", activity_id),
-        )?;
+        let req = self
+            .build_auth_request(
+                reqwest::Method::DELETE,
+                &format!("/activities/{}/collect", activity_id),
+            )
+            .await?;
         let _resp = self.send(req).await?;
         Ok(())
     }
 
     /// 获取我的活动列表
     pub async fn list_my_activities(&self) -> Result<GetMyActivitiesData> {
-        let req = self.build_auth_request(reqwest::Method::GET, "/my/activities")?;
+        let req = self
+            .build_auth_request(reqwest::Method::GET, "/my/activities")
+            .await?;
         let resp = self.send(req).await?;
         let body_bytes = resp.bytes().await?;
         let resp: GetMyActivitiesResponse = self.decode_body(body_bytes.as_ref())?;

@@ -1,7 +1,12 @@
 use crate::api::ApiClient;
 use crate::error::{Error, Result};
 use crate::pb::forum::{
-    Board, CollectPostData, CollectPostRequest, CollectPostResponse, Comment, CreateCommentData, CreateCommentRequest, CreateCommentResponse, CreatePostRequest, CreatePostResponse, CreateReportRequest, CreateReportResponse, GetBoardsRequest, GetBoardsResponse, GetPostResponse, LikeCommentData, LikeCommentRequest, LikeCommentResponse, LikePostData, LikePostRequest, LikePostResponse, ListCommentsResponse, ListPostsRequest, ListPostsResponse, MediaItem, PostDetail, PostLite, UpdatePostRequest, UpdatePostResponse
+    Board, CollectPostData, CollectPostRequest, CollectPostResponse, Comment, CreateCommentData,
+    CreateCommentRequest, CreateCommentResponse, CreatePostRequest, CreatePostResponse,
+    CreateReportRequest, CreateReportResponse, GetBoardsRequest, GetBoardsResponse,
+    GetPostResponse, LikeCommentData, LikeCommentRequest, LikeCommentResponse, LikePostData,
+    LikePostRequest, LikePostResponse, ListCommentsResponse, ListPostsRequest, ListPostsResponse,
+    MediaItem, PostDetail, PostLite, UpdatePostRequest, UpdatePostResponse,
 };
 
 #[derive(uniffi::Enum)]
@@ -64,7 +69,7 @@ impl ApiClient {
         let resp = self.send(req).await?;
         let body_bytes = resp.bytes().await?;
         let resp: GetBoardsResponse = self.decode_body(body_bytes.as_ref())?;
-        let list = resp.data.unwrap_or_default().list;
+        let list = resp.data.ok_or(Error::ResponseDataMissing)?.list;
         Ok(list)
     }
     /// 获取指定帖子详情
@@ -98,7 +103,8 @@ impl ApiClient {
             Ok(data.list)
         } else {
             let req = self
-                .build_auth_request(reqwest::Method::GET, "forum/posts")?
+                .build_auth_request(reqwest::Method::GET, "forum/posts")
+                .await?
                 .query(&params);
             let resp = self.send(req).await?;
             let bytes = resp.bytes().await?;
@@ -113,7 +119,8 @@ impl ApiClient {
     /// 发布新帖子
     pub async fn create_post(&self, input: CreatePostRequest) -> Result<PostDetail> {
         let req = self.prepare_body(
-            self.build_auth_request(reqwest::Method::POST, "forum/posts")?,
+            self.build_auth_request(reqwest::Method::POST, "forum/posts")
+                .await?,
             &input,
         )?;
         let resp = self.send(req).await?;
@@ -129,7 +136,8 @@ impl ApiClient {
         input: UpdatePostRequest,
     ) -> Result<PostDetail> {
         let req = self.prepare_body(
-            self.build_auth_request(reqwest::Method::PATCH, &format!("forum/posts/{}", post_id))?,
+            self.build_auth_request(reqwest::Method::PATCH, &format!("forum/posts/{}", post_id))
+                .await?,
             &input,
         )?;
         let resp = self.send(req).await?;
@@ -140,8 +148,9 @@ impl ApiClient {
 
     /// 删除帖子（仅限管理员或贴主）
     pub async fn delete_post(&self, post_id: String) -> Result<()> {
-        let req =
-            self.build_auth_request(reqwest::Method::DELETE, &format!("forum/posts/{}", post_id))?;
+        let req = self
+            .build_auth_request(reqwest::Method::DELETE, &format!("forum/posts/{}", post_id))
+            .await?;
         let _resp = self.send(req).await?;
         Ok(())
     }
@@ -149,7 +158,8 @@ impl ApiClient {
     /// 举报帖子或评论
     pub async fn create_report(&self, input: CreateReportRequest) -> Result<String> {
         let req = self.prepare_body(
-            self.build_auth_request(reqwest::Method::POST, "forum/reports")?,
+            self.build_auth_request(reqwest::Method::POST, "forum/reports")
+                .await?,
             &input,
         )?;
         let resp = self.send(req).await?;
@@ -167,7 +177,10 @@ impl ApiClient {
         page_size: u64,
         is_cached: bool,
     ) -> Result<Vec<Comment>> {
-        let cache_key = self.cache_key(format!("forum_post_{}_comments_{}_{}", post_id, page, page_size));
+        let cache_key = self.cache_key(format!(
+            "forum_post_{}_comments_{}_{}",
+            post_id, page, page_size
+        ));
         if is_cached && let Some(hit) = self.cache.get(&cache_key).await? {
             let resp: ListCommentsResponse = self.decode_body(hit.as_slice())?;
             Ok(resp.data.ok_or(Error::ResponseDataMissing)?.list)
@@ -194,7 +207,8 @@ impl ApiClient {
             self.build_auth_request(
                 reqwest::Method::POST,
                 &format!("forum/posts/{}/comments", input.post_id),
-            )?,
+            )
+            .await?,
             &input,
         )?;
         let resp = self.send(req).await?;
@@ -205,10 +219,12 @@ impl ApiClient {
 
     /// 删除指定评论（仅限管理员或评论作者本人）
     pub async fn delete_comment(&self, comment_id: String) -> Result<()> {
-        let req = self.build_auth_request(
-            reqwest::Method::DELETE,
-            &format!("forum/comments/{}", comment_id),
-        )?;
+        let req = self
+            .build_auth_request(
+                reqwest::Method::DELETE,
+                &format!("forum/comments/{}", comment_id),
+            )
+            .await?;
         let _resp = self.send(req).await?;
         Ok(())
     }
@@ -223,7 +239,8 @@ impl ApiClient {
             self.build_auth_request(
                 reqwest::Method::POST,
                 &format!("forum/comments/{}/like", comment_id),
-            )?,
+            )
+            .await?,
             &input,
         )?;
         let resp = self.send(req).await?;
@@ -242,7 +259,8 @@ impl ApiClient {
             self.build_auth_request(
                 reqwest::Method::POST,
                 &format!("forum/comments/{}/like", comment_id),
-            )?,
+            )
+            .await?,
             &input,
         )?;
         let resp = self.send(req).await?;
@@ -261,7 +279,8 @@ impl ApiClient {
             self.build_auth_request(
                 reqwest::Method::POST,
                 &format!("forum/posts/{}/like", post_id),
-            )?,
+            )
+            .await?,
             &input,
         )?;
         let resp = self.send(req).await?;
@@ -280,7 +299,8 @@ impl ApiClient {
             self.build_auth_request(
                 reqwest::Method::POST,
                 &format!("forum/posts/{}/like", post_id),
-            )?,
+            )
+            .await?,
             &input,
         )?;
         let resp = self.send(req).await?;
@@ -299,7 +319,8 @@ impl ApiClient {
             self.build_auth_request(
                 reqwest::Method::POST,
                 &format!("forum/posts/{}/collect", post_id),
-            )?,
+            )
+            .await?,
             &input,
         )?;
         let resp = self.send(req).await?;
@@ -318,7 +339,8 @@ impl ApiClient {
             self.build_auth_request(
                 reqwest::Method::POST,
                 &format!("forum/posts/{}/collect", post_id),
-            )?,
+            )
+            .await?,
             &input,
         )?;
         let resp = self.send(req).await?;

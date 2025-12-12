@@ -4,11 +4,13 @@ use crate::{
     pb::{
         self,
         course::{
-            AddScheduleItemsData, AddScheduleItemsRequest, GetPublicCoursesRequest, GetPublicCoursesResponse, GetScheduleRequest, GetScheduleResponse, GetSemestersRequest, GetSemestersResponse, PublicCourse, ScheduleItem, Semester, UpdateScheduleItemData, UpdateScheduleItemRequest, UpdateScheduleItemResponse
+            AddScheduleItemsData, AddScheduleItemsRequest, GetPublicCoursesRequest,
+            GetPublicCoursesResponse, GetScheduleRequest, GetScheduleResponse, GetSemestersRequest,
+            GetSemestersResponse, PublicCourse, ScheduleItem, Semester, UpdateScheduleItemData,
+            UpdateScheduleItemRequest, UpdateScheduleItemResponse,
         },
     },
 };
-
 
 #[uniffi::export(async_runtime = "tokio")]
 impl ApiClient {
@@ -19,17 +21,15 @@ impl ApiClient {
         query_params: GetPublicCoursesRequest,
         is_cached: bool,
     ) -> Result<Vec<PublicCourse>> {
-        let cache_key = self.cache_key(format!(
-            "courses_{:?}",
-            query_params
-        ));
+        let cache_key = self.cache_key(format!("courses_{:?}", query_params));
         if is_cached && let Some(hit) = self.cache.get(&cache_key).await? {
             let resp: GetPublicCoursesResponse = self.decode_body(hit.as_slice())?;
             let list = resp.data.unwrap_or_default().list;
             Ok(list)
         } else {
             let req = self
-                .build_auth_request(reqwest::Method::GET, "courses")?
+                .build_auth_request(reqwest::Method::GET, "courses")
+                .await?
                 .query(&query_params);
             let resp = self.send(req).await?;
             let body_bytes = resp.bytes().await?;
@@ -63,10 +63,13 @@ impl ApiClient {
         } else {
             let param = GetScheduleRequest { semester_id, week };
             let resp = self
-                .send(self.prepare_body(
-                    self.build_auth_request(reqwest::Method::GET, "schedule")?,
-                    &param,
-                )?)
+                .send(
+                    self.prepare_body(
+                        self.build_auth_request(reqwest::Method::GET, "schedule")
+                            .await?,
+                        &param,
+                    )?,
+                )
                 .await?;
 
             let body_bytes = resp.bytes().await?;
@@ -83,10 +86,13 @@ impl ApiClient {
         input: AddScheduleItemsRequest,
     ) -> Result<AddScheduleItemsData> {
         let resp = self
-            .send(self.prepare_body(
-                self.build_auth_request(reqwest::Method::POST, "schedule")?,
-                &input,
-            )?)
+            .send(
+                self.prepare_body(
+                    self.build_auth_request(reqwest::Method::POST, "schedule")
+                        .await?,
+                    &input,
+                )?,
+            )
             .await?;
 
         let body_bytes = resp.bytes().await?;
@@ -100,10 +106,13 @@ impl ApiClient {
         input: UpdateScheduleItemRequest,
     ) -> Result<UpdateScheduleItemData> {
         let resp = self
-            .send(self.prepare_body(
-                self.build_auth_request(reqwest::Method::PATCH, "schedule")?,
-                &input,
-            )?)
+            .send(
+                self.prepare_body(
+                    self.build_auth_request(reqwest::Method::PATCH, "schedule")
+                        .await?,
+                    &input,
+                )?,
+            )
             .await?;
         let body_bytes = resp.bytes().await?;
         let resp: UpdateScheduleItemResponse = self.decode_body(body_bytes.as_ref())?;
@@ -114,7 +123,8 @@ impl ApiClient {
     pub async fn delete_schedule_item(&self, item_id: i64) -> Result<()> {
         let _resp = self
             .send(
-                self.build_auth_request(reqwest::Method::DELETE, "schedule")?
+                self.build_auth_request(reqwest::Method::DELETE, "schedule")
+                    .await?
                     .query(&[("item_id", item_id)]),
             )
             .await?;
@@ -132,7 +142,8 @@ impl ApiClient {
         } else {
             let input = GetSemestersRequest {};
             let req = self.prepare_body(
-                self.build_auth_request(reqwest::Method::GET, "semesters")?,
+                self.build_auth_request(reqwest::Method::GET, "semesters")
+                    .await?,
                 &input,
             )?;
             let resp = self.send(req).await?;

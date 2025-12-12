@@ -251,37 +251,43 @@ typedef void (*UniffiCallbackInterfaceFileSystemMethod0)(uint64_t, RustBuffer, U
 #endif
 #ifndef UNIFFI_FFIDEF_CALLBACK_INTERFACE_FILE_SYSTEM_METHOD1
 #define UNIFFI_FFIDEF_CALLBACK_INTERFACE_FILE_SYSTEM_METHOD1
-typedef void (*UniffiCallbackInterfaceFileSystemMethod1)(uint64_t, RustBuffer, RustBuffer, UniffiForeignFutureCompleteVoid _Nonnull, uint64_t, UniffiForeignFutureDroppedCallbackStruct* _Nonnull
+typedef void (*UniffiCallbackInterfaceFileSystemMethod1)(uint64_t, RustBuffer, UniffiForeignFutureCompleteI8 _Nonnull, uint64_t, UniffiForeignFutureDroppedCallbackStruct* _Nonnull
     );
 
 #endif
 #ifndef UNIFFI_FFIDEF_CALLBACK_INTERFACE_FILE_SYSTEM_METHOD2
 #define UNIFFI_FFIDEF_CALLBACK_INTERFACE_FILE_SYSTEM_METHOD2
-typedef void (*UniffiCallbackInterfaceFileSystemMethod2)(uint64_t, RustBuffer, UniffiForeignFutureCompleteRustBuffer _Nonnull, uint64_t, UniffiForeignFutureDroppedCallbackStruct* _Nonnull
+typedef void (*UniffiCallbackInterfaceFileSystemMethod2)(uint64_t, RustBuffer, RustBuffer, UniffiForeignFutureCompleteVoid _Nonnull, uint64_t, UniffiForeignFutureDroppedCallbackStruct* _Nonnull
     );
 
 #endif
 #ifndef UNIFFI_FFIDEF_CALLBACK_INTERFACE_FILE_SYSTEM_METHOD3
 #define UNIFFI_FFIDEF_CALLBACK_INTERFACE_FILE_SYSTEM_METHOD3
-typedef void (*UniffiCallbackInterfaceFileSystemMethod3)(uint64_t, RustBuffer, UniffiForeignFutureCompleteVoid _Nonnull, uint64_t, UniffiForeignFutureDroppedCallbackStruct* _Nonnull
+typedef void (*UniffiCallbackInterfaceFileSystemMethod3)(uint64_t, RustBuffer, UniffiForeignFutureCompleteRustBuffer _Nonnull, uint64_t, UniffiForeignFutureDroppedCallbackStruct* _Nonnull
     );
 
 #endif
 #ifndef UNIFFI_FFIDEF_CALLBACK_INTERFACE_FILE_SYSTEM_METHOD4
 #define UNIFFI_FFIDEF_CALLBACK_INTERFACE_FILE_SYSTEM_METHOD4
-typedef void (*UniffiCallbackInterfaceFileSystemMethod4)(uint64_t, RustBuffer, RustBuffer, UniffiForeignFutureCompleteVoid _Nonnull, uint64_t, UniffiForeignFutureDroppedCallbackStruct* _Nonnull
+typedef void (*UniffiCallbackInterfaceFileSystemMethod4)(uint64_t, RustBuffer, UniffiForeignFutureCompleteVoid _Nonnull, uint64_t, UniffiForeignFutureDroppedCallbackStruct* _Nonnull
     );
 
 #endif
 #ifndef UNIFFI_FFIDEF_CALLBACK_INTERFACE_FILE_SYSTEM_METHOD5
 #define UNIFFI_FFIDEF_CALLBACK_INTERFACE_FILE_SYSTEM_METHOD5
-typedef void (*UniffiCallbackInterfaceFileSystemMethod5)(uint64_t, RustBuffer, UniffiForeignFutureCompleteVoid _Nonnull, uint64_t, UniffiForeignFutureDroppedCallbackStruct* _Nonnull
+typedef void (*UniffiCallbackInterfaceFileSystemMethod5)(uint64_t, RustBuffer, RustBuffer, UniffiForeignFutureCompleteVoid _Nonnull, uint64_t, UniffiForeignFutureDroppedCallbackStruct* _Nonnull
     );
 
 #endif
 #ifndef UNIFFI_FFIDEF_CALLBACK_INTERFACE_FILE_SYSTEM_METHOD6
 #define UNIFFI_FFIDEF_CALLBACK_INTERFACE_FILE_SYSTEM_METHOD6
-typedef void (*UniffiCallbackInterfaceFileSystemMethod6)(uint64_t, RustBuffer, RustBuffer* _Nonnull, 
+typedef void (*UniffiCallbackInterfaceFileSystemMethod6)(uint64_t, RustBuffer, UniffiForeignFutureCompleteVoid _Nonnull, uint64_t, UniffiForeignFutureDroppedCallbackStruct* _Nonnull
+    );
+
+#endif
+#ifndef UNIFFI_FFIDEF_CALLBACK_INTERFACE_FILE_SYSTEM_METHOD7
+#define UNIFFI_FFIDEF_CALLBACK_INTERFACE_FILE_SYSTEM_METHOD7
+typedef void (*UniffiCallbackInterfaceFileSystemMethod7)(uint64_t, RustBuffer, RustBuffer* _Nonnull, 
         RustCallStatus *_Nonnull uniffiCallStatus
     );
 
@@ -292,12 +298,13 @@ typedef struct UniffiVTableCallbackInterfaceFileSystem {
     UniffiCallbackInterfaceFree _Nonnull uniffiFree;
     UniffiCallbackInterfaceClone _Nonnull uniffiClone;
     UniffiCallbackInterfaceFileSystemMethod0 _Nonnull createDirAll;
-    UniffiCallbackInterfaceFileSystemMethod1 _Nonnull write;
-    UniffiCallbackInterfaceFileSystemMethod2 _Nonnull read;
-    UniffiCallbackInterfaceFileSystemMethod3 _Nonnull removeFile;
-    UniffiCallbackInterfaceFileSystemMethod4 _Nonnull rename;
-    UniffiCallbackInterfaceFileSystemMethod5 _Nonnull removeDirAll;
-    UniffiCallbackInterfaceFileSystemMethod6 _Nonnull readBlocking;
+    UniffiCallbackInterfaceFileSystemMethod1 _Nonnull fileExists;
+    UniffiCallbackInterfaceFileSystemMethod2 _Nonnull write;
+    UniffiCallbackInterfaceFileSystemMethod3 _Nonnull read;
+    UniffiCallbackInterfaceFileSystemMethod4 _Nonnull removeFile;
+    UniffiCallbackInterfaceFileSystemMethod5 _Nonnull rename;
+    UniffiCallbackInterfaceFileSystemMethod6 _Nonnull removeDirAll;
+    UniffiCallbackInterfaceFileSystemMethod7 _Nonnull readBlocking;
 } UniffiVTableCallbackInterfaceFileSystem;
 
 #endif
@@ -552,6 +559,11 @@ void uniffi_ulife_lib_fn_init_callback_vtable_filesystem(const UniffiVTableCallb
 uint64_t uniffi_ulife_lib_fn_method_filesystem_create_dir_all(uint64_t ptr, RustBuffer path
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_FILESYSTEM_FILE_EXISTS
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_FILESYSTEM_FILE_EXISTS
+uint64_t uniffi_ulife_lib_fn_method_filesystem_file_exists(uint64_t ptr, RustBuffer path
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_FILESYSTEM_WRITE
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_FILESYSTEM_WRITE
 uint64_t uniffi_ulife_lib_fn_method_filesystem_write(uint64_t ptr, RustBuffer path, RustBuffer data
@@ -604,7 +616,7 @@ uint64_t uniffi_ulife_lib_fn_method_persistencemanager_get_current_user(uint64_t
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_PERSISTENCEMANAGER_GET_CURRENT_USER_TOKEN
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_PERSISTENCEMANAGER_GET_CURRENT_USER_TOKEN
-RustBuffer uniffi_ulife_lib_fn_method_persistencemanager_get_current_user_token(uint64_t ptr, RustCallStatus *_Nonnull out_status
+uint64_t uniffi_ulife_lib_fn_method_persistencemanager_get_current_user_token(uint64_t ptr
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_METHOD_PERSISTENCEMANAGER_SAVE_CURRENT_USER
@@ -625,7 +637,7 @@ uint64_t uniffi_ulife_lib_fn_func_init_api_cache(RustBuffer cache_folder, uint64
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_FUNC_INIT_PERSISTENCE_MANAGER
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_FN_FUNC_INIT_PERSISTENCE_MANAGER
-void uniffi_ulife_lib_fn_func_init_persistence_manager(RustBuffer base_folder, uint64_t fs, RustCallStatus *_Nonnull out_status
+uint64_t uniffi_ulife_lib_fn_func_init_persistence_manager(RustBuffer base_folder, uint64_t fs
 );
 #endif
 #ifndef UNIFFI_FFIDEF_FFI_ULIFE_LIB_RUSTBUFFER_ALLOC
@@ -1143,6 +1155,12 @@ uint16_t uniffi_ulife_lib_checksum_method_createpostreq_to_proto(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_FILESYSTEM_CREATE_DIR_ALL
 #define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_FILESYSTEM_CREATE_DIR_ALL
 uint16_t uniffi_ulife_lib_checksum_method_filesystem_create_dir_all(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_FILESYSTEM_FILE_EXISTS
+#define UNIFFI_FFIDEF_UNIFFI_ULIFE_LIB_CHECKSUM_METHOD_FILESYSTEM_FILE_EXISTS
+uint16_t uniffi_ulife_lib_checksum_method_filesystem_file_exists(void
     
 );
 #endif

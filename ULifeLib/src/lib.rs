@@ -24,9 +24,10 @@ static ASYNC_RUNTIME: OnceCell<Arc<tokio::runtime::Runtime>> = OnceCell::new();
 
 static API_CACHE: OnceCell<Arc<HybridCache<String, Vec<u8>>>> = OnceCell::new();
 
-#[uniffi::export]
-pub fn init_persistence_manager(base_folder: String, fs: FsHandle) -> Result<()> {
-    let manager = PersistenceManager::new(base_folder, fs)?;
+#[uniffi::export(async_runtime = "tokio")]
+pub async fn init_persistence_manager(base_folder: String, fs: FsHandle) -> Result<()> {
+    let mut manager = PersistenceManager::new(base_folder, fs)?;
+    manager.load_file_mapping().await?;
     let _ = PERSISTENCE_MANAGER.set(Arc::new(manager));
     Ok(())
 }

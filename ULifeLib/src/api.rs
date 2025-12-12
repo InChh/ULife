@@ -91,8 +91,12 @@ impl ApiClient {
     }
 
     /// 构建需要认证的请求
-    fn build_auth_request(&self, method: reqwest::Method, path: &str) -> Result<RequestBuilder> {
-        let token = self.require_token()?;
+    async fn build_auth_request(
+        &self,
+        method: reqwest::Method,
+        path: &str,
+    ) -> Result<RequestBuilder> {
+        let token = self.require_token().await?;
         Ok(self.build_request(method, path).bearer_auth(token))
     }
 
@@ -135,11 +139,12 @@ impl ApiClient {
     }
 
     /// 获取当前用户的 Token
-    fn require_token(&self) -> Result<String> {
+    async fn require_token(&self) -> Result<String> {
         let token = PERSISTENCE_MANAGER
             .get()
             .ok_or(Error::Uninitialized)?
-            .get_current_user_token()?
+            .get_current_user_token()
+            .await?
             .ok_or(Error::UnAuthorized)?;
         Ok(token)
     }

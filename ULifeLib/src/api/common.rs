@@ -27,7 +27,8 @@ impl ApiClient {
         let filename_cloned = filename.clone();
         let file_type = filename_cloned.rsplit('.').next().unwrap_or("unknown");
         let req = self
-            .build_auth_request(reqwest::Method::POST, "storage/upload")?
+            .build_auth_request(reqwest::Method::POST, "storage/upload")
+            .await?
             .multipart(
                 reqwest::multipart::Form::new()
                     .part(

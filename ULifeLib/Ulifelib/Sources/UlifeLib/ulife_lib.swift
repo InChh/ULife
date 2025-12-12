@@ -1735,6 +1735,8 @@ public protocol FileSystem: AnyObject, Sendable {
     
     func createDirAll(path: String) async throws 
     
+    func fileExists(path: String) async throws  -> Bool
+    
     func write(path: String, data: Data) async throws 
     
     func read(path: String) async throws  -> Data
@@ -1809,6 +1811,23 @@ open func createDirAll(path: String)async throws   {
             completeFunc: ffi_ulife_lib_rust_future_complete_void,
             freeFunc: ffi_ulife_lib_rust_future_free_void,
             liftFunc: { $0 },
+            errorHandler: FfiConverterTypeError_lift
+        )
+}
+    
+open func fileExists(path: String)async throws  -> Bool  {
+    return
+        try  await uniffiRustCallAsync(
+            rustFutureFunc: {
+                uniffi_ulife_lib_fn_method_filesystem_file_exists(
+                    self.uniffiCloneHandle(),
+                    FfiConverterString.lower(path)
+                )
+            },
+            pollFunc: ffi_ulife_lib_rust_future_poll_i8,
+            completeFunc: ffi_ulife_lib_rust_future_complete_i8,
+            freeFunc: ffi_ulife_lib_rust_future_free_i8,
+            liftFunc: FfiConverterBool.lift,
             errorHandler: FfiConverterTypeError_lift
         )
 }
@@ -1965,6 +1984,49 @@ fileprivate struct UniffiCallbackInterfaceFileSystem {
                 uniffiFutureCallback(
                     uniffiCallbackData,
                     UniffiForeignFutureResultVoid(
+                        callStatus: RustCallStatus(code: statusCode, errorBuf: errorBuf)
+                    )
+                )
+            }
+            uniffiTraitInterfaceCallAsyncWithError(
+                makeCall: makeCall,
+                handleSuccess: uniffiHandleSuccess,
+                handleError: uniffiHandleError,
+                lowerError: FfiConverterTypeError_lower,
+                droppedCallback: uniffiOutDroppedCallback
+            )
+        },
+        fileExists: { (
+            uniffiHandle: UInt64,
+            path: RustBuffer,
+            uniffiFutureCallback: @escaping UniffiForeignFutureCompleteI8,
+            uniffiCallbackData: UInt64,
+            uniffiOutDroppedCallback: UnsafeMutablePointer<UniffiForeignFutureDroppedCallbackStruct>
+        ) in
+            let makeCall = {
+                () async throws -> Bool in
+                guard let uniffiObj = try? FfiConverterTypeFileSystem.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return try await uniffiObj.fileExists(
+                     path: try FfiConverterString.lift(path)
+                )
+            }
+
+            let uniffiHandleSuccess = { (returnValue: Bool) in
+                uniffiFutureCallback(
+                    uniffiCallbackData,
+                    UniffiForeignFutureResultI8(
+                        returnValue: FfiConverterBool.lower(returnValue),
+                        callStatus: RustCallStatus()
+                    )
+                )
+            }
+            let uniffiHandleError = { (statusCode, errorBuf) in
+                uniffiFutureCallback(
+                    uniffiCallbackData,
+                    UniffiForeignFutureResultI8(
+                        returnValue: 0,
                         callStatus: RustCallStatus(code: statusCode, errorBuf: errorBuf)
                     )
                 )
@@ -2290,7 +2352,7 @@ public protocol PersistenceManagerProtocol: AnyObject, Sendable {
     /**
      * 获取当前用户的 Token
      */
-    func getCurrentUserToken() throws  -> String?
+    func getCurrentUserToken() async throws  -> String?
     
     /**
      * 保存当前用户信息到本地存储
@@ -2381,12 +2443,21 @@ open func getCurrentUser()async throws  -> LoginData?  {
     /**
      * 获取当前用户的 Token
      */
-open func getCurrentUserToken()throws  -> String?  {
-    return try  FfiConverterOptionString.lift(try rustCallWithError(FfiConverterTypeError_lift) {
-    uniffi_ulife_lib_fn_method_persistencemanager_get_current_user_token(
-            self.uniffiCloneHandle(),$0
-    )
-})
+open func getCurrentUserToken()async throws  -> String?  {
+    return
+        try  await uniffiRustCallAsync(
+            rustFutureFunc: {
+                uniffi_ulife_lib_fn_method_persistencemanager_get_current_user_token(
+                    self.uniffiCloneHandle()
+                    
+                )
+            },
+            pollFunc: ffi_ulife_lib_rust_future_poll_rust_buffer,
+            completeFunc: ffi_ulife_lib_rust_future_complete_rust_buffer,
+            freeFunc: ffi_ulife_lib_rust_future_free_rust_buffer,
+            liftFunc: FfiConverterOptionString.lift,
+            errorHandler: FfiConverterTypeError_lift
+        )
 }
     
     /**
@@ -11064,6 +11135,8 @@ public enum Error: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
     
     case CacheError(message: String)
     
+    case FileNotFound(message: String)
+    
 
     
 
@@ -11143,6 +11216,10 @@ public struct FfiConverterTypeError: FfiConverterRustBuffer {
             message: try FfiConverterString.read(from: &buf)
         )
         
+        case 14: return .FileNotFound(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
 
         default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -11180,6 +11257,8 @@ public struct FfiConverterTypeError: FfiConverterRustBuffer {
             writeInt(&buf, Int32(12))
         case .CacheError(_ /* message is ignored*/):
             writeInt(&buf, Int32(13))
+        case .FileNotFound(_ /* message is ignored*/):
+            writeInt(&buf, Int32(14))
 
         
         }
@@ -12847,12 +12926,19 @@ public func initApiCache(cacheFolder: String, cacheSize: UInt64)async throws   {
             errorHandler: FfiConverterTypeError_lift
         )
 }
-public func initPersistenceManager(baseFolder: String, fs: FileSystem)throws   {try rustCallWithError(FfiConverterTypeError_lift) {
-    uniffi_ulife_lib_fn_func_init_persistence_manager(
-        FfiConverterString.lower(baseFolder),
-        FfiConverterTypeFileSystem_lower(fs),$0
-    )
-}
+public func initPersistenceManager(baseFolder: String, fs: FileSystem)async throws   {
+    return
+        try  await uniffiRustCallAsync(
+            rustFutureFunc: {
+                uniffi_ulife_lib_fn_func_init_persistence_manager(FfiConverterString.lower(baseFolder),FfiConverterTypeFileSystem_lower(fs)
+                )
+            },
+            pollFunc: ffi_ulife_lib_rust_future_poll_void,
+            completeFunc: ffi_ulife_lib_rust_future_complete_void,
+            freeFunc: ffi_ulife_lib_rust_future_free_void,
+            liftFunc: { $0 },
+            errorHandler: FfiConverterTypeError_lift
+        )
 }
 
 private enum InitializationResult {
@@ -12876,7 +12962,7 @@ private let initializationResult: InitializationResult = {
     if (uniffi_ulife_lib_checksum_func_init_api_cache() != 31644) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_ulife_lib_checksum_func_init_persistence_manager() != 21508) {
+    if (uniffi_ulife_lib_checksum_func_init_persistence_manager() != 29425) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ulife_lib_checksum_method_apiclient_add_schedule_item() != 59390) {
@@ -12999,28 +13085,31 @@ private let initializationResult: InitializationResult = {
     if (uniffi_ulife_lib_checksum_method_filesystem_create_dir_all() != 7643) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_ulife_lib_checksum_method_filesystem_write() != 59449) {
+    if (uniffi_ulife_lib_checksum_method_filesystem_file_exists() != 48566) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_ulife_lib_checksum_method_filesystem_read() != 4915) {
+    if (uniffi_ulife_lib_checksum_method_filesystem_write() != 20064) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_ulife_lib_checksum_method_filesystem_remove_file() != 15098) {
+    if (uniffi_ulife_lib_checksum_method_filesystem_read() != 55734) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_ulife_lib_checksum_method_filesystem_rename() != 23297) {
+    if (uniffi_ulife_lib_checksum_method_filesystem_remove_file() != 13860) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_ulife_lib_checksum_method_filesystem_remove_dir_all() != 36941) {
+    if (uniffi_ulife_lib_checksum_method_filesystem_rename() != 24308) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_ulife_lib_checksum_method_filesystem_read_blocking() != 35606) {
+    if (uniffi_ulife_lib_checksum_method_filesystem_remove_dir_all() != 6156) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_ulife_lib_checksum_method_filesystem_read_blocking() != 645) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ulife_lib_checksum_method_persistencemanager_get_current_user() != 3291) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_ulife_lib_checksum_method_persistencemanager_get_current_user_token() != 14188) {
+    if (uniffi_ulife_lib_checksum_method_persistencemanager_get_current_user_token() != 34933) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_ulife_lib_checksum_method_persistencemanager_save_current_user() != 13532) {

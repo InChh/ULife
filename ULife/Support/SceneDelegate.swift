@@ -18,12 +18,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         Task {
             do {
                 // 初始化持久化管理器
-                try initPersistenceManager(baseFolder: getDocumentsDirectory().path(), fs: SwiftFileSystem())
+                try await initPersistenceManager(baseFolder: getDocumentsDirectory().path(), fs: SwiftFileSystem())
                 // 初始化缓存
                 let cache_folder_path: String = getCachesDirectory().appending(path: "api_cache").path()
                 try await initApiCache(cacheFolder: cache_folder_path, cacheSize: 50 * 1024 * 1024) // 50 MB
                 // 检查登录状态
-                let isLoggedIn = try getPersistenceManager().getCurrentUserToken() != nil
+                let isLoggedIn = try await getPersistenceManager().getCurrentUserToken() != nil
 
                 if isLoggedIn {
                     // 已登录，进入主页面

@@ -29,4 +29,6 @@ pub enum Error {
     UnAuthorized,
     #[error("Cache error: {0}")]
     CacheError(#[from] foyer::Error),
+    #[error("File not found")]
+    FileNotFound,
 }

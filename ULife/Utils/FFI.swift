@@ -16,6 +16,13 @@ final class SwiftFileSystem: FileSystem {
         }.value
     }
     
+    func fileExists(path: String) async throws -> Bool {
+        let url = URL(fileURLWithPath: path)
+        return await Task {
+            return FileManager.default.fileExists(atPath: url.path)
+        }.value
+    }
+    
     func write(path: String, data: Data) async throws {
         let url = URL(fileURLWithPath: path)
         try await Task {
@@ -54,6 +61,9 @@ final class SwiftFileSystem: FileSystem {
     
     func readBlocking(path: String) throws -> Data {
         let url = URL(fileURLWithPath: path)
+        if !FileManager.default.fileExists(atPath: path) {
+            throw Error.FileNotFound(message: "File not found at path: \(path)")
+        }
         return try Data(contentsOf: url)
     }
 }

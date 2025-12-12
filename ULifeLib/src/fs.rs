@@ -11,6 +11,7 @@ pub type FsHandle = Arc<dyn FileSystem>;
 #[async_trait]
 pub trait FileSystem: Send + Sync {
     async fn create_dir_all(&self, path: String) -> Result<()>;
+    async fn file_exists(&self, path: String) -> Result<bool>;
     async fn write(&self, path: String, data: Vec<u8>) -> Result<()>;
     async fn read(&self, path: String) -> Result<Vec<u8>>;
     async fn remove_file(&self, path: String) -> Result<()>;
@@ -27,6 +28,10 @@ impl FileSystem for DefaultFileSystem {
     async fn create_dir_all(&self, path: String) -> Result<()> {
         tokio::fs::create_dir_all(path).await?;
         Ok(())
+    }
+
+    async fn file_exists(&self, path: String) -> Result<bool> {
+        Ok(tokio::fs::metadata(path).await.is_ok())
     }
 
     async fn write(&self, path: String, data: Vec<u8>) -> Result<()> {

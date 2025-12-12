@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{collections::HashMap, path::PathBuf};
 
 use dashmap::DashMap;
 use prost::Message;
@@ -18,7 +18,8 @@ impl PersistenceManager {
     /// 创建 PersistenceManager 实例
     #[uniffi::constructor]
     pub fn new(base_folder: String, fs: FsHandle) -> Result<Self> {
-        std::fs::create_dir_all(&base_folder)?;
+        tokio::runtime::Handle::current()
+            .block_on(async { fs.create_dir_all(base_folder.clone()).await })?;
         let key_to_file = DashMap::new();
         Ok(PersistenceManager {
             base_folder,
@@ -53,12 +54,73 @@ impl PersistenceManager {
     }
 
     /// 获取当前用户的 Token
-    pub fn get_current_user_token(&self) -> Result<Option<String>> {
+    pub async fn get_current_user_token(&self) -> Result<Option<String>> {
         if let Some(file_path) = self.key_to_file.get("current_user") {
-            let data = self.fs.read_blocking(file_path.value().to_string())?;
+            let data = self.fs.read(file_path.value().to_string()).await?;
             let current_user = LoginData::decode(&*data)?;
             return Ok(Some(current_user.token));
         }
         Ok(None)
+    }
+}
+
+impl PersistenceManager {
+    fn get_mapping_file_path(base_folder: &str) -> PathBuf {
+        PathBuf::from(base_folder).join("persistence_key_to_file.json")
+    }
+
+    pub async fn load_file_mapping(&mut self) -> Result<()> {
+        let path = Self::get_mapping_file_path(&self.base_folder);
+        if !self
+            .fs
+            .file_exists(path.to_string_lossy().to_string())
+            .await
+            .unwrap_or(false)
+        {
+            return Ok(());
+        }
+        match self.fs.read(path.to_string_lossy().to_string()).await {
+            Ok(bytes) => {
+                let map: HashMap<String, String> = serde_json::from_slice(&bytes)?;
+                self.key_to_file = DashMap::from_iter(map);
+                Ok(())
+            }
+            Err(err) => Err(err),
+        }
+    }
+}
+
+impl Drop for PersistenceManager {
+    fn drop(&mut self) {
+        tokio::runtime::Handle::current().block_on(async {
+            let _ = self.fs.create_dir_all(self.base_folder.clone()).await;
+            let path = Self::get_mapping_file_path(&self.base_folder);
+            let snapshot: HashMap<String, String> = self
+                .key_to_file
+                .iter()
+                .map(|entry| (entry.key().clone(), entry.value().clone()))
+                .collect();
+
+            if snapshot.is_empty()
+                && self
+                    .fs
+                    .file_exists(path.to_string_lossy().to_string())
+                    .await
+                    .unwrap_or(false)
+            {
+                let _ = self
+                    .fs
+                    .remove_file(path.to_string_lossy().to_string())
+                    .await;
+                return;
+            }
+
+            if let Ok(bytes) = serde_json::to_vec(&snapshot) {
+                let _ = self
+                    .fs
+                    .write(path.to_string_lossy().to_string(), bytes)
+                    .await;
+            }
+        });
     }
 }

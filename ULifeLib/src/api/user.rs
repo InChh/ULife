@@ -35,7 +35,10 @@ impl ApiClient {
         let method = reqwest::Method::POST;
         let input = LogoutRequest {};
         let _resp = self
-            .send(self.prepare_body(self.build_auth_request(method, "auth/logout")?, &input)?)
+            .send(self.prepare_body(
+                self.build_auth_request(method, "auth/logout").await?,
+                &input,
+            )?)
             .await?;
         Ok(())
     }
@@ -57,10 +60,13 @@ impl ApiClient {
     pub async fn get_user_profile(&self) -> Result<User> {
         let input = GetUserInfoRequest {};
         let resp = self
-            .send(self.prepare_body(
-                self.build_auth_request(reqwest::Method::GET, "users/me")?,
-                &input,
-            )?)
+            .send(
+                self.prepare_body(
+                    self.build_auth_request(reqwest::Method::GET, "users/me")
+                        .await?,
+                    &input,
+                )?,
+            )
             .await?;
         let body_bytes = resp.bytes().await?;
         let user_resp: pb::user::GetUserInfoResponse = self.decode_body(body_bytes.as_ref())?;
@@ -71,10 +77,13 @@ impl ApiClient {
     /// 修改头像、简介、联系方式等
     pub async fn update_user_profile(&self, input: UpdateProfileRequest) -> Result<()> {
         let _resp = self
-            .send(self.prepare_body(
-                self.build_auth_request(reqwest::Method::PUT, "users/me")?,
-                &input,
-            )?)
+            .send(
+                self.prepare_body(
+                    self.build_auth_request(reqwest::Method::PUT, "users/me")
+                        .await?,
+                    &input,
+                )?,
+            )
             .await?;
 
         Ok(())
@@ -85,13 +94,16 @@ impl ApiClient {
     /// 前端检查新密码的合法性：与旧密码不一致，密码非空，密码强度非过弱小
     pub async fn change_password(&self, old_password: String, new_password: String) -> Result<()> {
         let _resp = self
-            .send(self.prepare_body(
-                self.build_auth_request(reqwest::Method::POST, "auth/change-password")?,
-                &ChangePasswordRequest {
-                    old_password,
-                    new_password,
-                },
-            )?)
+            .send(
+                self.prepare_body(
+                    self.build_auth_request(reqwest::Method::POST, "auth/change-password")
+                        .await?,
+                    &ChangePasswordRequest {
+                        old_password,
+                        new_password,
+                    },
+                )?,
+            )
             .await?;
 
         Ok(())
