@@ -45,11 +45,17 @@ final class AIChatViewController: UIViewController {
 
     // MARK: - UI
     private func setupNavigation() {
-        navigationItem.rightBarButtonItem = UIBarButtonItem(
+        let closeItem = UIBarButtonItem(
             barButtonSystemItem: .close,
             target: self,
             action: #selector(close)
         )
+        let refreshItem = UIBarButtonItem(
+            barButtonSystemItem: .refresh,
+            target: self,
+            action: #selector(refreshConversation)
+        )
+        navigationItem.rightBarButtonItems = [closeItem, refreshItem]
     }
 
     private func setupTableView() {
@@ -108,6 +114,31 @@ final class AIChatViewController: UIViewController {
         dismiss(animated: true)
     }
 
+    /// 清空当前会话上下文并重新开始一轮新的对话
+    @objc private func refreshConversation() {
+        guard !isSending else { return }
+
+        let alert = UIAlertController(
+            title: "清空对话？",
+            message: "这将清空当前 AI 对话的所有上下文，从头开始新的会话。",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "取消", style: .cancel))
+        alert.addAction(UIAlertAction(title: "清空并重开", style: .destructive, handler: { [weak self] _ in
+            guard let self = self else { return }
+            // 本地清空消息和会话 ID
+            self.conversationId = nil
+            self.messages.removeAll()
+            self.tableView.reloadData()
+            self.saveConversationId(nil)
+
+            // 重新拉起一轮欢迎语（新会话）
+            Task { await self.warmUpChat() }
+        }))
+
+        present(alert, animated: true)
+    }
+
     @objc private func sendMessage() {
         guard let text = messageField.text?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else {
             return
@@ -132,7 +163,10 @@ final class AIChatViewController: UIViewController {
             let resp: Campus_Ai_ChatResponse = try await AIAssistantService.shared.chat(request: req)
             conversationId = resp.conversationID
             let reply = resp.reply
-            appendMessage(role: .assistant, content: reply.content.isEmpty ? "（无内容）" : reply.content)
+            let text = reply.content.isEmpty
+                ? "这次我没有生成有效的回答，请稍后再试一次。"
+                : reply.content
+            appendMessage(role: .assistant, content: text)
         } catch {
             // 如果是 404，清空会话重试一次，避免因过期会话导致的 NotFound
             if case NetworkError.serverError(404, _) = error, !hasRetriedAfter404 {

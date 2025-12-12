@@ -41,5 +41,9 @@ bytes = "1"
 # 10. AI 调用
 async-openai = "0.20"
 
+# 11. 外部 HTTP 请求（用于天气查询等）
+reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls"] }
+urlencoding = "2"
+
 [build-dependencies]
 prost-build = "0.12"

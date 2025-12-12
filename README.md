@@ -40,4 +40,25 @@ chmod +x start.sh run.sh
 - 后端测试：`cd campus_backend-main && cargo test`
 - 清理后端构建：`cd campus_backend-main && cargo clean`
 
+## 版本更新（AI 聊天助手 & 工具接入）
+
+### 2025-12-12：AI 聊天助手 + 工具能力
+
+- **新增 AI 聊天助手模块**
+  - iOS 端新增 `AIChatViewController`，通过悬浮球入口（`AIAssistantManager`）打开，与后端 `/v1/proto/ai/chat`、`/v1/proto/ai/history` 交互。
+  - 使用 `Protocol/ai.proto` + `ai.pb.swift`/`campus.ai.rs` 实现 Protobuf 通信，会话 ID 和历史消息会在本地与服务端双向持久化。
+  - 支持一键“刷新”清空当前会话上下文并重新开始新对话。
+
+- **后端 AI 模块增强**
+  - 新增 `modules/ai` 下的 `tools.rs`，封装可供大模型使用的工具：
+    - **活动查询工具**：从 `activities` 表中按时间范围查询近期校园活动，供模型做“活动推荐/总结”。
+    - **天气工具**：通过 Open‑Meteo API + 地理编码实时获取指定城市当天天气，用于回答“今天天气如何”等问题。
+    - **论坛摘要工具**：复用 `BbsService::get_posts` 获取近期高热度帖子，让模型能回答“今天校园论坛在讨论什么”类问题。
+  - `AIService::chat` 中：
+    - 基于用户最近一条消息做简单关键词规划（活动/天气/论坛），按需调用上述工具并把 JSON 结果注入对话上下文。
+    - 若模型在有工具数据时仍返回空内容，服务端会基于工具结果生成兜底回答，避免前端出现“无法生成有效回答”。
+
+- **网络与稳定性改进**
+  - 修复 UTF‑8 截断导致的 panic（会话标题、摘要统一改为按字符截断）。
+  - Protobuf/JSON 网络层增加更详细的日志与错误处理，避免因单次请求失败导致会话整体中断。
 
