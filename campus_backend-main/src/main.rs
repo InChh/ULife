@@ -13,7 +13,9 @@ use crate::modules::course::controller_proto::course_proto_routes;
 use crate::modules::bbs::controller::bbs_routes;
 use crate::modules::bbs::controller_proto::bbs_proto_routes;
 use crate::modules::activity::controller::activity_routes;
+use crate::modules::ai::controller::ai_routes;
 use crate::modules::ai::controller_proto::ai_proto_routes;
+use crate::modules::ai::service::AIService;
 
 #[tokio::main]
 async fn main() {
@@ -41,6 +43,21 @@ async fn main() {
             std::process::exit(1);
         }
     };
+
+    // 启动后台定时任务：定期生成“今日校园简报”
+    {
+        let pool_clone = pool.clone();
+        tokio::spawn(async move {
+            use tokio::time::{interval, Duration};
+            let mut ticker = interval(Duration::from_secs(60 * 60)); // 每小时触发一次
+            loop {
+                ticker.tick().await;
+                if let Err(e) = AIService::generate_daily_digest(&pool_clone).await {
+                    tracing::warn!("daily digest task failed: {}", e);
+                }
+            }
+        });
+    }
     
     // 构建路由
     let api_routes = Router::new()
@@ -49,6 +66,7 @@ async fn main() {
         .merge(course_routes())
         .merge(bbs_routes())
         .merge(activity_routes())
+        .merge(ai_routes())
         // Protobuf API 路由
         .merge(user_proto_routes())
         .merge(course_proto_routes())

@@ -52,11 +52,12 @@ pub async fn get_recent_activities(
     // 计算时间范围
     let now = Utc::now().naive_utc();
     let start_time: Option<NaiveDateTime> = match args.time_range.as_str() {
+        "1d" => Some(now - Duration::days(1)),
         "7d" => Some(now - Duration::days(7)),
         "30d" => Some(now - Duration::days(30)),
         "all" => None,
-        // 未知取值时，兜底为 30 天，避免时间范围过大
-        _ => Some(now - Duration::days(30)),
+        // 未知取值时，兜底为 7 天，避免时间范围过大
+        _ => Some(now - Duration::days(7)),
     };
 
     let mut query = String::from(

@@ -148,6 +148,127 @@ impl AIService {
         Ok((conversation, messages))
     }
 
+    /// 查询最近一条每日简报（system_digest 会话中的最新 assistant 消息）
+    pub async fn latest_daily_digest(
+        pool: &MySqlPool,
+    ) -> Result<Option<(String, NaiveDateTime)>, AppError> {
+        // 先找到 system_digest 的最新会话
+        let row: Option<(u64, NaiveDateTime)> = sqlx::query_as(
+            "SELECT id, created_at FROM ai_conversations \
+             WHERE user_id = ? ORDER BY created_at DESC LIMIT 1",
+        )
+        .bind("system_digest")
+        .fetch_optional(pool)
+        .await?;
+
+        let (conversation_id, created_at) = match row {
+            Some(r) => r,
+            None => return Ok(None),
+        };
+
+        // 在该会话下取最新一条 assistant 消息
+        let msg_row: Option<(String, NaiveDateTime)> = sqlx::query_as(
+            "SELECT content, created_at FROM ai_messages \
+             WHERE conversation_id = ? AND role = 'assistant' \
+             ORDER BY created_at DESC, id DESC LIMIT 1",
+        )
+        .bind(conversation_id)
+        .fetch_optional(pool)
+        .await?;
+
+        if let Some((content, msg_created_at)) = msg_row {
+            Ok(Some((content, msg_created_at)))
+        } else {
+            Ok(Some((
+                String::new(), // 空内容，但保证返回日期
+                created_at,
+            )))
+        }
+    }
+
+    /// 生成“今日校园简报”，用于定时任务。
+    ///
+    /// 逻辑：
+    /// 1. 调用活动/论坛工具获取“今天或最近”的活动与论坛帖子。
+    /// 2. 让大模型在 100 字以内生成一段中文简报。
+    /// 3. 将简报写入一个系统会话中，同时打印日志，方便后续查看与调试。
+    pub async fn generate_daily_digest(pool: &MySqlPool) -> Result<(), AppError> {
+        let model = get_model_name().await?;
+        let client = build_ai_client()?;
+
+        let system_user = "system_digest";
+
+        // 取最近 1 天活动和若干条论坛热帖
+        let activity_args = ActivityToolArgs {
+            time_range: "1d".to_string(),
+            category: None,
+            limit: 20,
+        };
+        let activities = get_recent_activities(pool, system_user, activity_args).await?;
+        let forum_posts = get_forum_recent_posts(pool, system_user, 10).await?;
+
+        let activities_json =
+            serde_json::to_string(&activities).unwrap_or_else(|_| "[]".to_string());
+        let forum_json = serde_json::to_string(&forum_posts).unwrap_or_else(|_| "[]".to_string());
+
+        let today = Utc::now().date_naive().to_string();
+
+        let system_msg = ChatCompletionRequestMessage::from(
+            ChatCompletionRequestUserMessageArgs::default()
+                .role(async_openai::types::Role::System)
+                .content(
+                    "你是校园系统的简报助手，需要根据数据库提供的活动与论坛数据，\
+                     用不超过 100 个中文字符写一段“今日校园简报”。\n\
+                     要求：\n\
+                     - 尽量同时提到活动和论坛讨论的主题；\n\
+                     - 风格客观、简洁，不要自称 AI，也不要出现列表或编号，只写一小段话；\n\
+                     - 如果某一类数据为空，可以只总结另一类，或说明“暂无相关记录”。",
+                )
+                .build()
+                .unwrap(),
+        );
+
+        let user_msg = ChatCompletionRequestMessage::from(
+            ChatCompletionRequestUserMessageArgs::default()
+                .content(format!(
+                    "今天日期：{}。\n下面是最近的活动数据 JSON：{}\n下面是最近的论坛帖子数据 JSON：{}",
+                    today, activities_json, forum_json
+                ))
+                .build()
+                .unwrap(),
+        );
+
+        let req = CreateChatCompletionRequestArgs::default()
+            .model(model.clone())
+            .temperature(0.5)
+            .max_tokens(120u16)
+            .messages(vec![system_msg, user_msg])
+            .build()
+            .map_err(|e| AppError::Validation(format!("Invalid daily digest request: {}", e)))?;
+
+        let resp = client
+            .chat()
+            .create(req)
+            .await
+            .map_err(|e| AppError::Internal(format!("LLM daily digest call failed: {}", e)))?;
+
+        let summary = resp
+            .choices
+            .first()
+            .and_then(|c| c.message.content.clone())
+            .unwrap_or_else(|| "".to_string());
+
+        tracing::info!("📚 Daily campus digest for {}: {}", today, summary);
+
+        // 将简报写入一个系统会话，便于后续由客户端或管理后台查看
+        let conv_title = format!("每日校园简报 {}", today);
+        let conversation_id =
+            Self::ensure_conversation(pool, system_user, None, &model, Some(&conv_title)).await?;
+        Self::append_message(pool, conversation_id, "assistant", &summary, None).await?;
+
+        Ok(())
+    }
+
     pub async fn chat(
         pool: &MySqlPool,
         user_id: &str,

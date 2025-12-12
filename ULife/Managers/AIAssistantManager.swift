@@ -21,7 +21,12 @@ final class AIAssistantManager {
         button.translatesAutoresizingMaskIntoConstraints = false
         button.backgroundColor = UIColor.systemBlue
         button.tintColor = .white
-        button.setImage(UIImage(systemName: "sparkles"), for: .normal)
+        // 使用 SF Symbols 中更具“人工智能小机器人”风格的图标
+        if let robotImage = UIImage(systemName: "brain.head.profile") {
+            button.setImage(robotImage, for: .normal)
+        } else {
+            button.setImage(UIImage(systemName: "sparkles"), for: .normal)
+        }
         button.layer.cornerRadius = 28
         button.layer.shadowColor = UIColor.black.cgColor
         button.layer.shadowOpacity = 0.2

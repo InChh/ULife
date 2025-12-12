@@ -10,26 +10,34 @@ import UIKit
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
 
-        func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
-            guard let windowScene = (scene as? UIWindowScene) else { return }
-            window = UIWindow(windowScene: windowScene)
-            
-            // 检查登录状态
-            let isLoggedIn = UserDefaults.standard.bool(forKey: "isLoggedIn")
-            
-            if isLoggedIn {
-                // 已登录，进入主页面
-                window?.rootViewController = UIHelper.createTabViewController()
-                syncAIAssistantVisibility()
-            } else {
-                // 未登录，进入登录页面
-                let loginVC = LoginViewController()
-                let navController = UINavigationController(rootViewController: loginVC)
-                window?.rootViewController = navController
-            }
-            
-            window?.makeKeyAndVisible()
+    func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
+        guard let windowScene = (scene as? UIWindowScene) else { return }
+        window = UIWindow(windowScene: windowScene)
+
+        // 检查登录状态
+        let isLoggedIn = UserDefaults.standard.bool(forKey: "isLoggedIn")
+
+        if isLoggedIn {
+            // 已登录，进入主页面
+            window?.rootViewController = UIHelper.createTabViewController()
+            syncAIAssistantVisibility()
+        } else {
+            // 未登录，进入登录页面
+            let loginVC = LoginViewController()
+            let navController = UINavigationController(rootViewController: loginVC)
+            window?.rootViewController = navController
         }
+
+        window?.makeKeyAndVisible()
+
+        // App 启动时检查是否有“今日校园简报”需要通过系统通知提醒
+        DailyDigestManager.shared.checkAndNotifyTodayDigest()
+
+        #if DEBUG
+        // 调试环境下，每 5 秒推送一次简报通知，便于联调测试
+        DailyDigestManager.shared.startDebugNotificationLoop()
+        #endif
+    }
 
     /// 切换到主界面（供登录成功后调用）
     func showMainInterface() {
@@ -58,8 +66,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     func sceneDidBecomeActive(_ scene: UIScene) {
-        // Called when the scene has moved from an inactive state to an active state.
-        // Use this method to restart any tasks that were paused (or not yet started) when the scene was inactive.
+        // 从后台回到前台时也检查一次，确保当天简报能尽快送达
+        DailyDigestManager.shared.checkAndNotifyTodayDigest()
     }
 
     func sceneWillResignActive(_ scene: UIScene) {
